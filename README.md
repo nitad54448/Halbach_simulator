@@ -1,6 +1,6 @@
 # Halbach Ring Simulator
 
-This repository contains an interactive, web-based 3D simulator for calculating and visualizing the magnetic fields of finite-length Halbach cylinders. This program was initially created with a local Qwen-Coder 70b and improved with Gemini 3.1 and Claude Opus 4.6.
+This repository contains an interactive, web-based 3D simulator for calculating and visualizing the magnetic fields of finite-length Halbach cylinders. This program was initially created with a local Qwen-Coder 70b and improved with Gemini 3.1 and Claude Sonnet 4.6.
 
 ## Mathematical Model
 
