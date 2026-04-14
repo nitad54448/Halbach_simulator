@@ -669,7 +669,7 @@ function setView(mode) {
 // and gives the correct Halbach bore field enhancement and leakage cancellation.
 
 const MU0 = 4e-7 * Math.PI;  // H/m
-const N_RINGS = 64;           // integration steps along cylinder axis
+const N_RINGS = 32;           // integration steps along cylinder axis
 
 // Complete elliptic integrals K(k) and E(k) via AGM (Arithmetic-Geometric Mean)
 // Input: m = k² (NOT k). Returns [K, E].
