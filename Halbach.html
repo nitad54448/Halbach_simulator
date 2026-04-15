@@ -10,12 +10,12 @@
   --bg: #0a0c10;
   --panel: #0f1318;
   --panel2: #141920;
-  --border: #1e2730;
+  --border: #39495a;
   --accent: #00d4ff;
   --accent2: #ff6b35;
   --accent3: #a8ff3e;
   --text: #e2eaf5;
-  --muted: #4a5568;
+  --muted: #99aed4;
   --label: #7a8fa6;
   --north: #e53e3e;
   --south: #3182ce;
@@ -24,7 +24,7 @@
 * { box-sizing: border-box; margin: 0; padding: 0; }
 
 body {
-  font-family: 'JetBrains Mono', monospace;
+  font-family: system-ui, -apple-system, 'Segoe UI', Roboto, Helvetica, Arial, sans-serif;
   background: var(--bg);
   color: var(--text);
   display: flex;
@@ -46,11 +46,9 @@ body {
 }
 
 
-
-
 /* LEFT PANEL */
 .left {
-  width: 320px;
+  width: 360px;
   min-width: 320px;
   background: var(--panel);
   border-right: 1px solid var(--border);
@@ -60,13 +58,14 @@ body {
   overflow-x: hidden;
 }
 
-.left::-webkit-scrollbar { width: 4px; }
+.left::-webkit-scrollbar { width: 10px; }
 .left::-webkit-scrollbar-track { background: var(--panel); }
 .left::-webkit-scrollbar-thumb { background: var(--border); border-radius: 2px; }
 
 .brand {
   padding: 20px 24px 16px;
   border-bottom: 1px solid var(--border);
+  text-align: center;
 }
 .brand h1 {
   font-family: 'Syne', sans-serif;
@@ -179,21 +178,19 @@ body {
   padding: 10px 8px;
   background: var(--panel2);
   color: var(--text);
-  border: 1px solid var(--border);
+  border: 4px solid var(--border);
   border-radius: 4px;
   font-family: 'JetBrains Mono', monospace;
-  font-size: 10px;
+  font-size: 12px;
   font-weight: 600;
   letter-spacing: 0.06em;
   cursor: pointer;
   text-transform: uppercase;
   transition: all 0.2s;
 }
-.btn:hover { background: var(--border); border-color: var(--accent); color: var(--accent); }
-.btn.primary { border-color: var(--accent); color: var(--accent); }
+.btn:hover {  border-color: var(--accent); color: var(--accent); }
+.btn.primary { background: var(--border); border-color: var(--accent); color: var(--accent); }
 .btn.primary:hover { background: rgba(0,212,255,0.1); }
-.btn.step { border-color: var(--accent3); color: var(--accent3); }
-.btn.step:hover { background: rgba(168,255,62,0.1); }
 
 /* MAIN VIEW */
 .main {
@@ -337,7 +334,7 @@ canvas.proj { display: block; width: 100%; }
 <div class="left">
   <div class="brand">
     <h1>Halbach Ring</h1>
-    <p>MAGNETIC ARRAY SIMULATOR · v1.0</p>
+    <p>MAGNETIC ARRAY SIMULATOR · v1.1</p>
   </div>
 
 
@@ -346,7 +343,6 @@ canvas.proj { display: block; width: 100%; }
 <div class="section">
   <div class="section-title">Halbach order</div>
   <div class="field-row">
-    
     <select id="halbachK" oninput="update()">
       <option value="1">k=1 — No inner field </option>
       <option value="2" selected>k=2 — Uniform field in bore</option>
@@ -354,10 +350,16 @@ canvas.proj { display: block; width: 100%; }
       <option value="4">k=4 — Sextupole</option>
     </select>
   </div>
+  <div class="field-row" style="margin-top:10px;">
+    <label>Magnet Shape</label>
+    <select id="magnetShape" onchange="onMagnetShapeChange()">
+      <option value="cylinder" selected>Cylinder</option>
+      <option value="cuboid">Parallelepiped (Cuboid)</option>
+    </select>
+  </div>
 </div>
 
 <!-- MAGNET -->
- 
 <div class="section">
   <div class="section-title">Magnet</div>
   <div class="two-col">
@@ -366,21 +368,44 @@ canvas.proj { display: block; width: 100%; }
       <input type="number" id="nPoles" value="8" min="2" max="32" step="2" oninput="update()">
     </div>
     <div class="field-row">
-      <label>Magnet Ø (mm)</label>
-      <input type="number" id="magDiam" value="10" min="1" max="50" step="0.5" oninput="update()">
-    </div>
-  </div>
-  <div class="two-col">
-    <div class="field-row">
-      <label>Length (mm)</label>
-      <input type="number" id="magLen" value="20" min="2" max="100" step="1" oninput="update()">
-    </div>
-    <div class="field-row">
       <label>Field Br (T)</label>
       <input type="number" id="magB" value="1.2" min="0.1" max="2.0" step="0.05" oninput="update()">
     </div>
   </div>
-  <div class="two-col">
+
+  <!-- Cylinder dims -->
+  <div id="dims-cylinder">
+    <div class="two-col">
+      <div class="field-row">
+        <label>Diameter (mm)</label>
+        <input type="number" id="magDiam" value="10" min="1" max="50" step="0.5" oninput="update()">
+      </div>
+      <div class="field-row">
+        <label>Length (mm)</label>
+        <input type="number" id="magLen" value="20" min="2" max="100" step="1" oninput="update()">
+      </div>
+    </div>
+  </div>
+
+  <!-- Cuboid dims (hidden by default) -->
+  <div id="dims-cuboid" style="display:none;">
+    <div class="two-col">
+      <div class="field-row">
+        <label>Width (mm)</label>
+        <input type="number" id="magWidth" value="10" min="1" max="50" step="0.5" oninput="update()">
+      </div>
+      <div class="field-row">
+        <label>Height Z (mm)</label>
+        <input type="number" id="magHeight" value="10" min="1" max="50" step="0.5" oninput="update()">
+      </div>
+    </div>
+    <div class="field-row">
+      <label>Length N→S (mm)</label>
+      <input type="number" id="magLenCuboid" value="20" min="2" max="100" step="1" oninput="update()">
+    </div>
+  </div>
+
+  <div class="two-col" style="margin-top:4px;">
     <div class="field-row">
       <label>Placement Ø (mm)</label>
       <input type="number" id="magRadius" value="72" min="10" max="600" step="1" oninput="update()">
@@ -455,8 +480,9 @@ canvas.proj { display: block; width: 100%; }
 <div class="section">
   <div class="section-title">Actions</div>
   <div class="btn-group">
-    <button class="btn step" onclick="exportSTL()">STL 3D Model</button>
-    <button class="btn" onclick="resetView()">Reset View</button>
+    <button class="btn" onclick="exportSTL()">STL 3D Model</button>
+  
+    <button class="btn" onclick="generatePDF()">Report PDF</button>
   </div>
 </div>
 
@@ -519,8 +545,8 @@ canvas.proj { display: block; width: 100%; }
 
 <!-- THREE.JS from CDN -->
 <script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js"></script>
-<script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js"></script>
 <script src="https://cdn.jsdelivr.net/npm/three@0.128.0/examples/js/exporters/STLExporter.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
 
 <script>
 
@@ -833,17 +859,133 @@ function cylinderField(px, py, pz,          // eval point (mm)
   return { Bx, By, Bz };
 }
 
+// ── Shape selector helper ──────────────────────────────────────────────────────
+function onMagnetShapeChange() {
+  const shape = document.getElementById('magnetShape').value;
+  document.getElementById('dims-cylinder').style.display = shape === 'cylinder' ? '' : 'none';
+  document.getElementById('dims-cuboid').style.display   = shape === 'cuboid'   ? '' : 'none';
+  update();
+}
+
+// ── Parallelepiped (cuboid) field kernel ───────────────────────────────────────
+// A uniformly magnetised rectangular prism of half-dimensions (hW, hH, hL)
+// with magnetisation along the local X axis (length axis = N→S).
+// Uses the exact analytical formula via the scalar magnetic potential for a
+// uniformly magnetised rectangular prism (Furlani, "Permanent Magnet and
+// Electromechanical Devices", 2001):
+//
+//   B = Br/2 · Σ_{i,j,k ∈ {±1}}  (-1)^(i+j+k)  · F(x+i·hL, y+j·hW, z+k·hH)
+//
+// where F components are the standard closed-form expressions.
+// The magnetisation is along the local axial (length) direction.
+//
+// We rotate the eval point into the magnet's local frame, compute, then rotate back.
+function cuboidField(px, py, pz,          // eval point (mm)
+                     cx, cy, cz,          // magnet centre (mm)
+                     mux, muy, muz,       // magnetisation unit vector (normalised)
+                     hW_mm, hH_mm, hL_mm, // half-width, half-height, half-length (mm)
+                     Br) {
+  // The Furlani analytical formula is dimensionless (log and atan of length ratios),
+  // so we can work directly in mm. No unit conversion needed here.
+  const dx = (px - cx);
+  const dy = (py - cy);
+  const dz = (pz - cz);
+
+  // Local frame: axial = mag direction (mux,muy,muz)
+  const ax = mux, ay = muy, az = muz;
+
+  // Build orthonormal frame with geometry-aware axes:
+  // e2 = global Z (height direction for ring magnets lying in XY plane)
+  // e1 = e2 × mag_axis  (width direction, perpendicular to both mag axis and Z)
+  // This ensures hH always corresponds to the Z (bore) axis and hW to the
+  // tangential direction, regardless of each magnet's angular position.
+  const e2x = 0, e2y = 0, e2z = 1;
+  let e1x = e2y * az - e2z * ay;  // = -ay
+  let e1y = e2z * ax - e2x * az;  // =  ax
+  let e1z = e2x * ay - e2y * ax;  // =   0
+  const e1n = Math.sqrt(e1x*e1x + e1y*e1y + e1z*e1z);
+  // Fallback if mag axis is parallel to Z (degenerate case)
+  if (e1n < 1e-10) { e1x = 1; e1y = 0; e1z = 0; }
+  else { e1x /= e1n; e1y /= e1n; e1z /= e1n; }
+
+  // Eval point in local frame: axial = u, perp1 = v, perp2 = w
+  const u = dx * ax  + dy * ay  + dz * az;   // along magnetisation
+  const v = dx * e1x + dy * e1y + dz * e1z;  // "width" direction
+  const w = dx * e2x + dy * e2y + dz * e2z;  // "height" direction
+
+  const hL = hL_mm;  // half-length along magnetisation (mm, formula is dimensionless)
+  const hW = hW_mm;  // half-width
+  const hH = hH_mm;  // half-height
+
+  const Br_o4pi = Br / (4 * Math.PI);
+
+  // Analytical expressions (Furlani 2001, eqs. 3-75 … 3-77)
+  // Component along magnetisation axis (Baxial) and two transverse (Bv, Bw)
+  let Bu = 0, Bv = 0, Bw = 0;
+
+  // Furlani 2001 eqs 3-75..3-77: corners indexed (i,j,k) in {0,1}^3, sign=(-1)^(i+j+k)
+  // xi = u+(2i-1)*hL: i=0 -> minus face (u-hL), i=1 -> plus face (u+hL)
+  for (let i = 0; i <= 1; i++) {
+    for (let j = 0; j <= 1; j++) {
+      for (let kk = 0; kk <= 1; kk++) {
+        const sign = Math.pow(-1, i + j + kk);
+        const xi = u + (2*i  - 1) * hL;
+        const yj = v + (2*j  - 1) * hW;
+        const zk = w + (2*kk - 1) * hH;
+        const r  = Math.sqrt(xi*xi + yj*yj + zk*zk);
+        if (r < 1e-14) continue;
+
+        Bu += sign * Math.atan2(yj * zk, xi * r);
+
+        const log_arg_v = zk + r;
+        if (log_arg_v > 0) Bv -= sign * Math.log(log_arg_v);
+
+        const log_arg_w = yj + r;
+        if (log_arg_w > 0) Bw -= sign * Math.log(log_arg_w);
+      }
+    }
+  }
+
+  Bu *= Br_o4pi;
+  Bv *= Br_o4pi;
+  Bw *= Br_o4pi;
+
+if (Math.abs(u) <= hL + 1e-6 && Math.abs(v) <= hW + 1e-6 && Math.abs(w) <= hH + 1e-6) {
+  Bu += Br;
+}
+
+  // Rotate local field back to global frame
+  const Bx = Bu * ax  + Bv * e1x + Bw * e2x;
+  const By = Bu * ay  + Bv * e1y + Bw * e2y;
+  const Bz = Bu * az  + Bv * e1z + Bw * e2z;
+
+  return { Bx, By, Bz };
+}
+
+// ── Shared parameter reader ───────────────────────────────────────────────────
+function getMagnetParams() {
+  const shape  = (document.getElementById('magnetShape')?.value) || 'cylinder';
+  const nPoles = parseInt(document.getElementById('nPoles').value) || 8;
+  const Br     = parseFloat(document.getElementById('magB').value) || 1.2;
+  const k      = parseInt(document.getElementById('halbachK').value) || 2;
+  const rPlace = (parseFloat(document.getElementById('magRadius').value) || 70) / 2;
+
+  let magDiam, magLen, magWidth, magHeight;
+  if (shape === 'cylinder') {
+    magDiam = parseFloat(document.getElementById('magDiam').value) || 10;
+    magLen  = parseFloat(document.getElementById('magLen').value)  || 20;
+  } else {
+    magLen    = parseFloat(document.getElementById('magLenCuboid').value) || 20;
+    magWidth  = parseFloat(document.getElementById('magWidth').value)     || 10;
+    magHeight = parseFloat(document.getElementById('magHeight').value)    || 10;
+    magDiam   = Math.max(magWidth, magHeight); // used for placement geometry checks
+  }
+  return { shape, nPoles, Br, k, rPlace, magDiam, magLen, magWidth, magHeight };
+}
+
 // Main field, changed on april 14 to vector and norm
 function fieldVectorAt(x, y, z) {
-  const nPoles  = parseInt(document.getElementById('nPoles').value) || 8;
-  const magDiam = parseFloat(document.getElementById('magDiam').value) || 10;
-  const magLen  = parseFloat(document.getElementById('magLen').value)  || 20;
-  const Br      = parseFloat(document.getElementById('magB').value)    || 1.2;
-  const k       = parseInt(document.getElementById('halbachK').value)  || 2;
-  const rPlace  = (parseFloat(document.getElementById('magRadius').value) || 70) / 2;
-
-  const a      = magDiam / 2;
-  const halfL  = magLen  / 2;
+  const { shape, nPoles, Br, k, rPlace, magDiam, magLen, magWidth, magHeight } = getMagnetParams();
 
   let Bx = 0, By = 0, Bz = 0;
   const angleStep = (2 * Math.PI) / nPoles;
@@ -860,8 +1002,18 @@ function fieldVectorAt(x, y, z) {
     const muy = Math.sin(phi);
     const muz = 0;
 
-    const { Bx: bx, By: by, Bz: bz } = cylinderField(x, y, z, cx, cy, cz, mux, muy, muz, a, halfL, Br);
-    Bx += bx; By += by; Bz += bz;
+    let contrib;
+    if (shape === 'cylinder') {
+      const a     = magDiam / 2;
+      const halfL = magLen  / 2;
+      contrib = cylinderField(x, y, z, cx, cy, cz, mux, muy, muz, a, halfL, Br);
+    } else {
+      const hL = magLen    / 2;
+      const hW = magWidth  / 2;
+      const hH = magHeight / 2;
+      contrib = cuboidField(x, y, z, cx, cy, cz, mux, muy, muz, hW, hH, hL, Br);
+    }
+    Bx += contrib.Bx; By += contrib.By; Bz += contrib.Bz;
   }
   return { Bx, By, Bz };
 }
@@ -1368,15 +1520,11 @@ function buildScene() {
   magnetGroup = new THREE.Group();
   arrowGroup = new THREE.Group();
 
-  const nPoles = Math.max(2, Math.min(32, parseInt(document.getElementById('nPoles').value) || 8));
-  const magDiam = parseFloat(document.getElementById('magDiam').value) || 10;
-  const magLen = parseFloat(document.getElementById('magLen').value) || 20;
+  const { shape, nPoles: nPolesRaw, Br: magB, k: halbachK, rPlace, magDiam, magLen, magWidth, magHeight } = getMagnetParams();
+  const nPoles = Math.max(2, Math.min(32, nPolesRaw));
   const holderIn = parseFloat(document.getElementById('holderIn').value) || 60;
   const holderOut = parseFloat(document.getElementById('holderOut').value) || 100;
   const holderThick = parseFloat(document.getElementById('holderThick').value) || 25;
-  const halbachK = parseInt(document.getElementById('halbachK').value) || 2;
-  const magB = parseFloat(document.getElementById('magB').value) || 1.2;
-  const rPlace = (parseFloat(document.getElementById('magRadius').value) || 70) / 2;
   const scale = 1;
 
   magnetData = [];
@@ -1431,8 +1579,11 @@ function buildScene() {
 if (showMagnets) {
       const isField = displayMode === 'field';
 
-      // Magnet body: cylinder whose long axis = magnetization direction (in XY)
-      const cylGeo = new THREE.CylinderGeometry(magDiam / 2 * scale, magDiam / 2 * scale, magLen * scale, 32);
+      // Rotation quaternion: aligns the geometry's default "length" axis with (mx, my, 0)
+      const yAxis = new THREE.Vector3(0, 1, 0);
+      const targetAxis = new THREE.Vector3(mx, my, 0).normalize();
+      const quat = new THREE.Quaternion().setFromUnitVectors(yAxis, targetAxis);
+
       const bodyMat = new THREE.MeshStandardMaterial({
         color: 0xd0d8e0,
         roughness: 0.2,
@@ -1443,22 +1594,37 @@ if (showMagnets) {
         wireframe: isField
       });
 
-      const cylMesh = new THREE.Mesh(cylGeo, bodyMat);
-      cylMesh.position.set(px, py, 0);
+      let bodyMesh;
+      let halfL, capOffset;
 
-      // Default CylinderGeometry axis is Y; rotate so it aligns with (mx, my, 0)
-      const yAxis = new THREE.Vector3(0, 1, 0);
-      const targetAxis = new THREE.Vector3(mx, my, 0).normalize();
-      const quat = new THREE.Quaternion().setFromUnitVectors(yAxis, targetAxis);
-      cylMesh.setRotationFromQuaternion(quat);
-      cylMesh.castShadow = true;
-      cylMesh.receiveShadow = true;
-      magnetGroup.add(cylMesh);
+      if (shape === 'cylinder') {
+        // Cylinder: diameter × length
+        const cylGeo = new THREE.CylinderGeometry(magDiam / 2 * scale, magDiam / 2 * scale, magLen * scale, 32);
+        bodyMesh = new THREE.Mesh(cylGeo, bodyMat);
+        halfL = magLen / 2 * scale;
+        capOffset = 0.15;
+      } else {
+        // Parallelepiped: width (X perp) × height Z × length (along mag axis, default Y in THREE)
+        const cubGeo = new THREE.BoxGeometry(magWidth * scale, magLen * scale, magHeight * scale);
+        bodyMesh = new THREE.Mesh(cubGeo, bodyMat);
+        halfL = magLen / 2 * scale;
+        capOffset = 0.15;
+      }
 
-      // N cap (red) and S cap (blue)
-      const capGeo = new THREE.CircleGeometry(magDiam / 2 * scale * 1.01, 24);
-      const halfL = magLen / 2 * scale;
-      const capOffset = 0.15;
+      bodyMesh.position.set(px, py, 0);
+      bodyMesh.setRotationFromQuaternion(quat);
+      bodyMesh.castShadow = true;
+      bodyMesh.receiveShadow = true;
+      magnetGroup.add(bodyMesh);
+
+      // N cap (red) and S cap (blue) — shape-dependent
+      let capGeo;
+      if (shape === 'cylinder') {
+        capGeo = new THREE.CircleGeometry(magDiam / 2 * scale * 1.01, 24);
+      } else {
+        // Flat rectangle cap matching the face (width × height)
+        capGeo = new THREE.PlaneGeometry(magWidth * scale * 1.01, magHeight * scale * 1.01);
+      }
 
       const nCapMat = new THREE.MeshStandardMaterial({ 
         color: 0xe53e3e, roughness: 0.4, metalness: 0.3, side: THREE.FrontSide, 
@@ -1476,18 +1642,20 @@ if (showMagnets) {
 
       const nCap = new THREE.Mesh(capGeo, nCapMat);
       nCap.position.set(px + mx * (halfL + capOffset), py + my * (halfL + capOffset), 0);
+      nCap.up.set(0, 0, 1);
       nCap.lookAt(px + mx * (halfL + capOffset + 1), py + my * (halfL + capOffset + 1), 0);
       magnetGroup.add(nCap);
 
       const sCap = new THREE.Mesh(capGeo, sCapMat);
       sCap.position.set(px - mx * (halfL + capOffset), py - my * (halfL + capOffset), 0);
+      sCap.up.set(0, 0, 1);
       sCap.lookAt(px - mx * (halfL + capOffset + 1), py - my * (halfL + capOffset + 1), 0);
       magnetGroup.add(sCap);
 
       
     }
 
-    magnetData.push({
+  magnetData.push({
       index: i,
       angle: angle * 180 / Math.PI,
       magAngle: magAngle * 180 / Math.PI,
@@ -1557,14 +1725,14 @@ if (showMagnets) {
 
   scene.add(magnetGroup);
   scene.add(arrowGroup);
-  computeStats(nPoles, magB, rPlace, magDiam, magLen, halbachK);
+  computeStats();
 }
 
 
 
 
 // computeStats (champ à 0, important pour k=2, B out c'est à l'extérieur du holder)
-function computeStats(nPoles, Br, rPlace, magDiam, magLen, k) {
+function computeStats() {
   const holderIn = parseFloat(document.getElementById('holderIn').value) || 60;
   const holderOut = parseFloat(document.getElementById('holderOut').value) || 100;
   const Ri = holderIn / 2;
@@ -1595,19 +1763,141 @@ function computeStats(nPoles, Br, rPlace, magDiam, magLen, k) {
 }
 
 
-// 2. Optimized Update Function
-function update() {
-  // Always build 3D scene (handles geometry visiblity)
-  buildScene();
+async function generatePDF() {
+  showTooltip("Generating PDF Report...", 5000);
   
-  // Only redraw map if we are currently looking at a 2D Map tab
-  if (currentMapPlane) {
-    drawSingleMap(currentMapPlane);
+  // Brief timeout to allow the UI to render the tooltip
+  await new Promise(r => setTimeout(r, 100));
+
+  const { jsPDF } = window.jspdf;
+  const doc = new jsPDF();
+  
+  const pageWidth = doc.internal.pageSize.getWidth();
+  const margin = 10;
+  const contentWidth = pageWidth - 2 * margin;
+
+  doc.setFont("helvetica", "bold");
+  doc.setFontSize(14);
+  doc.text("Halbach Array Simulator - Configuration Report", margin, 15);
+
+  doc.setFont("helvetica", "normal");
+  doc.setFontSize(10);
+  
+  // 1. Write ALL Parameters
+  const p = getMagnetParams();
+  const holderIn = document.getElementById('holderIn').value;
+  const holderOut = document.getElementById('holderOut').value;
+  const holderThick = document.getElementById('holderThick').value;
+  const numContours = document.getElementById('numContours').value;
+  
+  let y = 25;
+  doc.setFont("helvetica", "bold");
+  doc.text("Magnet Parameters", margin, y); y += 6;
+  doc.setFont("helvetica", "normal");
+  doc.text(`Shape: ${p.shape.toUpperCase()} | Poles: ${p.nPoles} | Field Br: ${p.Br} T | Halbach k: ${p.k}`, margin, y); y += 6;
+  
+  if (p.shape === 'cylinder') {
+    doc.text(`Dimensions: Diameter ${p.magDiam} mm x Length ${p.magLen} mm`, margin, y); y += 6;
+  } else {
+    doc.text(`Dimensions: Width ${p.magWidth} mm x Height Z ${p.magHeight} mm x Length N->S ${p.magLen} mm`, margin, y); y += 6;
   }
+  doc.text(`Placement Ø: ${p.rPlace * 2} mm`, margin, y); y += 10;
+
+  doc.setFont("helvetica", "bold");
+  doc.text("Holder Parameters", margin, y); y += 6;
+  doc.setFont("helvetica", "normal");
+  doc.text(`Inner Ø: ${holderIn} mm | Outer Ø: ${holderOut} mm | Thickness: ${holderThick} mm`, margin, y); y += 10;
+
+  doc.setFont("helvetica", "bold");
+  doc.text("Computed & Display Parameters", margin, y); y += 6;
+  doc.setFont("helvetica", "normal");
+  doc.text(`Contour Lines: ${numContours}`, margin, y); y += 6;
+  doc.text(`Center Field: ${document.getElementById('stat-Binner').textContent}`, margin, y); y += 6;
+  doc.text(`Outside Field (Leakage): ${document.getElementById('stat-Bouter').textContent}`, margin, y); y += 15;
+
+  // 2. Capture 3D Canvas (Forced TOP view)
+  // Save current camera state
+  const origSpherical = { ...spherical };
+  const origPan = { ...panOffset };
+  const origTargetView = targetView ? { ...targetView } : null;
+
+  // Force Top View instantly (bypassing animation)
+  spherical.theta = 0;
+  spherical.phi = 0.01;
+  spherical.radius = 280; 
+  panOffset.x = 0;
+  panOffset.y = 0;
+  targetView = null; 
+
+  camera.position.x = spherical.radius * Math.sin(spherical.phi) * Math.sin(spherical.theta) + panOffset.x;
+  camera.position.y = spherical.radius * Math.sin(spherical.phi) * Math.cos(spherical.theta) + panOffset.y;
+  camera.position.z = spherical.radius * Math.cos(spherical.phi);
+  camera.up.set(0, 0, 1);
+  camera.lookAt(panOffset.x, panOffset.y, 0);
+  camera.updateProjectionMatrix();
+
+  renderer.render(scene, camera); 
+  const canvas3D = document.getElementById('threejs-canvas');
+  const aspect3D = canvas3D.height / canvas3D.width;
+  
+  // Calculate height to fit the remainder of the first page, or constrain by width
+  let imgHeight3D = contentWidth * aspect3D;
+  doc.addImage(canvas3D.toDataURL("image/jpeg", 1.0), "JPEG", margin, y, contentWidth, imgHeight3D);
+
+  // Restore camera state
+  spherical.theta = origSpherical.theta;
+  spherical.phi = origSpherical.phi;
+  spherical.radius = origSpherical.radius;
+  panOffset.x = origPan.x;
+  panOffset.y = origPan.y;
+  targetView = origTargetView;
+
+  // 3. Capture 2D Maps (Full Page Width)
+  const mapContainer = document.getElementById('map-container');
+  const wasHidden = mapContainer.style.display === 'none';
+  
+  if (wasHidden) {
+    mapContainer.style.visibility = 'hidden';
+    mapContainer.style.display = 'flex';
+  }
+
+  const mapCanvas = document.getElementById('map-canvas');
+  const originalPlane = currentMapPlane; 
+  const planes = ['xy', 'xz', 'yz'];
+  
+  for (let i = 0; i < planes.length; i++) {
+    doc.addPage(); // Put each map on a new full page
+    
+    const plane = planes[i];
+    _drawSingleMapImpl(plane);
+    
+    doc.setFont("helvetica", "bold");
+    doc.text(`2D Field Map: ${plane.toUpperCase()} Plane`, margin, 20);
+    
+    // The map canvas is square by design in your code (1:1 aspect ratio)
+    doc.addImage(mapCanvas.toDataURL("image/png", 1.0), "PNG", margin, 25, contentWidth, contentWidth);
+  }
+
+  // Restore the original state
+  if (originalPlane) {
+    _drawSingleMapImpl(originalPlane);
+  } else {
+    const ctx = mapCanvas.getContext('2d');
+    ctx.clearRect(0, 0, mapCanvas.width, mapCanvas.height);
+  }
+
+  if (wasHidden) {
+    mapContainer.style.display = 'none';
+    mapContainer.style.visibility = '';
+  }
+
+  doc.save("Halbach_Array_Report.pdf");
+  showTooltip("PDF Downloaded successfully.", 3000);
 }
 
 
-// ==================== STL FILE EXPORT ====================
+
+//  STL 
 function exportSTL() {
   if (typeof THREE.STLExporter === 'undefined') {
     console.error("STLExporter is not loaded.");
@@ -1695,12 +1985,8 @@ function animate(time) {
 }
 
 
-// ==================== MAIN UPDATE ====================
-function update() {
-  buildScene();
-}
 
-// ==================== INIT ====================
+// init
 resize();
 buildScene();
 
