@@ -13,7 +13,6 @@
   --border: #39495a;
   --accent: #00d4ff;
   --accent2: #ff6b35;
-  --accent3: #a8ff3e;
   --text: #e2eaf5;
   --muted: #99aed4;
   --label: #7a8fa6;
@@ -336,7 +335,7 @@ canvas.proj { display: block; width: 100%; }
 <div class="left">
   <div class="brand">
     <h1>Halbach Ring</h1>
-    <p>MAGNETIC ARRAY SIMULATOR · v2.0</p>
+    <p>MAGNETIC ARRAY SIMULATOR · v2.2</p>
   </div>
 
 
@@ -388,7 +387,7 @@ canvas.proj { display: block; width: 100%; }
         <input type="number" id="phaseOffset2" value="0" step="1" oninput="update()">
       </div>
       
-      <button class="btn" id="btn-estimate" onclick="estimateOptimalOffset()" style="width: 100%; margin: 0; height: 33px; padding: 0; box-sizing: border-box;">ESTIMATE</button>
+      <button class="btn" id="btn-estimate" onclick="estimateOptimalOffset()" style="width: 100%; margin: 0; height: 33px; padding: 0; box-sizing: border-box;">Optimize</button>
       
     </div>
   </div>
@@ -448,6 +447,19 @@ canvas.proj { display: block; width: 100%; }
     <input type="checkbox" id="showMagnets" checked onchange="update()">
     <label for="showMagnets">Visible</label>
   </div>
+
+  <div style="border-top:1px solid var(--border); padding-top:10px; margin-top:10px;">
+    <div class="two-col" style="align-items: center;">
+      <div class="field-row" style="margin-bottom: 0;">
+        <label>Test Radius (mm)</label>
+        <input type="number" id="testRadius" value="10" min="1" max="200" step="1" oninput="update()">
+      </div>
+      <div class="field-row" style="margin-bottom: 0;">
+        <label>Variance (%)</label>
+        <input type="text" id="varianceResult" value="—" readonly style="color: var(--accent); font-weight: 700; background: var(--bg); text-align: center; border: 1px solid var(--border);">
+      </div>
+    </div>
+  </div>
 </div>
 
 <div class="section">
@@ -476,15 +488,15 @@ canvas.proj { display: block; width: 100%; }
 
 
 <div class="section">
-  <div class="section-title">Computed Parameters</div>
-  <div class="stats-grid">
-    <div class="stat-card">
-      <div class="sv" id="stat-Binner">—</div>
-      <div class="sl">B Center (T)</div>
+<div class="section-title">Computed Parameters</div>
+  <div class="two-col">
+    <div class="field-row">
+      <label>B Center (T)</label>
+      <input type="text" id="stat-Binner" value="—" readonly style="color: var(--accent); font-weight: 700; background: var(--bg); text-align: center; border: 1px solid var(--border);">
     </div>
-    <div class="stat-card">
-      <div class="sv" id="stat-Bouter">—</div>
-      <div class="sl">B Outside (T)</div>
+    <div class="field-row">
+      <label>B Outside (T)</label>
+      <input type="text" id="stat-Bouter" value="—" readonly style="color: var(--accent); font-weight: 700; background: var(--bg); text-align: center; border: 1px solid var(--border);">
     </div>
   </div>
   
@@ -537,7 +549,10 @@ canvas.proj { display: block; width: 100%; }
     <span class="toolbar-label">2D Maps</span>
     <button class="view-btn" id="vbtn-map-xy" onclick="setMapTab('xy')">XY Plane</button>
     <button class="view-btn" id="vbtn-map-xz" onclick="setMapTab('xz')">XZ Plane</button>
+    
     <button class="view-btn" id="vbtn-map-yz" onclick="setMapTab('yz')">YZ Plane</button>
+    <button class="view-btn" id="vbtn-map-sphere" onclick="showSphereMap()">Sphere Map</button>
+
     <div class="spacer"></div>
   </div>
 
@@ -561,6 +576,12 @@ canvas.proj { display: block; width: 100%; }
       Z axis = bore axis (vertical) · Magnets in XY plane<br>
       Red cap = N · Blue cap = S pole<br>
       Rotate: Left drag &nbsp;|&nbsp; Zoom: Scroll · Pan: Right drag
+    </div>
+
+  <div id="sphere-colorbar" style="display:none; position:absolute; right:24px; top:50%; transform:translateY(-50%); height:60%; z-index:100; pointer-events:none; flex-direction:column; align-items:center; gap:8px;">
+      <div id="cb-max" style="font-family:'JetBrains Mono',monospace; font-size:10px; color:#e2eaf5;">Max</div>
+      <div id="cb-gradient" style="width:16px; flex:1; border:1px solid var(--border); border-radius:2px;"></div>
+      <div id="cb-min" style="font-family:'JetBrains Mono',monospace; font-size:10px; color:#e2eaf5;">Min</div>
     </div>
 
   </div><!-- /viewport-area -->
@@ -660,43 +681,62 @@ canvas.addEventListener('wheel', e => {
 
 let currentMapPlane = null;
 
+
+function setView(mode) {
+  window.isSphereView = false;
+  document.getElementById('map-container').style.display = 'none';
+  document.getElementById('sphere-colorbar').style.display = 'none'; // Hide colorbar
+  currentMapPlane = null;
+  
+  document.querySelectorAll('.view-btn').forEach(b => b.classList.remove('active'));
+  document.getElementById('vbtn-' + mode).classList.add('active');
+  document.getElementById('dbtn-' + displayMode).classList.add('active');
+
+  if (mode === '3d') targetView = { theta: 0.4, phi: 1.1, radius: 220 };
+  else if (mode === 'top') targetView = { theta: 0, phi: 0.01, radius: 200 };   
+  else if (mode === 'front') targetView = { theta: 0, phi: Math.PI / 2, radius: 200 };  
+  else if (mode === 'side') targetView = { theta: Math.PI / 2, phi: Math.PI / 2, radius: 200 }; 
+  
+  update();
+}
+
 function setMapTab(plane) {
-  plane = plane.toLowerCase(); // Ensure case consistency
+  window.isSphereView = false;
+  plane = plane.toLowerCase(); 
   const container = document.getElementById('map-container');
   if (container) container.style.display = 'flex';
+  document.getElementById('sphere-colorbar').style.display = 'none'; // Hide colorbar
   
-  // 1. Clear active states from all view buttons safely
   document.querySelectorAll('.view-btn').forEach(b => b.classList.remove('active'));
   
-  // 2. Add active state ONLY if the element exists (prevents script-crashing errors)
   const tabBtn = document.getElementById('vbtn-map-' + plane) || document.getElementById('tab-' + plane);
   if (tabBtn) tabBtn.classList.add('active');
   
   const dispBtn = document.getElementById('dbtn-' + displayMode);
   if (dispBtn) dispBtn.classList.add('active'); 
   
-  // 3. Draw the map
   currentMapPlane = plane;
   if (typeof drawSingleMap === 'function') {
     drawSingleMap(plane);
   }
+  update();
 }
 
-
-
-// Restores the 3D Scene
-function setView(mode) {
+function showSphereMap() {
+  window.isSphereView = true;
   document.getElementById('map-container').style.display = 'none';
+  document.getElementById('sphere-colorbar').style.display = 'flex'; // Show colorbar
   currentMapPlane = null;
+  
   document.querySelectorAll('.view-btn').forEach(b => b.classList.remove('active'));
-  document.getElementById('vbtn-' + mode).classList.add('active');
-  document.getElementById('dbtn-' + displayMode).classList.add('active');
-
-  if (mode === '3d') targetView = { theta: 0.4, phi: 1.1, radius: 220 };
-  else if (mode === 'top') targetView = { theta: 0, phi: 0.01, radius: 200 };   // looking down Z
-  else if (mode === 'front') targetView = { theta: 0, phi: Math.PI / 2, radius: 200 };  // from +Y
-  else if (mode === 'side') targetView = { theta: Math.PI / 2, phi: Math.PI / 2, radius: 200 }; // from +X
+  document.getElementById('vbtn-map-sphere').classList.add('active');
+  
+  const targetR = parseFloat(document.getElementById('testRadius').value) || 10;
+  targetView = { theta: 0.4, phi: 1.1, radius: Math.max(80, targetR * 3) };
+  
+  update();
 }
+
 
 // ── Finite-cylinder field kernel ──────────────────────────────────────────────
 // Each magnet is a uniformly magnetised cylinder of radius `a`, half-length `L`,
@@ -1512,20 +1552,15 @@ function _drawSingleMapImpl(plane) {
 
 
 
-
-
-// ==================== HOMOGENEITY OPTIMIZATION ====================
-
+// search optimal offset
 async function estimateOptimalOffset() {
   const rings = getMagnetParams().rings;
   if (rings.length < 2) return;
 
-  // 1. Prompt user for the Good Field Region radius
-  const rStr = prompt("Enter the radius (in mm) of the central sphere to optimize for homogeneity:", "10");
-  if (!rStr) return;
-  const targetR = parseFloat(rStr);
+  // 1. Read the Good Field Region radius directly from the UI
+  const targetR = parseFloat(document.getElementById('testRadius').value);
   if (isNaN(targetR) || targetR <= 0) {
-    showTooltip("Invalid radius entered.", 3000);
+    showTooltip("Invalid radius entered. Please check the Test Radius field.", 3000);
     return;
   }
 
@@ -1599,7 +1634,9 @@ async function estimateOptimalOffset() {
   showTooltip(`Optimization Complete!\nTarget Sphere: Ø${targetR*2} mm\nBest Phase Offset: ${bestAngle}°\nField Variance: ${variancePct}%`, 6000);
 }
 
-// Helper: Calculates the field for a specific parameter state without relying on globals
+
+// Helper: Calculates the field for a specific parameter state 
+//erreur avant v2.2
 function fieldAtWithParams(x, y, z, params) {
   const { shape, nPoles, k, rings } = params;
   let Bx = 0, By = 0, Bz = 0;
@@ -1608,8 +1645,12 @@ function fieldAtWithParams(x, y, z, params) {
   for (let r = 0; r < rings.length; r++) {
     const ring = rings[r];
     for (let i = 0; i < nPoles; i++) {
-      const theta = i * angleStep + ring.phaseOffset;
-      const phi   = k * theta;
+      // CORRECT RIGID BODY ROTATION
+      const theta0 = i * angleStep;
+      const phi0   = k * theta0;
+      const theta = theta0 + ring.phaseOffset;
+      const phi   = phi0   + ring.phaseOffset;
+
       const cx = ring.rPlace * Math.cos(theta);
       const cy = ring.rPlace * Math.sin(theta);
       const mux = Math.cos(phi);
@@ -1626,8 +1667,6 @@ function fieldAtWithParams(x, y, z, params) {
   }
   return Math.sqrt(Bx*Bx + By*By + Bz*Bz);
 }
-
-
 
 
 
@@ -1667,12 +1706,100 @@ let arrowGroup = null;
 let magnetData = [];
 
 
+
+function buildSphereGeometry() {
+  const targetR = parseFloat(document.getElementById('testRadius').value) || 10;
+  const params = getMagnetParams();
+
+  // 128x128 resolution ensures a beautifully smooth gradient
+  const geometry = new THREE.SphereGeometry(targetR, 128, 128); 
+  const pos = geometry.attributes.position;
+  const vCount = pos.count;
+
+  const colors = [];
+  const bValues = new Float32Array(vCount);
+  let minB = Infinity, maxB = -Infinity;
+
+  // 1. Calculate Field Magnitude at every vertex on the sphere
+  for(let i = 0; i < vCount; i++) {
+     const x = pos.getX(i);
+     const y = pos.getY(i);
+     const z = pos.getZ(i);
+     const B = fieldAtWithParams(x, y, z, params);
+     bValues[i] = B;
+     if(B < minB) minB = B;
+     if(B > maxB) maxB = B;
+  }
+
+  if (maxB === minB) maxB = minB + 0.001;
+
+  // 2. Map to colors (using your existing 2D map color math)
+  const color = new THREE.Color();
+  for(let i = 0; i < vCount; i++) {
+     const v = (bValues[i] - minB) / (maxB - minB);
+     color.setRGB(
+       Math.min(1, Math.pow(v, 0.4)),
+       Math.min(1, Math.pow(v, 1.2)),
+       Math.min(1, 1 - v)
+     );
+     colors.push(color.r, color.g, color.b);
+  }
+
+  geometry.setAttribute('color', new THREE.Float32BufferAttribute(colors, 3));
+  
+  const material = new THREE.MeshBasicMaterial({ vertexColors: true });
+  const sphere = new THREE.Mesh(geometry, material);
+  
+  // Add a very faint wireframe overlay for depth perception
+  const wireMat = new THREE.MeshBasicMaterial({ color: 0x1e2730, wireframe: true, transparent: true, opacity: 0.1 });
+  const wireSphere = new THREE.Mesh(geometry, wireMat);
+  sphere.add(wireSphere);
+
+  // 3. Add internal coordinate Axes (X=Red, Y=Green, Z=Blue)
+  const axesHelper = new THREE.AxesHelper(targetR * 1.5);
+  sphere.add(axesHelper);
+
+  window.sphereMapGroup.add(sphere);
+
+// --- Update UI Colorbar ---
+  const cb = document.getElementById('sphere-colorbar');
+  if (cb && window.isSphereView) {
+    document.getElementById('cb-max').textContent = maxB.toFixed(3) + ' T';
+    document.getElementById('cb-min').textContent = minB.toFixed(3) + ' T';
+    
+    // Generate a CSS gradient that perfectly matches our Math.pow color scale
+    let gradStops = [];
+    for(let i = 0; i <= 10; i++) {
+      const v = i / 10;
+      const r = Math.floor(Math.min(255, 255 * Math.pow(v, 0.4)));
+      const g = Math.floor(Math.min(255, 255 * Math.pow(v, 1.2)));
+      const b = Math.floor(Math.min(255, 255 * (1 - v)));
+      gradStops.push(`rgb(${r},${g},${b}) ${v * 100}%`);
+    }
+    document.getElementById('cb-gradient').style.background = `linear-gradient(to top, ${gradStops.join(', ')})`;
+  }
+
+}
+
+
+
+
 function buildScene() {
   if (magnetGroup) scene.remove(magnetGroup);
   if (arrowGroup) scene.remove(arrowGroup);
+  if (window.sphereMapGroup) scene.remove(window.sphereMapGroup);
+  
   magnetGroup = new THREE.Group();
   arrowGroup = new THREE.Group();
+  window.sphereMapGroup = new THREE.Group();
 
+  // If in Sphere mode, draw ONLY the sphere and exit the function early.
+  if (window.isSphereView) {
+    buildSphereGeometry();
+    scene.add(window.sphereMapGroup);
+    computeStats();
+    return; 
+  }
   const { shape, nPoles: nPolesRaw, k: halbachK, rings } = getMagnetParams();
   const nPoles = Math.max(2, Math.min(32, nPolesRaw));
   
@@ -1854,7 +1981,7 @@ function computeStats() {
 
   // 2. Leakage Sampling exactly at the holder's outer edge
   let peakBouter = 0;
-  const numSamples = 32; // Sample 32 points around the circumference
+  const numSamples = 32; 
   for (let i = 0; i < numSamples; i++) {
     const a = (i / numSamples) * Math.PI * 2;
     const b = fieldAt(Ro * Math.cos(a), Ro * Math.sin(a), 0);
@@ -1862,9 +1989,56 @@ function computeStats() {
   }
 
   // 3. Update DOM with the center value and edge leakage
-  document.getElementById('stat-Binner').textContent = centerBinner.toFixed(3) + ' T';
-  document.getElementById('stat-Bouter').textContent = peakBouter.toFixed(3) + ' T';
- // document.getElementById('stat-bore').textContent = Ri.toFixed(1) + ' mm';
+// 3. Update DOM with the center value and edge leakage
+  document.getElementById('stat-Binner').value = centerBinner.toFixed(3) + ' T';
+  document.getElementById('stat-Bouter').value = peakBouter.toFixed(3) + ' T';
+
+  // 4. Calculate Field Variance based on user-defined Test Radius
+  calculateVariance();
+}
+
+
+//erreur avant 2.2
+function calculateVariance() {
+  const targetR = parseFloat(document.getElementById('testRadius').value);
+  const resultField = document.getElementById('varianceResult');
+  
+  if (isNaN(targetR) || targetR <= 0) {
+    resultField.value = "N/A";
+    return;
+  }
+
+  const params = getMagnetParams();
+  const numPoints = 256;
+  const phi = Math.PI * (3 - Math.sqrt(5)); 
+  
+  let minB = Infinity;
+  let maxB = -Infinity;
+  let sumB = 0;
+
+  for (let i = 0; i < numPoints; i++) {
+    const y_norm = 1 - (i / (numPoints - 1)) * 2;
+    const radiusAtY = Math.sqrt(1 - y_norm * y_norm);
+    const theta = phi * i;
+    
+    // BUG FIX: y_norm is now scaled by targetR
+    const x = Math.cos(theta) * radiusAtY * targetR;
+    const y = y_norm * targetR; 
+    const z = Math.sin(theta) * radiusAtY * targetR;
+
+    const B = fieldAtWithParams(x, y, z, params);
+    if (B < minB) minB = B;
+    if (B > maxB) maxB = B;
+    sumB += B;
+  }
+
+  const avgB = sumB / numPoints;
+  if (avgB < 1e-6) {
+    resultField.value = "N/A";
+  } else {
+    const variance = ((maxB - minB) / avgB) * 100;
+    resultField.value = variance.toFixed(2) + " %";
+  }
 }
 
 
