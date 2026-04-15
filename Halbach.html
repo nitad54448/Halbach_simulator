@@ -19,6 +19,7 @@
   --label: #7a8fa6;
   --north: #e53e3e;
   --south: #3182ce;
+  --button: #1c3247;
 }
 
 * { box-sizing: border-box; margin: 0; padding: 0; }
@@ -176,10 +177,10 @@ body {
 .btn {
   flex: 1;
   padding: 10px 8px;
-  background: var(--panel2);
+  background: var(--button);
   color: var(--text);
-  border: 4px solid var(--border);
-  border-radius: 4px;
+  border: 1px solid var(--border);
+  border-radius: 1px;
   font-family: 'JetBrains Mono', monospace;
   font-size: 12px;
   font-weight: 600;
@@ -335,7 +336,7 @@ canvas.proj { display: block; width: 100%; }
 <div class="left">
   <div class="brand">
     <h1>Halbach Ring</h1>
-    <p>MAGNETIC ARRAY SIMULATOR · v1.1</p>
+    <p>MAGNETIC ARRAY SIMULATOR · v1.2</p>
   </div>
 
 
@@ -379,7 +380,7 @@ canvas.proj { display: block; width: 100%; }
     <div class="two-col">
       <div class="field-row">
         <label>Diameter (mm)</label>
-        <input type="number" id="magDiam" value="10" min="1" max="50" step="0.5" oninput="update()">
+        <input type="number" id="magDiam" value="20" min="1" max="50" step="0.5" oninput="update()">
       </div>
       <div class="field-row">
         <label>Length (mm)</label>
@@ -393,11 +394,11 @@ canvas.proj { display: block; width: 100%; }
     <div class="two-col">
       <div class="field-row">
         <label>Width (mm)</label>
-        <input type="number" id="magWidth" value="10" min="1" max="50" step="0.5" oninput="update()">
+        <input type="number" id="magWidth" value="20" min="1" max="50" step="0.5" oninput="update()">
       </div>
       <div class="field-row">
         <label>Height Z (mm)</label>
-        <input type="number" id="magHeight" value="10" min="1" max="50" step="0.5" oninput="update()">
+        <input type="number" id="magHeight" value="20" min="1" max="50" step="0.5" oninput="update()">
       </div>
     </div>
     <div class="field-row">
@@ -427,13 +428,13 @@ canvas.proj { display: block; width: 100%; }
     </div>
     <div class="field-row">
       <label>Outer Ø (mm)</label>
-      <input type="number" id="holderOut" value="100" min="20" max="500" step="1" oninput="update()">
+      <input type="number" id="holderOut" value="120" min="20" max="500" step="1" oninput="update()">
     </div>
   </div>
   <div class="two-col">
     <div class="field-row">
       <label>Thickness (mm)</label>
-      <input type="number" id="holderThick" value="25" min="5" max="150" step="1" oninput="update()">
+      <input type="number" id="holderThick" value="40" min="2" max="150" step="1" oninput="update()">
     </div>
     <div class="field-row checkbox-row">
       <input type="checkbox" id="showHolder" checked onchange="update()">
@@ -441,9 +442,6 @@ canvas.proj { display: block; width: 100%; }
     </div>
   </div>
 </div>
-
-
-
 
 
 <div class="section">
@@ -1039,6 +1037,7 @@ function drawSingleMap(plane) {
   setTimeout(() => _drawSingleMapImpl(plane), 30);
 }
 
+//added a change of fonts to appear correctly in the pdf
 function _drawSingleMapImpl(plane) {
   const c = document.getElementById('map-canvas');
   const container = document.getElementById('map-container');
@@ -1171,10 +1170,7 @@ function _drawSingleMapImpl(plane) {
   ctx.imageSmoothingEnabled = false; 
   ctx.drawImage(offCanvas, ml, mt, plotW, plotH);
 
-
-
   // map isolines, in log
-
   const showLabels = document.getElementById('showContourLabels')?.checked;
 
   const inputContours = document.getElementById('numContours');
@@ -1378,9 +1374,10 @@ function _drawSingleMapImpl(plane) {
   // fin vectors
 
 
-
-  ctx.strokeStyle = "#2a3a4a";
-  ctx.fillStyle = "#7a8fa6";
+// ==================== REPLACE FROM HERE ====================
+  const isExport = window.isExportingPDF;
+  ctx.strokeStyle = isExport ? "#cbd5e1" : "#2a3a4a";
+  ctx.fillStyle = isExport ? "#4a5568" : "#7a8fa6";
   ctx.font = "11px 'JetBrains Mono', monospace";
   ctx.lineWidth = 1;
 
@@ -1392,10 +1389,11 @@ function _drawSingleMapImpl(plane) {
     ctx.beginPath(); ctx.moveTo(xPos, mt + plotH); ctx.lineTo(xPos, mt + plotH + 5); ctx.stroke();
     ctx.fillText(val.toFixed(1), xPos, mt + plotH + 8);
   }
-  ctx.fillStyle = "#00d4ff";
+  
+  ctx.fillStyle = isExport ? "#005bb5" : "#00d4ff";
   ctx.fillText(xLabel, ml + plotW / 2, mt + plotH + 28);
 
-  ctx.fillStyle = "#7a8fa6";
+  ctx.fillStyle = isExport ? "#4a5568" : "#7a8fa6";
   ctx.beginPath(); ctx.moveTo(ml, mt); ctx.lineTo(ml, mt + plotH); ctx.stroke();
   ctx.textAlign = "right"; ctx.textBaseline = "middle";
   for (let i = 0; i <= 4; i++) {
@@ -1408,7 +1406,7 @@ function _drawSingleMapImpl(plane) {
   ctx.save();
   ctx.translate(ml - 45, mt + plotH / 2);
   ctx.rotate(-Math.PI / 2);
-  ctx.fillStyle = "#00d4ff";
+  ctx.fillStyle = isExport ? "#005bb5" : "#00d4ff";
   ctx.textAlign = "center";
   ctx.fillText(yLabel, 0, 0);
   ctx.restore();
@@ -1428,7 +1426,7 @@ function _drawSingleMapImpl(plane) {
   ctx.fillRect(cbX, mt, cbW, plotH);
   ctx.strokeRect(cbX, mt, cbW, plotH);
 
-  ctx.fillStyle = "#7a8fa6";
+  ctx.fillStyle = isExport ? "#4a5568" : "#7a8fa6";
   ctx.textAlign = "left";
   ctx.textBaseline = "middle";
   for (let i = 0; i <= 5; i++) {
@@ -1440,43 +1438,32 @@ function _drawSingleMapImpl(plane) {
     ctx.fillText(B_val.toFixed(3) + " T", cbX + cbW + 8, yPos);
   }
   
-  ctx.fillStyle = "#e2eaf5";
+  ctx.fillStyle = isExport ? "#111827" : "#e2eaf5";
   ctx.textAlign = "center";
   ctx.fillText("B Field", cbX + cbW / 2, mt - 15);
 
+  const Bcenter = fieldAt(0, 0, 0);
 
-//
-
-//modif le 14 avril
-
-const Bcenter = fieldAt(0, 0, 0);
-
-ctx.save();
-
-// Style
-ctx.fillStyle = "#e2eaf5";
-ctx.font = "12px 'JetBrains Mono', monospace";
-ctx.textAlign = "center";
-ctx.textBaseline = "bottom";
-
-// Position: centered above the plot
-ctx.fillText(
-  "Center: " + Bcenter.toFixed(3) + " T",
-  ml + plotW / 2,   // center of graph
-  mt - 8            // just above top border
-);
-
-ctx.restore();
-
-//
-
-
+  ctx.save();
+  ctx.fillStyle = isExport ? "#111827" : "#e2eaf5";
+  ctx.font = "12px 'JetBrains Mono', monospace";
+  ctx.textAlign = "center";
+  ctx.textBaseline = "bottom";
+  ctx.fillText("Center: " + Bcenter.toFixed(3) + " T", ml + plotW / 2, mt - 8);
+  ctx.restore();
 
   // Restore cursor and hide computing overlay
   document.body.style.cursor = '';
   const overlay2 = document.getElementById('map-computing-overlay');
   if (overlay2) overlay2.style.display = 'none';
 }
+// fin de changement de couleur, important pour le PDF, mais trop de boulot pour pas grand chose
+
+
+
+
+
+
 
 
 function resetView() { targetView = { theta: 0.4, phi: 1.1, radius: 220 }; panOffset = { x: 0, y: 0 }; }
@@ -1764,10 +1751,20 @@ function computeStats() {
 }
 
 
+//PDF
 async function generatePDF() {
-  showTooltip("Generating PDF Report...", 5000);
-  
-  // Brief timeout to allow the UI to render the tooltip
+const overlay = document.createElement('div');
+  overlay.id = 'pdf-loading-overlay';
+  overlay.style.cssText = 'position:fixed; inset:0; background:rgba(10,12,16,0.95); z-index:9999; display:flex; justify-content:center; align-items:center; flex-direction:column; gap:16px;';
+  overlay.innerHTML = `
+    <div id="pdf-spinner" style="width:50px; height:50px; border:4px solid #1e2730; border-top-color:#ff6b35; border-radius:50%; animation:spin 0.8s linear infinite;"></div>
+    <div id="pdf-status" style="font-family:'JetBrains Mono',monospace; font-size:14px; color:#ff6b35; letter-spacing:0.15em; font-weight:bold;">GENERATING PDF REPORT...</div>
+    <div id="pdf-sub" style="font-family:'JetBrains Mono',monospace; font-size:10px; color:#7a8fa6;">Computing high-resolution maps. Please wait.</div>
+    <button id="pdf-download-btn" style="display:none; padding:12px 24px; background:#ff6b35; color:#0a0c10; border:none; border-radius:4px; font-weight:bold; cursor:pointer; font-family:'JetBrains Mono',monospace; margin-top:10px; font-size:14px; transition: 0.2s;">DOWNLOAD PDF</button>
+  `;
+  document.body.appendChild(overlay);
+
+  // Safely yield to paint the UI
   await new Promise(r => setTimeout(r, 100));
 
   const { jsPDF } = window.jspdf;
@@ -1784,7 +1781,7 @@ async function generatePDF() {
   doc.setFont("helvetica", "normal");
   doc.setFontSize(10);
   
-  // 1. Write ALL Parameters
+  // --- PARAMETERS ---
   const p = getMagnetParams();
   const holderIn = document.getElementById('holderIn').value;
   const holderOut = document.getElementById('holderOut').value;
@@ -1792,6 +1789,7 @@ async function generatePDF() {
   const numContours = document.getElementById('numContours').value;
   
   let y = 25;
+
   doc.setFont("helvetica", "bold");
   doc.text("Magnet Parameters", margin, y); y += 6;
   doc.setFont("helvetica", "normal");
@@ -1802,6 +1800,7 @@ async function generatePDF() {
   } else {
     doc.text(`Dimensions: Width ${p.magWidth} mm x Height Z ${p.magHeight} mm x Length N->S ${p.magLen} mm`, margin, y); y += 6;
   }
+
   doc.text(`Placement Ø: ${p.rPlace * 2} mm`, margin, y); y += 10;
 
   doc.setFont("helvetica", "bold");
@@ -1816,19 +1815,18 @@ async function generatePDF() {
   doc.text(`Center Field: ${document.getElementById('stat-Binner').textContent}`, margin, y); y += 6;
   doc.text(`Outside Field (Leakage): ${document.getElementById('stat-Bouter').textContent}`, margin, y); y += 15;
 
-  // 2. Capture 3D Canvas (Forced TOP view)
-  // Save current camera state
+  // --- SAVE CAMERA ---
   const origSpherical = { ...spherical };
   const origPan = { ...panOffset };
   const origTargetView = targetView ? { ...targetView } : null;
 
-  // Force Top View instantly (bypassing animation)
+  // --- FORCE TOP VIEW ---
   spherical.theta = 0;
   spherical.phi = 0.01;
-  spherical.radius = 280; 
+  spherical.radius = 280;
   panOffset.x = 0;
   panOffset.y = 0;
-  targetView = null; 
+  targetView = null;
 
   camera.position.x = spherical.radius * Math.sin(spherical.phi) * Math.sin(spherical.theta) + panOffset.x;
   camera.position.y = spherical.radius * Math.sin(spherical.phi) * Math.cos(spherical.theta) + panOffset.y;
@@ -1837,15 +1835,53 @@ async function generatePDF() {
   camera.lookAt(panOffset.x, panOffset.y, 0);
   camera.updateProjectionMatrix();
 
-  renderer.render(scene, camera); 
-  const canvas3D = document.getElementById('threejs-canvas');
-  const aspect3D = canvas3D.height / canvas3D.width;
-  
-  // Calculate height to fit the remainder of the first page, or constrain by width
-  let imgHeight3D = contentWidth * aspect3D;
-  doc.addImage(canvas3D.toDataURL("image/jpeg", 1.0), "JPEG", margin, y, contentWidth, imgHeight3D);
+  // --- SAVE RENDER STATE ---
+  const originalBg = scene.background;
+  const originalFog = scene.fog;
+  const originalTone = renderer.toneMapping;
+  const originalExposure = renderer.toneMappingExposure;
+  const originalGridVisible = (typeof gridHelper !== 'undefined') ? gridHelper.visible : null;
 
-  // Restore camera state
+  const originalAmbient = (typeof ambientLight !== 'undefined') ? ambientLight.intensity : null;
+  const originalDir = (typeof dirLight !== 'undefined') ? dirLight.intensity : null;
+
+  // --- CLEAN EXPORT MODE ---
+  if (originalGridVisible !== null) gridHelper.visible = false;
+
+  scene.background = new THREE.Color(0xffffff);
+  scene.fog = null;
+
+  renderer.toneMapping = THREE.NoToneMapping;
+  renderer.toneMappingExposure = 1.0;
+  renderer.setClearColor(0xffffff, 1);
+
+  if (ambientLight) ambientLight.intensity = 2.0;
+  if (dirLight) dirLight.intensity = 1.0;
+
+  
+  // --- RENDER ---
+  renderer.render(scene, camera);
+
+  const canvas3D = renderer.domElement;
+  const aspect3D = canvas3D.height / canvas3D.width;
+  const imgHeight3D = contentWidth * aspect3D;
+
+  // --- ADD IMAGE (PNG!) ---
+  doc.addImage(canvas3D.toDataURL("image/png"), "PNG", margin, y, contentWidth, imgHeight3D);
+
+
+  if (originalGridVisible !== null) gridHelper.visible = originalGridVisible;
+
+  scene.background = originalBg;
+  scene.fog = originalFog;
+
+  renderer.toneMapping = originalTone;
+  renderer.toneMappingExposure = originalExposure;
+
+  if (ambientLight && originalAmbient !== null) ambientLight.intensity = originalAmbient;
+  if (dirLight && originalDir !== null) dirLight.intensity = originalDir;
+
+  // --- RESTORE CAMERA ---
   spherical.theta = origSpherical.theta;
   spherical.phi = origSpherical.phi;
   spherical.radius = origSpherical.radius;
@@ -1853,7 +1889,8 @@ async function generatePDF() {
   panOffset.y = origPan.y;
   targetView = origTargetView;
 
-  // 3. Capture 2D Maps (Full Page Width)
+  // --- 2D MAPS ---
+  window.isExportingPDF = true;
   const mapContainer = document.getElementById('map-container');
   const wasHidden = mapContainer.style.display === 'none';
   
@@ -1867,19 +1904,15 @@ async function generatePDF() {
   const planes = ['xy', 'xz', 'yz'];
   
   for (let i = 0; i < planes.length; i++) {
-    doc.addPage(); // Put each map on a new full page
+    doc.addPage();
     
     const plane = planes[i];
     _drawSingleMapImpl(plane);
-    
     doc.setFont("helvetica", "bold");
     doc.text(`2D Field Map: ${plane.toUpperCase()} Plane`, margin, 20);
-    
-    // The map canvas is square by design in your code (1:1 aspect ratio)
-    doc.addImage(mapCanvas.toDataURL("image/png", 1.0), "PNG", margin, 25, contentWidth, contentWidth);
+    doc.addImage(mapCanvas.toDataURL("image/png"), "PNG", margin, 25, contentWidth, contentWidth);
   }
 
-  // Restore the original state
   if (originalPlane) {
     _drawSingleMapImpl(originalPlane);
   } else {
@@ -1891,15 +1924,33 @@ async function generatePDF() {
     mapContainer.style.display = 'none';
     mapContainer.style.visibility = '';
   }
+window.isExportingPDF = false;
 
-  doc.save("Halbach_Array_Report.pdf");
-  showTooltip("PDF Downloaded successfully.", 3000);
+const blob = doc.output('blob');
+  const url = URL.createObjectURL(blob);
+
+  document.getElementById('pdf-spinner').style.display = 'none';
+  document.getElementById('pdf-status').textContent = 'PDF READY';
+  document.getElementById('pdf-status').style.color = '#e2eaf5';
+  document.getElementById('pdf-sub').style.display = 'none';
+  
+  const btn = document.getElementById('pdf-download-btn');
+  btn.style.display = 'block';
+  btn.onmouseover = () => btn.style.transform = 'scale(1.05)';
+  btn.onmouseout = () => btn.style.transform = 'scale(1)';
+  
+  btn.onclick = () => {
+    const a = document.createElement('a');
+    a.href = url;
+    a.download = "Halbach_Array_Report.pdf";
+    a.click();
+    URL.revokeObjectURL(url);
+    overlay.remove();
+    showTooltip("PDF Downloaded successfully.", 3000);
+  };
 }
 
-
-
-//  STL 
-function exportSTL() {
+async function exportSTL() {
   if (typeof THREE.STLExporter === 'undefined') {
     console.error("STLExporter is not loaded.");
     showTooltip("Error: Exporter library failed to load.", 3000);
@@ -1911,22 +1962,47 @@ function exportSTL() {
     return;
   }
 
-  // Parse the magnetGroup (ignores the grid, lights, and arrows)
+  // --- CREATE FULL-SCREEN BUSY OVERLAY (TWO-STEP) ---
+  const overlay = document.createElement('div');
+  overlay.id = 'stl-loading-overlay';
+  overlay.style.cssText = 'position:fixed; inset:0; background:rgba(10,12,16,0.95); z-index:9999; display:flex; justify-content:center; align-items:center; flex-direction:column; gap:16px;';
+  overlay.innerHTML = `
+    <div id="stl-spinner" style="width:50px; height:50px; border:4px solid #1e2730; border-top-color:#a8ff3e; border-radius:50%; animation:spin 0.8s linear infinite;"></div>
+    <div id="stl-status" style="font-family:'JetBrains Mono',monospace; font-size:14px; color:#a8ff3e; letter-spacing:0.15em; font-weight:bold;">GENERATING STL FILE...</div>
+    <div id="stl-sub" style="font-family:'JetBrains Mono',monospace; font-size:10px; color:#7a8fa6;">Parsing 3D geometry. Please wait.</div>
+    <button id="stl-download-btn" style="display:none; padding:12px 24px; background:#a8ff3e; color:#0a0c10; border:none; border-radius:4px; font-weight:bold; cursor:pointer; font-family:'JetBrains Mono',monospace; margin-top:10px; font-size:14px; transition: 0.2s;">DOWNLOAD STL</button>
+  `;
+  document.body.appendChild(overlay);
+
+  await new Promise(r => setTimeout(r, 100));
+
+  // Parse the magnetGroup
   const exporter = new THREE.STLExporter();
   const stlString = exporter.parse(magnetGroup);
 
-  // Trigger download
+  // --- TWO-STEP DOWNLOAD TRIGGER ---
   const blob = new Blob([stlString], { type: 'text/plain' });
   const url = URL.createObjectURL(blob);
-  const a = document.createElement('a');
-  a.href = url; 
-  a.download = 'halbach_array.stl';
-  document.body.appendChild(a); 
-  a.click(); 
-  document.body.removeChild(a);
-  URL.revokeObjectURL(url);
 
-  showTooltip(`STL exported successfully.\nReady for CAD or 3D Printing.`, 4000);
+  document.getElementById('stl-spinner').style.display = 'none';
+  document.getElementById('stl-status').textContent = 'STL READY';
+  document.getElementById('stl-status').style.color = '#e2eaf5';
+  document.getElementById('stl-sub').style.display = 'none';
+  
+  const btn = document.getElementById('stl-download-btn');
+  btn.style.display = 'block';
+  btn.onmouseover = () => btn.style.transform = 'scale(1.05)';
+  btn.onmouseout = () => btn.style.transform = 'scale(1)';
+
+  btn.onclick = () => {
+    const a = document.createElement('a');
+    a.href = url;
+    a.download = 'halbach_array.stl';
+    a.click();
+    URL.revokeObjectURL(url);
+    overlay.remove();
+    showTooltip(`STL exported successfully.\nReady for CAD or 3D Printing.`, 4000);
+  };
 }
 
 
