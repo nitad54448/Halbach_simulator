@@ -336,7 +336,7 @@ canvas.proj { display: block; width: 100%; }
 <div class="left">
   <div class="brand">
     <h1>Halbach Ring</h1>
-    <p>MAGNETIC ARRAY SIMULATOR · v1.2</p>
+    <p>MAGNETIC ARRAY SIMULATOR · v2.0</p>
   </div>
 
 
@@ -363,59 +363,90 @@ canvas.proj { display: block; width: 100%; }
 
 <!-- MAGNET -->
 <div class="section">
-  <div class="section-title">Magnet</div>
+  <div class="section-title">Magnets</div>
+  
   <div class="two-col">
     <div class="field-row">
-      <label>Poles (N)</label>
+      <label>Rings</label>
+      <select id="numRings" onchange="updateUIToggle()">
+        <option value="1" selected>1 Ring</option>
+        <option value="2">2, Concentric</option>
+      </select>
+    </div>
+    <div class="field-row">
+      <label>Poles (N) per Ring</label>
       <input type="number" id="nPoles" value="8" min="2" max="32" step="2" oninput="update()">
     </div>
-    <div class="field-row">
-      <label>Field Br (T)</label>
-      <input type="number" id="magB" value="1.2" min="0.1" max="2.0" step="0.05" oninput="update()">
+  </div>
+
+
+<div id="phaseOffsetContainer" style="display:none; margin-top:4px;">
+    <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 10px; align-items: end;">
+      
+      <div class="field-row" style="margin-bottom: 0;">
+        <label>Phase Offset (°)</label>
+        <input type="number" id="phaseOffset2" value="0" step="1" oninput="update()">
+      </div>
+      
+      <button class="btn" id="btn-estimate" onclick="estimateOptimalOffset()" style="width: 100%; margin: 0; height: 33px; padding: 0; box-sizing: border-box;">ESTIMATE</button>
+      
     </div>
   </div>
 
-  <!-- Cylinder dims -->
-  <div id="dims-cylinder">
+
+  <div style="border-top:1px solid var(--border); padding-top:10px; margin-top:10px;">
+    <div class="section-title" style="color:var(--accent);">Ring 1 (Inner)</div>
     <div class="two-col">
       <div class="field-row">
-        <label>Diameter (mm)</label>
-        <input type="number" id="magDiam" value="20" min="1" max="50" step="0.5" oninput="update()">
+        <label>Field Br (T)</label>
+        <input type="number" id="magB1" value="1.2" min="0.1" max="2.0" step="0.05" oninput="update()">
       </div>
       <div class="field-row">
-        <label>Length (mm)</label>
-        <input type="number" id="magLen" value="20" min="2" max="100" step="1" oninput="update()">
+        <label>Placement Ø (mm)</label>
+        <input type="number" id="magRadius1" value="72" min="10" max="600" step="1" oninput="update()">
       </div>
+    </div>
+    <div class="two-col dims-cylinder">
+      <div class="field-row"><label>Diameter (mm)</label><input type="number" id="magDiam1" value="20" min="1" max="50" step="0.5" oninput="update()"></div>
+      <div class="field-row"><label>Length (mm)</label><input type="number" id="magLen1" value="20" min="2" max="100" step="1" oninput="update()"></div>
+    </div>
+    <div class="dims-cuboid" style="display:none;">
+      <div class="two-col">
+        <div class="field-row"><label>Width (mm)</label><input type="number" id="magWidth1" value="20" step="0.5" oninput="update()"></div>
+        <div class="field-row"><label>Height Z (mm)</label><input type="number" id="magHeight1" value="20" step="0.5" oninput="update()"></div>
+      </div>
+      <div class="field-row"><label>Length N→S (mm)</label><input type="number" id="magLenCuboid1" value="20" step="1" oninput="update()"></div>
     </div>
   </div>
 
-  <!-- Cuboid dims (hidden by default) -->
-  <div id="dims-cuboid" style="display:none;">
+  <div id="ring2-params" style="display:none; border-top:1px solid var(--border); padding-top:10px; margin-top:5px;">
+    <div class="section-title" style="color:var(--accent2);">Ring 2 (Outer)</div>
     <div class="two-col">
       <div class="field-row">
-        <label>Width (mm)</label>
-        <input type="number" id="magWidth" value="20" min="1" max="50" step="0.5" oninput="update()">
+        <label>Field Br (T)</label>
+        <input type="number" id="magB2" value="1.2" min="0.1" max="2.0" step="0.05" oninput="update()">
       </div>
       <div class="field-row">
-        <label>Height Z (mm)</label>
-        <input type="number" id="magHeight" value="20" min="1" max="50" step="0.5" oninput="update()">
+        <label>Placement Ø (mm)</label>
+        <input type="number" id="magRadius2" value="120" min="10" max="600" step="1" oninput="update()">
       </div>
     </div>
-    <div class="field-row">
-      <label>Length N→S (mm)</label>
-      <input type="number" id="magLenCuboid" value="20" min="2" max="100" step="1" oninput="update()">
+    <div class="two-col dims-cylinder">
+      <div class="field-row"><label>Diameter (mm)</label><input type="number" id="magDiam2" value="20" step="0.5" oninput="update()"></div>
+      <div class="field-row"><label>Length (mm)</label><input type="number" id="magLen2" value="20" step="1" oninput="update()"></div>
+    </div>
+    <div class="dims-cuboid" style="display:none;">
+      <div class="two-col">
+        <div class="field-row"><label>Width (mm)</label><input type="number" id="magWidth2" value="20" step="0.5" oninput="update()"></div>
+        <div class="field-row"><label>Height Z (mm)</label><input type="number" id="magHeight2" value="20" step="0.5" oninput="update()"></div>
+      </div>
+      <div class="field-row"><label>Length N→S (mm)</label><input type="number" id="magLenCuboid2" value="20" step="1" oninput="update()"></div>
     </div>
   </div>
 
-  <div class="two-col" style="margin-top:4px;">
-    <div class="field-row">
-      <label>Placement Ø (mm)</label>
-      <input type="number" id="magRadius" value="72" min="10" max="600" step="1" oninput="update()">
-    </div>
-    <div class="field-row checkbox-row">
-      <input type="checkbox" id="showMagnets" checked onchange="update()">
-      <label for="showMagnets">Visible</label>
-    </div>
+  <div class="field-row checkbox-row" style="margin-top:10px;">
+    <input type="checkbox" id="showMagnets" checked onchange="update()">
+    <label for="showMagnets">Visible</label>
   </div>
 </div>
 
@@ -457,11 +488,8 @@ canvas.proj { display: block; width: 100%; }
     </div>
   </div>
   
-  <div style="margin-top:8px; font-size:9px; color:#4a6a8a; line-height:1.6; border-bottom: 1px solid var(--border); padding-bottom: 12px; margin-bottom: 12px;">
-    Ri = R − d/2 = <span id="stat-bore">—</span>
-  </div>
 
-  <div class="two-col">
+ <div class="two-col" style="margin-top: 12px;">
     <div class="field-row">
       <label>Contour Lines</label>
       <input type="number" id="numContours" value="10" min="0" max="50" step="1" oninput="update()">
@@ -861,10 +889,24 @@ function cylinderField(px, py, pz,          // eval point (mm)
 // ── Shape selector helper ──────────────────────────────────────────────────────
 function onMagnetShapeChange() {
   const shape = document.getElementById('magnetShape').value;
-  document.getElementById('dims-cylinder').style.display = shape === 'cylinder' ? '' : 'none';
-  document.getElementById('dims-cuboid').style.display   = shape === 'cuboid'   ? '' : 'none';
+  const isCyl = (shape === 'cylinder');
+  document.querySelectorAll('.dims-cylinder').forEach(el => el.style.display = isCyl ? '' : 'none');
+  document.querySelectorAll('.dims-cuboid').forEach(el => el.style.display = isCyl ? 'none' : '');
   update();
 }
+
+
+function updateUIToggle() {
+  const numRings = document.getElementById('numRings').value;
+  const isTwoRings = (numRings === '2');
+  
+  document.getElementById('ring2-params').style.display = isTwoRings ? 'block' : 'none';
+  document.getElementById('phaseOffsetContainer').style.display = isTwoRings ? 'flex' : 'none';
+  
+  update();
+}
+
+
 
 // ── Parallelepiped (cuboid) field kernel ───────────────────────────────────────
 // A uniformly magnetised rectangular prism of half-dimensions (hW, hH, hL)
@@ -961,58 +1003,69 @@ if (Math.abs(u) <= hL + 1e-6 && Math.abs(v) <= hW + 1e-6 && Math.abs(w) <= hH + 
   return { Bx, By, Bz };
 }
 
-// ── Shared parameter reader ───────────────────────────────────────────────────
-function getMagnetParams() {
-  const shape  = (document.getElementById('magnetShape')?.value) || 'cylinder';
-  const nPoles = parseInt(document.getElementById('nPoles').value) || 8;
-  const Br     = parseFloat(document.getElementById('magB').value) || 1.2;
-  const k      = parseInt(document.getElementById('halbachK').value) || 2;
-  const rPlace = (parseFloat(document.getElementById('magRadius').value) || 70) / 2;
 
-  let magDiam, magLen, magWidth, magHeight;
-  if (shape === 'cylinder') {
-    magDiam = parseFloat(document.getElementById('magDiam').value) || 10;
-    magLen  = parseFloat(document.getElementById('magLen').value)  || 20;
-  } else {
-    magLen    = parseFloat(document.getElementById('magLenCuboid').value) || 20;
-    magWidth  = parseFloat(document.getElementById('magWidth').value)     || 10;
-    magHeight = parseFloat(document.getElementById('magHeight').value)    || 10;
-    magDiam   = Math.max(magWidth, magHeight); // used for placement geometry checks
+function getMagnetParams() {
+  const shape  = document.getElementById('magnetShape').value || 'cylinder';
+  const nPoles = parseInt(document.getElementById('nPoles').value) || 8;
+  const k      = parseInt(document.getElementById('halbachK').value) || 2;
+  const numRings = parseInt(document.getElementById('numRings').value) || 1;
+
+  const rings = [];
+  for (let i = 1; i <= numRings; i++) {
+    const Br = parseFloat(document.getElementById(`magB${i}`).value) || 1.2;
+    const rPlace = (parseFloat(document.getElementById(`magRadius${i}`).value) || 70) / 2;
+    const phaseOffset = i === 2 ? (parseFloat(document.getElementById('phaseOffset2').value) * Math.PI / 180) : 0;
+
+    let magDiam, magLen, magWidth, magHeight;
+    if (shape === 'cylinder') {
+      magDiam = parseFloat(document.getElementById(`magDiam${i}`).value) || 20;
+      magLen  = parseFloat(document.getElementById(`magLen${i}`).value)  || 20;
+    } else {
+      magLen    = parseFloat(document.getElementById(`magLenCuboid${i}`).value) || 20;
+      magWidth  = parseFloat(document.getElementById(`magWidth${i}`).value)     || 20;
+      magHeight = parseFloat(document.getElementById(`magHeight${i}`).value)    || 20;
+      magDiam   = Math.max(magWidth, magHeight);
+    }
+    rings.push({ Br, rPlace, phaseOffset, magDiam, magLen, magWidth, magHeight });
   }
-  return { shape, nPoles, Br, k, rPlace, magDiam, magLen, magWidth, magHeight };
+  return { shape, nPoles, k, rings };
 }
 
-// Main field, changed on april 14 to vector and norm
+// ── Vector Field 
 function fieldVectorAt(x, y, z) {
-  const { shape, nPoles, Br, k, rPlace, magDiam, magLen, magWidth, magHeight } = getMagnetParams();
-
+  const { shape, nPoles, k, rings } = getMagnetParams();
   let Bx = 0, By = 0, Bz = 0;
   const angleStep = (2 * Math.PI) / nPoles;
 
-  for (let i = 0; i < nPoles; i++) {
-    const theta = i * angleStep;
-    const phi   = k * theta;
+  for (let r = 0; r < rings.length; r++) {
+    const ring = rings[r];
 
-    const cx = rPlace * Math.cos(theta);
-    const cy = rPlace * Math.sin(theta);
-    const cz = 0;
+ for (let i = 0; i < nPoles; i++) {
+      // 1. Calculate the standard Halbach array at 0 degrees
+      const theta0 = i * angleStep;
+      const phi0   = k * theta0; 
 
-    const mux = Math.cos(phi);
-    const muy = Math.sin(phi);
-    const muz = 0;
+      // 2. Apply a rigid body rotation to the entire system
+      const theta = theta0 + ring.phaseOffset;
+      const phi   = phi0   + ring.phaseOffset;
 
-    let contrib;
-    if (shape === 'cylinder') {
-      const a     = magDiam / 2;
-      const halfL = magLen  / 2;
-      contrib = cylinderField(x, y, z, cx, cy, cz, mux, muy, muz, a, halfL, Br);
-    } else {
-      const hL = magLen    / 2;
-      const hW = magWidth  / 2;
-      const hH = magHeight / 2;
-      contrib = cuboidField(x, y, z, cx, cy, cz, mux, muy, muz, hW, hH, hL, Br);
+      const cx = ring.rPlace * Math.cos(theta);
+      const cy = ring.rPlace * Math.sin(theta);
+      const cz = 0;
+
+      const mux = Math.cos(phi);
+      const muy = Math.sin(phi);
+      const muz = 0;
+
+
+      let contrib;
+      if (shape === 'cylinder') {
+        contrib = cylinderField(x, y, z, cx, cy, cz, mux, muy, muz, ring.magDiam/2, ring.magLen/2, ring.Br);
+      } else {
+        contrib = cuboidField(x, y, z, cx, cy, cz, mux, muy, muz, ring.magWidth/2, ring.magHeight/2, ring.magLen/2, ring.Br);
+      }
+      Bx += contrib.Bx; By += contrib.By; Bz += contrib.Bz;
     }
-    Bx += contrib.Bx; By += contrib.By; Bz += contrib.Bz;
   }
   return { Bx, By, Bz };
 }
@@ -1021,8 +1074,6 @@ function fieldAt(x, y, z) {
   const v = fieldVectorAt(x, y, z);
   return Math.sqrt(v.Bx*v.Bx + v.By*v.By + v.Bz*v.Bz);
 }
-
-
 
 function drawSingleMap(plane) {
   const c = document.getElementById('map-canvas');
@@ -1463,6 +1514,120 @@ function _drawSingleMapImpl(plane) {
 
 
 
+// ==================== HOMOGENEITY OPTIMIZATION ====================
+
+async function estimateOptimalOffset() {
+  const rings = getMagnetParams().rings;
+  if (rings.length < 2) return;
+
+  // 1. Prompt user for the Good Field Region radius
+  const rStr = prompt("Enter the radius (in mm) of the central sphere to optimize for homogeneity:", "10");
+  if (!rStr) return;
+  const targetR = parseFloat(rStr);
+  if (isNaN(targetR) || targetR <= 0) {
+    showTooltip("Invalid radius entered.", 3000);
+    return;
+  }
+
+  // UI: Show busy state
+  document.body.style.cursor = 'wait';
+  const btn = document.getElementById('btn-estimate');
+  const originalBtnText = btn.innerText;
+  btn.innerText = "Computing...";
+  
+  // Yield thread so the UI updates before the heavy math starts
+  await new Promise(r => setTimeout(r, 50)); 
+
+  // 2. Generate 256 points evenly on the sphere surface (Fibonacci Sphere)
+  const points = [];
+  const numPoints = 256;
+  const phi = Math.PI * (3 - Math.sqrt(5)); // Golden angle
+  for (let i = 0; i < numPoints; i++) {
+    const y = 1 - (i / (numPoints - 1)) * 2; // y goes from 1 to -1
+    const radiusAtY = Math.sqrt(1 - y * y);
+    const theta = phi * i;
+    const x = Math.cos(theta) * radiusAtY;
+    const z = Math.sin(theta) * radiusAtY;
+    points.push({ x: x * targetR, y: y * targetR, z: z * targetR });
+  }
+
+  let bestAngle = 0;
+  let bestScore = Infinity;
+  const phaseInput = document.getElementById('phaseOffset2');
+
+  // 3. Brute-force sweep from 0 to 180 degrees (full symmetry cycle)
+  const maxSearchAngle = 360 / getMagnetParams().nPoles;
+  const stepSize = 0.25; // Higher resolution for better accuracy
+
+  for (let a = 0; a <= maxSearchAngle; a += stepSize) {
+    phaseInput.value = a;
+    const currentParams = getMagnetParams();
+
+    let minB = Infinity;
+    let maxB = -Infinity;
+    let sumB = 0;
+
+    // Evaluate the field at all 256 boundary points
+    for (let i = 0; i < numPoints; i++) {
+      const p = points[i];
+      const B = fieldAtWithParams(p.x, p.y, p.z, currentParams);
+      if (B < minB) minB = B;
+      if (B > maxB) maxB = B;
+      sumB += B;
+    }
+
+    const avgB = sumB / numPoints;
+    // Calculate variance: (Max - Min) / Avg. Lower is better.
+    const score = avgB > 1e-6 ? (maxB - minB) / avgB : Infinity;
+
+    if (score < bestScore) {
+      bestScore = score;
+      bestAngle = a;
+    }
+  }
+
+  // 4. Apply the optimal angle to the UI and redraw
+  phaseInput.value = bestAngle;
+  update();
+
+  // Clean up UI
+  document.body.style.cursor = 'default';
+  btn.innerText = originalBtnText;
+  
+  // Show results
+  const variancePct = (bestScore * 100).toFixed(2);
+  showTooltip(`Optimization Complete!\nTarget Sphere: Ø${targetR*2} mm\nBest Phase Offset: ${bestAngle}°\nField Variance: ${variancePct}%`, 6000);
+}
+
+// Helper: Calculates the field for a specific parameter state without relying on globals
+function fieldAtWithParams(x, y, z, params) {
+  const { shape, nPoles, k, rings } = params;
+  let Bx = 0, By = 0, Bz = 0;
+  const angleStep = (2 * Math.PI) / nPoles;
+
+  for (let r = 0; r < rings.length; r++) {
+    const ring = rings[r];
+    for (let i = 0; i < nPoles; i++) {
+      const theta = i * angleStep + ring.phaseOffset;
+      const phi   = k * theta;
+      const cx = ring.rPlace * Math.cos(theta);
+      const cy = ring.rPlace * Math.sin(theta);
+      const mux = Math.cos(phi);
+      const muy = Math.sin(phi);
+
+      let contrib;
+      if (shape === 'cylinder') {
+        contrib = cylinderField(x, y, z, cx, cy, 0, mux, muy, 0, ring.magDiam/2, ring.magLen/2, ring.Br);
+      } else {
+        contrib = cuboidField(x, y, z, cx, cy, 0, mux, muy, 0, ring.magWidth/2, ring.magHeight/2, ring.magLen/2, ring.Br);
+      }
+      Bx += contrib.Bx; By += contrib.By; Bz += contrib.Bz;
+    }
+  }
+  return Math.sqrt(Bx*Bx + By*By + Bz*Bz);
+}
+
+
 
 
 
@@ -1508,167 +1673,130 @@ function buildScene() {
   magnetGroup = new THREE.Group();
   arrowGroup = new THREE.Group();
 
-  const { shape, nPoles: nPolesRaw, Br: magB, k: halbachK, rPlace, magDiam, magLen, magWidth, magHeight } = getMagnetParams();
+  const { shape, nPoles: nPolesRaw, k: halbachK, rings } = getMagnetParams();
   const nPoles = Math.max(2, Math.min(32, nPolesRaw));
+  
   const holderIn = parseFloat(document.getElementById('holderIn').value) || 60;
-  const holderOut = parseFloat(document.getElementById('holderOut').value) || 100;
-  const holderThick = parseFloat(document.getElementById('holderThick').value) || 25;
+  const holderOut = parseFloat(document.getElementById('holderOut').value) || 120;
+  const holderThick = parseFloat(document.getElementById('holderThick').value) || 40;
   const scale = 1;
 
   magnetData = [];
 
-  const showHolder = document.getElementById('showHolder') ? document.getElementById('showHolder').checked : true;
-  const showMagnets = document.getElementById('showMagnets') ? document.getElementById('showMagnets').checked : true;
+  const showHolder = document.getElementById('showHolder')?.checked ?? true;
+  const showMagnets = document.getElementById('showMagnets')?.checked ?? true;
 
-  // ==== HOLDER (Annular disk in XY plane — Z is bore axis) ====
+  // ==== HOLDER ====
   if (showHolder) {
-    const shape = new THREE.Shape();
-    shape.absarc(0, 0, holderOut / 2 * scale, 0, Math.PI * 2, false);
+    const s = new THREE.Shape();
+    s.absarc(0, 0, holderOut / 2 * scale, 0, Math.PI * 2, false);
     const holePath = new THREE.Path();
     holePath.absarc(0, 0, holderIn / 2 * scale, 0, Math.PI * 2, true);
-    shape.holes.push(holePath);
+    s.holes.push(holePath);
 
-    // Extrude along Z (bore axis)
     const extrudeSettings = { depth: holderThick * scale, bevelEnabled: false, curveSegments: 64 };
-    const holderGeo = new THREE.ExtrudeGeometry(shape, extrudeSettings);
-    holderGeo.translate(0, 0, -holderThick / 2 * scale); // centre at z=0
+    const holderGeo = new THREE.ExtrudeGeometry(s, extrudeSettings);
+    holderGeo.translate(0, 0, -holderThick / 2 * scale);
 
     const holderMat = new THREE.MeshStandardMaterial({
-      color: 0x6a8a9a,
-      roughness: 0.3,
-      metalness: 0.5,
-      transparent: true,
-      opacity: 0.4,
-      side: THREE.DoubleSide
+      color: 0x6a8a9a, roughness: 0.3, metalness: 0.5,
+      transparent: true, opacity: 0.4, side: THREE.DoubleSide
     });
-
-    const holderMesh = new THREE.Mesh(holderGeo, holderMat);
-    magnetGroup.add(holderMesh);
+    magnetGroup.add(new THREE.Mesh(holderGeo, holderMat));
   }
 
-  // ==== MAGNETS in XY plane, Z = bore axis ====
+  // ==== MAGNETS ====
   const angleStep = (2 * Math.PI) / nPoles;
 
-  for (let i = 0; i < nPoles; i++) {
-    const angle = i * angleStep;
-    // Halbach magnetization angle: rotates k times around the ring
-    const magAngle = halbachK * angle;
+  for (let rIdx = 0; rIdx < rings.length; rIdx++) {
+    const ring = rings[rIdx];
 
-    // Magnet center position in XY plane
-    const px = rPlace * Math.cos(angle) * scale;
-    const py = rPlace * Math.sin(angle) * scale;
+for (let i = 0; i < nPoles; i++) {
+      // 1. Calculate the standard Halbach layout
+      const theta0 = i * angleStep;
+      const phi0   = halbachK * theta0;
 
-    // Transverse magnetization direction (in XY plane)
-    const mx = Math.cos(magAngle);
-    const my = Math.sin(magAngle);
+      // 2. Apply the rigid body phase offset
+      const angle = theta0 + ring.phaseOffset;
+      const magAngle = phi0 + ring.phaseOffset;
 
+      const px = ring.rPlace * Math.cos(angle) * scale;
+      const py = ring.rPlace * Math.sin(angle) * scale;
+      const mx = Math.cos(magAngle);
+      const my = Math.sin(magAngle);
 
+      if (showMagnets) {
+        const isField = displayMode === 'field';
+        const yAxis = new THREE.Vector3(0, 1, 0);
+        const targetAxis = new THREE.Vector3(mx, my, 0).normalize();
+        const quat = new THREE.Quaternion().setFromUnitVectors(yAxis, targetAxis);
 
-if (showMagnets) {
-      const isField = displayMode === 'field';
+        const bodyMat = new THREE.MeshStandardMaterial({
+          color: rIdx === 0 ? 0xd0d8e0 : 0xa5b0bc, // Darker color for outer ring
+          roughness: 0.2, metalness: 0.85, emissive: 0x111111,
+          transparent: isField, opacity: isField ? 0.15 : 1.0, wireframe: isField
+        });
 
-      // Rotation quaternion: aligns the geometry's default "length" axis with (mx, my, 0)
-      const yAxis = new THREE.Vector3(0, 1, 0);
-      const targetAxis = new THREE.Vector3(mx, my, 0).normalize();
-      const quat = new THREE.Quaternion().setFromUnitVectors(yAxis, targetAxis);
+        let bodyMesh, halfL, capOffset = 0.15;
 
-      const bodyMat = new THREE.MeshStandardMaterial({
-        color: 0xd0d8e0,
-        roughness: 0.2,
-        metalness: 0.85,
-        emissive: 0x111111,
-        transparent: isField,
-        opacity: isField ? 0.15 : 1.0,
-        wireframe: isField
-      });
+        if (shape === 'cylinder') {
+          const cylGeo = new THREE.CylinderGeometry(ring.magDiam / 2 * scale, ring.magDiam / 2 * scale, ring.magLen * scale, 32);
+          bodyMesh = new THREE.Mesh(cylGeo, bodyMat);
+          halfL = ring.magLen / 2 * scale;
+        } else {
+          const cubGeo = new THREE.BoxGeometry(ring.magWidth * scale, ring.magLen * scale, ring.magHeight * scale);
+          bodyMesh = new THREE.Mesh(cubGeo, bodyMat);
+          halfL = ring.magLen / 2 * scale;
+        }
 
-      let bodyMesh;
-      let halfL, capOffset;
+        bodyMesh.position.set(px, py, 0);
+        bodyMesh.setRotationFromQuaternion(quat);
+        bodyMesh.castShadow = true; bodyMesh.receiveShadow = true;
+        magnetGroup.add(bodyMesh);
 
-      if (shape === 'cylinder') {
-        // Cylinder: diameter × length
-        const cylGeo = new THREE.CylinderGeometry(magDiam / 2 * scale, magDiam / 2 * scale, magLen * scale, 32);
-        bodyMesh = new THREE.Mesh(cylGeo, bodyMat);
-        halfL = magLen / 2 * scale;
-        capOffset = 0.15;
-      } else {
-        // Parallelepiped: width (X perp) × height Z × length (along mag axis, default Y in THREE)
-        const cubGeo = new THREE.BoxGeometry(magWidth * scale, magLen * scale, magHeight * scale);
-        bodyMesh = new THREE.Mesh(cubGeo, bodyMat);
-        halfL = magLen / 2 * scale;
-        capOffset = 0.15;
+        let capGeo = shape === 'cylinder' 
+          ? new THREE.CircleGeometry(ring.magDiam / 2 * scale * 1.01, 24)
+          : new THREE.PlaneGeometry(ring.magWidth * scale * 1.01, ring.magHeight * scale * 1.01);
+
+        const nCapMat = new THREE.MeshStandardMaterial({ color: 0xe53e3e, roughness: 0.4, metalness: 0.3, side: THREE.FrontSide, polygonOffset: true, polygonOffsetFactor: -1, polygonOffsetUnits: -1, transparent: isField, opacity: isField ? 0.3 : 1.0 });
+        const sCapMat = new THREE.MeshStandardMaterial({ color: 0x3182ce, roughness: 0.4, metalness: 0.3, side: THREE.FrontSide, polygonOffset: true, polygonOffsetFactor: -1, polygonOffsetUnits: -1, transparent: isField, opacity: isField ? 0.3 : 1.0 });
+
+        const nCap = new THREE.Mesh(capGeo, nCapMat);
+        nCap.position.set(px + mx * (halfL + capOffset), py + my * (halfL + capOffset), 0);
+        nCap.up.set(0, 0, 1);
+        nCap.lookAt(px + mx * (halfL + capOffset + 1), py + my * (halfL + capOffset + 1), 0);
+        magnetGroup.add(nCap);
+
+        const sCap = new THREE.Mesh(capGeo, sCapMat);
+        sCap.position.set(px - mx * (halfL + capOffset), py - my * (halfL + capOffset), 0);
+        sCap.up.set(0, 0, 1);
+        sCap.lookAt(px - mx * (halfL + capOffset + 1), py - my * (halfL + capOffset + 1), 0);
+        magnetGroup.add(sCap);
       }
 
-      bodyMesh.position.set(px, py, 0);
-      bodyMesh.setRotationFromQuaternion(quat);
-      bodyMesh.castShadow = true;
-      bodyMesh.receiveShadow = true;
-      magnetGroup.add(bodyMesh);
-
-      // N cap (red) and S cap (blue) — shape-dependent
-      let capGeo;
-      if (shape === 'cylinder') {
-        capGeo = new THREE.CircleGeometry(magDiam / 2 * scale * 1.01, 24);
-      } else {
-        // Flat rectangle cap matching the face (width × height)
-        capGeo = new THREE.PlaneGeometry(magWidth * scale * 1.01, magHeight * scale * 1.01);
-      }
-
-      const nCapMat = new THREE.MeshStandardMaterial({ 
-        color: 0xe53e3e, roughness: 0.4, metalness: 0.3, side: THREE.FrontSide, 
-        polygonOffset: true, polygonOffsetFactor: -1, polygonOffsetUnits: -1,
-        transparent: isField, opacity: isField ? 0.3 : 1.0
-      });
-      const sCapMat = new THREE.MeshStandardMaterial({ 
-        color: 0x3182ce, roughness: 0.4, metalness: 0.3, side: THREE.FrontSide, 
-        polygonOffset: true, polygonOffsetFactor: -1, polygonOffsetUnits: -1,
-        transparent: isField, opacity: isField ? 0.3 : 1.0
-      });
-
-
-
-
-      const nCap = new THREE.Mesh(capGeo, nCapMat);
-      nCap.position.set(px + mx * (halfL + capOffset), py + my * (halfL + capOffset), 0);
-      nCap.up.set(0, 0, 1);
-      nCap.lookAt(px + mx * (halfL + capOffset + 1), py + my * (halfL + capOffset + 1), 0);
-      magnetGroup.add(nCap);
-
-      const sCap = new THREE.Mesh(capGeo, sCapMat);
-      sCap.position.set(px - mx * (halfL + capOffset), py - my * (halfL + capOffset), 0);
-      sCap.up.set(0, 0, 1);
-      sCap.lookAt(px - mx * (halfL + capOffset + 1), py - my * (halfL + capOffset + 1), 0);
-      magnetGroup.add(sCap);
-
-      
+      magnetData.push({ ring: rIdx+1, index: i, angle: angle * 180 / Math.PI, magAngle: magAngle * 180 / Math.PI, mx, my, px, py });
     }
-
-  magnetData.push({
-      index: i,
-      angle: angle * 180 / Math.PI,
-      magAngle: magAngle * 180 / Math.PI,
-      mx, my, px, py,
-      color: 0xd0d8e0
-    });
   }
 
-
-
-  // ==========================================
-  // 3D FIELD VECTOR GRID
+  // ==== 3D FIELD ARROWS ====
   if (displayMode === 'field') {
-    const R_max = rPlace + magDiam * 1.5;
-    const Z_max = magLen * 0.75;
-    const steps = 12; // Grid resolution across the diameter
-    const zSteps = 3; // Number of Z-layers (3 is a good balance for visibility/performance)
-    
+    let maxRPlace = 0, maxDiam = 0, maxLen = 0, maxBr = 0;
+    rings.forEach(r => {
+      if (r.rPlace > maxRPlace) maxRPlace = r.rPlace;
+      if (r.magDiam > maxDiam) maxDiam = r.magDiam;
+      if (r.magLen > maxLen) maxLen = r.magLen;
+      if (r.Br > maxBr) maxBr = r.Br;
+    });
+
+    const R_max = maxRPlace + maxDiam * 1.5;
+    const Z_max = maxLen * 0.75;
+    const steps = 12, zSteps = 3;
     const stepSize = (R_max * 2) / steps;
     const zStepSize = zSteps > 1 ? (Z_max * 2) / (zSteps - 1) : 0;
 
     let maxMag = 0.001;
     const samples = [];
 
-    // Pre-calculate to find the peak magnitude for color mapping
     for (let ix = 0; ix <= steps; ix++) {
       for (let iy = 0; iy <= steps; iy++) {
         for (let iz = 0; iz < zSteps; iz++) {
@@ -1676,40 +1804,29 @@ if (showMagnets) {
           const y = -R_max + iy * stepSize;
           const z = zSteps > 1 ? -Z_max + iz * zStepSize : 0;
           
-          // Mask into a circular region to keep the 3D view clean
           if (Math.sqrt(x*x + y*y) > R_max) continue;
 
           const v = fieldVectorAt(x, y, z);
           const mag = Math.sqrt(v.Bx*v.Bx + v.By*v.By + v.Bz*v.Bz);
-          
-          // Cap at roughly 2x Remanence to avoid singularities directly inside magnets throwing off the color scale
-          if (mag > maxMag && mag < magB * 2) maxMag = mag; 
-          
+          if (mag > maxMag && mag < maxBr * 2) maxMag = mag; 
           samples.push({x, y, z, vx: v.Bx, vy: v.By, vz: v.Bz, mag});
         }
       }
     }
 
-    // Generate the 3D Arrows
     samples.forEach(s => {
-      if (s.mag > 0.005) { // Filter out absolute dead zones
+      if (s.mag > 0.005) {
         const dir = new THREE.Vector3(s.vx, s.vy, s.vz).normalize();
         const origin = new THREE.Vector3(s.x, s.y, s.z);
-        
-        // Logarithmic length scaling for better dynamic range visualization
         const normMag = Math.min(1, s.mag / maxMag);
         const arrowLen = stepSize * 0.3 + (stepSize * 0.6) * Math.pow(normMag, 0.4);
         
-        // Color mapping: Blue (Low) -> Cyan -> Green -> Yellow -> Red (High)
         const color = new THREE.Color();
         color.setHSL((1.0 - normMag) * 0.7, 1.0, 0.5);
-        
-        const arrow = new THREE.ArrowHelper(dir, origin, arrowLen, color.getHex(), arrowLen * 0.3, arrowLen * 0.2);
-        arrowGroup.add(arrow);
+        arrowGroup.add(new THREE.ArrowHelper(dir, origin, arrowLen, color.getHex(), arrowLen * 0.3, arrowLen * 0.2));
       }
     });
   }
-
 
   scene.add(magnetGroup);
   scene.add(arrowGroup);
@@ -1747,7 +1864,7 @@ function computeStats() {
   // 3. Update DOM with the center value and edge leakage
   document.getElementById('stat-Binner').textContent = centerBinner.toFixed(3) + ' T';
   document.getElementById('stat-Bouter').textContent = peakBouter.toFixed(3) + ' T';
-  document.getElementById('stat-bore').textContent = Ri.toFixed(1) + ' mm';
+ // document.getElementById('stat-bore').textContent = Ri.toFixed(1) + ' mm';
 }
 
 
