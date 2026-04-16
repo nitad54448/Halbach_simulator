@@ -335,7 +335,7 @@ canvas.proj { display: block; width: 100%; }
 <div class="left">
   <div class="brand">
     <h1>Halbach Ring</h1>
-    <p>MAGNETIC ARRAY SIMULATOR · v2.2</p>
+    <p>MAGNETIC ARRAY SIMULATOR · v2.3</p>
   </div>
 
 
@@ -369,7 +369,7 @@ canvas.proj { display: block; width: 100%; }
       <label>Rings</label>
       <select id="numRings" onchange="updateUIToggle()">
         <option value="1" selected>1 Ring</option>
-        <option value="2">2, Concentric</option>
+        <option value="2">2 Rings</option>
       </select>
     </div>
     <div class="field-row">
@@ -393,18 +393,33 @@ canvas.proj { display: block; width: 100%; }
   </div>
 
 
+
+
+
+
+
   <div style="border-top:1px solid var(--border); padding-top:10px; margin-top:10px;">
     <div class="section-title" style="color:var(--accent);">Ring 1 (Inner)</div>
+    
     <div class="two-col">
       <div class="field-row">
         <label>Field Br (T)</label>
         <input type="number" id="magB1" value="1.2" min="0.1" max="2.0" step="0.05" oninput="update()">
       </div>
+      <div></div>
+    </div>
+
+    <div class="two-col">
       <div class="field-row">
         <label>Placement Ø (mm)</label>
-        <input type="number" id="magRadius1" value="72" min="10" max="600" step="1" oninput="update()">
+        <input type="number" id="magRadius1" value="82" min="10" max="600" step="1" oninput="update()">
+      </div>
+      <div class="field-row">
+        <label>Z Shift (mm)</label>
+        <input type="number" id="magZ1" value="0" step="1" oninput="update()">
       </div>
     </div>
+
     <div class="two-col dims-cylinder">
       <div class="field-row"><label>Diameter (mm)</label><input type="number" id="magDiam1" value="20" min="1" max="50" step="0.5" oninput="update()"></div>
       <div class="field-row"><label>Length (mm)</label><input type="number" id="magLen1" value="20" min="2" max="100" step="1" oninput="update()"></div>
@@ -414,22 +429,35 @@ canvas.proj { display: block; width: 100%; }
         <div class="field-row"><label>Width (mm)</label><input type="number" id="magWidth1" value="20" step="0.5" oninput="update()"></div>
         <div class="field-row"><label>Height Z (mm)</label><input type="number" id="magHeight1" value="20" step="0.5" oninput="update()"></div>
       </div>
-      <div class="field-row"><label>Length N→S (mm)</label><input type="number" id="magLenCuboid1" value="20" step="1" oninput="update()"></div>
+      <div class="two-col">
+        <div class="field-row"><label>Length N→S (mm)</label><input type="number" id="magLenCuboid1" value="20" step="1" oninput="update()"></div>
+        <div></div>
+      </div>
     </div>
   </div>
 
   <div id="ring2-params" style="display:none; border-top:1px solid var(--border); padding-top:10px; margin-top:5px;">
     <div class="section-title" style="color:var(--accent2);">Ring 2 (Outer)</div>
+    
     <div class="two-col">
       <div class="field-row">
         <label>Field Br (T)</label>
         <input type="number" id="magB2" value="1.2" min="0.1" max="2.0" step="0.05" oninput="update()">
       </div>
+      <div></div>
+    </div>
+
+    <div class="two-col">
       <div class="field-row">
         <label>Placement Ø (mm)</label>
-        <input type="number" id="magRadius2" value="120" min="10" max="600" step="1" oninput="update()">
+        <input type="number" id="magRadius2" value="82" min="10" max="600" step="1" oninput="update()">
+      </div>
+      <div class="field-row">
+        <label>Z Shift (mm)</label>
+        <input type="number" id="magZ2" value="20" step="1" oninput="update()">
       </div>
     </div>
+
     <div class="two-col dims-cylinder">
       <div class="field-row"><label>Diameter (mm)</label><input type="number" id="magDiam2" value="20" step="0.5" oninput="update()"></div>
       <div class="field-row"><label>Length (mm)</label><input type="number" id="magLen2" value="20" step="1" oninput="update()"></div>
@@ -439,7 +467,10 @@ canvas.proj { display: block; width: 100%; }
         <div class="field-row"><label>Width (mm)</label><input type="number" id="magWidth2" value="20" step="0.5" oninput="update()"></div>
         <div class="field-row"><label>Height Z (mm)</label><input type="number" id="magHeight2" value="20" step="0.5" oninput="update()"></div>
       </div>
-      <div class="field-row"><label>Length N→S (mm)</label><input type="number" id="magLenCuboid2" value="20" step="1" oninput="update()"></div>
+      <div class="two-col">
+        <div class="field-row"><label>Length N→S (mm)</label><input type="number" id="magLenCuboid2" value="20" step="1" oninput="update()"></div>
+        <div></div>
+      </div>
     </div>
   </div>
 
@@ -447,6 +478,9 @@ canvas.proj { display: block; width: 100%; }
     <input type="checkbox" id="showMagnets" checked onchange="update()">
     <label for="showMagnets">Visible</label>
   </div>
+
+
+
 
   <div style="border-top:1px solid var(--border); padding-top:10px; margin-top:10px;">
     <div class="two-col" style="align-items: center;">
@@ -1054,6 +1088,7 @@ function getMagnetParams() {
   for (let i = 1; i <= numRings; i++) {
     const Br = parseFloat(document.getElementById(`magB${i}`).value) || 1.2;
     const rPlace = (parseFloat(document.getElementById(`magRadius${i}`).value) || 70) / 2;
+    const zOffset = parseFloat(document.getElementById(`magZ${i}`).value) || 0; // NEW: Z-Shift
     const phaseOffset = i === 2 ? (parseFloat(document.getElementById('phaseOffset2').value) * Math.PI / 180) : 0;
 
     let magDiam, magLen, magWidth, magHeight;
@@ -1066,12 +1101,14 @@ function getMagnetParams() {
       magHeight = parseFloat(document.getElementById(`magHeight${i}`).value)    || 20;
       magDiam   = Math.max(magWidth, magHeight);
     }
-    rings.push({ Br, rPlace, phaseOffset, magDiam, magLen, magWidth, magHeight });
+    rings.push({ Br, rPlace, zOffset, phaseOffset, magDiam, magLen, magWidth, magHeight });
   }
   return { shape, nPoles, k, rings };
 }
 
+
 // ── Vector Field 
+// 1. Replace fieldVectorAt
 function fieldVectorAt(x, y, z) {
   const { shape, nPoles, k, rings } = getMagnetParams();
   let Bx = 0, By = 0, Bz = 0;
@@ -1080,23 +1117,20 @@ function fieldVectorAt(x, y, z) {
   for (let r = 0; r < rings.length; r++) {
     const ring = rings[r];
 
- for (let i = 0; i < nPoles; i++) {
-      // 1. Calculate the standard Halbach array at 0 degrees
+    for (let i = 0; i < nPoles; i++) {
       const theta0 = i * angleStep;
       const phi0   = k * theta0; 
 
-      // 2. Apply a rigid body rotation to the entire system
       const theta = theta0 + ring.phaseOffset;
       const phi   = phi0   + ring.phaseOffset;
 
       const cx = ring.rPlace * Math.cos(theta);
       const cy = ring.rPlace * Math.sin(theta);
-      const cz = 0;
+      const cz = ring.zOffset; // NEW: Apply Z Shift
 
       const mux = Math.cos(phi);
       const muy = Math.sin(phi);
       const muz = 0;
-
 
       let contrib;
       if (shape === 'cylinder') {
@@ -1109,6 +1143,40 @@ function fieldVectorAt(x, y, z) {
   }
   return { Bx, By, Bz };
 }
+
+// 2. Replace fieldAtWithParams
+function fieldAtWithParams(x, y, z, params) {
+  const { shape, nPoles, k, rings } = params;
+  let Bx = 0, By = 0, Bz = 0;
+  const angleStep = (2 * Math.PI) / nPoles;
+
+  for (let r = 0; r < rings.length; r++) {
+    const ring = rings[r];
+    for (let i = 0; i < nPoles; i++) {
+      const theta0 = i * angleStep;
+      const phi0   = k * theta0;
+      const theta = theta0 + ring.phaseOffset;
+      const phi   = phi0   + ring.phaseOffset;
+
+      const cx = ring.rPlace * Math.cos(theta);
+      const cy = ring.rPlace * Math.sin(theta);
+      const cz = ring.zOffset; // NEW: Apply Z Shift
+      
+      const mux = Math.cos(phi);
+      const muy = Math.sin(phi);
+
+      let contrib;
+      if (shape === 'cylinder') {
+        contrib = cylinderField(x, y, z, cx, cy, cz, mux, muy, 0, ring.magDiam/2, ring.magLen/2, ring.Br);
+      } else {
+        contrib = cuboidField(x, y, z, cx, cy, cz, mux, muy, 0, ring.magWidth/2, ring.magHeight/2, ring.magLen/2, ring.Br);
+      }
+      Bx += contrib.Bx; By += contrib.By; Bz += contrib.Bz;
+    }
+  }
+  return Math.sqrt(Bx*Bx + By*By + Bz*Bz);
+}
+
 
 function fieldAt(x, y, z) {
   const v = fieldVectorAt(x, y, z);
@@ -1635,39 +1703,6 @@ async function estimateOptimalOffset() {
 }
 
 
-// Helper: Calculates the field for a specific parameter state 
-//erreur avant v2.2
-function fieldAtWithParams(x, y, z, params) {
-  const { shape, nPoles, k, rings } = params;
-  let Bx = 0, By = 0, Bz = 0;
-  const angleStep = (2 * Math.PI) / nPoles;
-
-  for (let r = 0; r < rings.length; r++) {
-    const ring = rings[r];
-    for (let i = 0; i < nPoles; i++) {
-      // CORRECT RIGID BODY ROTATION
-      const theta0 = i * angleStep;
-      const phi0   = k * theta0;
-      const theta = theta0 + ring.phaseOffset;
-      const phi   = phi0   + ring.phaseOffset;
-
-      const cx = ring.rPlace * Math.cos(theta);
-      const cy = ring.rPlace * Math.sin(theta);
-      const mux = Math.cos(phi);
-      const muy = Math.sin(phi);
-
-      let contrib;
-      if (shape === 'cylinder') {
-        contrib = cylinderField(x, y, z, cx, cy, 0, mux, muy, 0, ring.magDiam/2, ring.magLen/2, ring.Br);
-      } else {
-        contrib = cuboidField(x, y, z, cx, cy, 0, mux, muy, 0, ring.magWidth/2, ring.magHeight/2, ring.magLen/2, ring.Br);
-      }
-      Bx += contrib.Bx; By += contrib.By; Bz += contrib.Bz;
-    }
-  }
-  return Math.sqrt(Bx*Bx + By*By + Bz*Bz);
-}
-
 
 
 function resetView() { targetView = { theta: 0.4, phi: 1.1, radius: 220 }; panOffset = { x: 0, y: 0 }; }
@@ -1781,9 +1816,6 @@ function buildSphereGeometry() {
 
 }
 
-
-
-
 function buildScene() {
   if (magnetGroup) scene.remove(magnetGroup);
   if (arrowGroup) scene.remove(arrowGroup);
@@ -1793,7 +1825,6 @@ function buildScene() {
   arrowGroup = new THREE.Group();
   window.sphereMapGroup = new THREE.Group();
 
-  // If in Sphere mode, draw ONLY the sphere and exit the function early.
   if (window.isSphereView) {
     buildSphereGeometry();
     scene.add(window.sphereMapGroup);
@@ -1838,17 +1869,16 @@ function buildScene() {
   for (let rIdx = 0; rIdx < rings.length; rIdx++) {
     const ring = rings[rIdx];
 
-for (let i = 0; i < nPoles; i++) {
-      // 1. Calculate the standard Halbach layout
+    for (let i = 0; i < nPoles; i++) {
       const theta0 = i * angleStep;
       const phi0   = halbachK * theta0;
 
-      // 2. Apply the rigid body phase offset
       const angle = theta0 + ring.phaseOffset;
       const magAngle = phi0 + ring.phaseOffset;
 
       const px = ring.rPlace * Math.cos(angle) * scale;
       const py = ring.rPlace * Math.sin(angle) * scale;
+      const pz = ring.zOffset * scale; // NEW: Z-Shift variable
       const mx = Math.cos(magAngle);
       const my = Math.sin(magAngle);
 
@@ -1859,7 +1889,7 @@ for (let i = 0; i < nPoles; i++) {
         const quat = new THREE.Quaternion().setFromUnitVectors(yAxis, targetAxis);
 
         const bodyMat = new THREE.MeshStandardMaterial({
-          color: rIdx === 0 ? 0xd0d8e0 : 0xa5b0bc, // Darker color for outer ring
+          color: rIdx === 0 ? 0xd0d8e0 : 0xa5b0bc,
           roughness: 0.2, metalness: 0.85, emissive: 0x111111,
           transparent: isField, opacity: isField ? 0.15 : 1.0, wireframe: isField
         });
@@ -1876,7 +1906,7 @@ for (let i = 0; i < nPoles; i++) {
           halfL = ring.magLen / 2 * scale;
         }
 
-        bodyMesh.position.set(px, py, 0);
+        bodyMesh.position.set(px, py, pz); // CHANGED: Apply Z shift
         bodyMesh.setRotationFromQuaternion(quat);
         bodyMesh.castShadow = true; bodyMesh.receiveShadow = true;
         magnetGroup.add(bodyMesh);
@@ -1889,15 +1919,15 @@ for (let i = 0; i < nPoles; i++) {
         const sCapMat = new THREE.MeshStandardMaterial({ color: 0x3182ce, roughness: 0.4, metalness: 0.3, side: THREE.FrontSide, polygonOffset: true, polygonOffsetFactor: -1, polygonOffsetUnits: -1, transparent: isField, opacity: isField ? 0.3 : 1.0 });
 
         const nCap = new THREE.Mesh(capGeo, nCapMat);
-        nCap.position.set(px + mx * (halfL + capOffset), py + my * (halfL + capOffset), 0);
+        nCap.position.set(px + mx * (halfL + capOffset), py + my * (halfL + capOffset), pz); // CHANGED
         nCap.up.set(0, 0, 1);
-        nCap.lookAt(px + mx * (halfL + capOffset + 1), py + my * (halfL + capOffset + 1), 0);
+        nCap.lookAt(px + mx * (halfL + capOffset + 1), py + my * (halfL + capOffset + 1), pz); // CHANGED
         magnetGroup.add(nCap);
 
         const sCap = new THREE.Mesh(capGeo, sCapMat);
-        sCap.position.set(px - mx * (halfL + capOffset), py - my * (halfL + capOffset), 0);
+        sCap.position.set(px - mx * (halfL + capOffset), py - my * (halfL + capOffset), pz); // CHANGED
         sCap.up.set(0, 0, 1);
-        sCap.lookAt(px - mx * (halfL + capOffset + 1), py - my * (halfL + capOffset + 1), 0);
+        sCap.lookAt(px - mx * (halfL + capOffset + 1), py - my * (halfL + capOffset + 1), pz); // CHANGED
         magnetGroup.add(sCap);
       }
 
@@ -1907,16 +1937,17 @@ for (let i = 0; i < nPoles; i++) {
 
   // ==== 3D FIELD ARROWS ====
   if (displayMode === 'field') {
-    let maxRPlace = 0, maxDiam = 0, maxLen = 0, maxBr = 0;
+    let maxRPlace = 0, maxDiam = 0, maxLen = 0, maxBr = 0, maxZOffset = 0;
     rings.forEach(r => {
       if (r.rPlace > maxRPlace) maxRPlace = r.rPlace;
       if (r.magDiam > maxDiam) maxDiam = r.magDiam;
       if (r.magLen > maxLen) maxLen = r.magLen;
       if (r.Br > maxBr) maxBr = r.Br;
+      if (Math.abs(r.zOffset) > maxZOffset) maxZOffset = Math.abs(r.zOffset); // NEW: Track highest Z offset
     });
 
     const R_max = maxRPlace + maxDiam * 1.5;
-    const Z_max = maxLen * 0.75;
+    const Z_max = maxLen * 0.75 + maxZOffset; // CHANGED: Expand sampling height to cover shifted rings
     const steps = 12, zSteps = 3;
     const stepSize = (R_max * 2) / steps;
     const zStepSize = zSteps > 1 ? (Z_max * 2) / (zSteps - 1) : 0;
@@ -1959,6 +1990,7 @@ for (let i = 0; i < nPoles; i++) {
   scene.add(arrowGroup);
   computeStats();
 }
+
 
 
 
