@@ -1,0 +1,1716 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<title>Mandhala · 48-Dipole</title>
+<style>
+@import url('https://fonts.googleapis.com/css2?family=JetBrains+Mono:wght@300;400;600;700&family=Syne:wght@400;600;800&display=swap');
+:root {
+  --bg:#080b0f; --panel:#0d1218; --panel2:#121820; --border:#2a3a4a;
+  --accent:#a8ff3e; --accent2:#00d4ff; --accent3:#ff6b35;
+  --text:#e2eaf5; --muted:#8899bb; --label:#607080; --button:#152030;
+  --north:#e53e3e; --south:#3182ce;
+}
+*{box-sizing:border-box;margin:0;padding:0;}
+body{font-family:'JetBrains Mono',monospace;background:var(--bg);color:var(--text);display:flex;height:100vh;overflow:hidden;}
+
+/* SCROLLBAR */
+::-webkit-scrollbar{width:6px;}
+::-webkit-scrollbar-track{background:var(--panel);}
+::-webkit-scrollbar-thumb{background:var(--border);border-radius:2px;}
+
+/* LEFT PANEL */
+.left{width:320px;min-width:320px;background:var(--panel);border-right:1px solid var(--border);display:flex;flex-direction:column;overflow-y:auto;overflow-x:hidden;}
+.brand{padding:18px 20px 14px;border-bottom:1px solid var(--border);text-align:center;}
+.brand h1{font-family:'Syne',sans-serif;font-size:16px;font-weight:800;color:var(--accent);letter-spacing:.08em;text-transform:uppercase;}
+.brand p{font-size:9px;color:var(--muted);margin-top:4px;letter-spacing:.1em;}
+.section{padding:14px 20px;border-bottom:1px solid var(--border);}
+.section-title{font-size:8px;font-weight:700;letter-spacing:.22em;color:var(--muted);text-transform:uppercase;margin-bottom:12px;}
+.field-row{display:flex;flex-direction:column;margin-bottom:10px;}
+.field-row label{font-size:9px;color:var(--label);margin-bottom:4px;letter-spacing:.04em;}
+.field-row input,.field-row select{background:var(--panel2);border:1px solid var(--border);color:var(--text);font-family:'JetBrains Mono',monospace;font-size:11px;padding:7px 9px;border-radius:3px;outline:none;transition:border-color .2s;width:100%;}
+.field-row input:focus{border-color:var(--accent);}
+.field-row input[readonly]{color:var(--accent2);text-align:center;font-weight:700;background:var(--bg);border-color:var(--border);}
+.two-col{display:grid;grid-template-columns:1fr 1fr;gap:8px;}
+.three-col{display:grid;grid-template-columns:1fr 1fr 1fr;gap:6px;}
+
+.btn{width:100%;padding:9px;background:var(--button);color:var(--text);border:1px solid var(--border);border-radius:2px;font-family:'JetBrains Mono',monospace;font-size:10px;font-weight:700;cursor:pointer;text-transform:uppercase;letter-spacing:.08em;transition:all .2s;}
+.btn:hover{border-color:var(--accent);color:var(--accent);}
+.btn.primary{background:rgba(168,255,62,.08);border-color:var(--accent);color:var(--accent);}
+.btn.primary:hover{background:rgba(168,255,62,.16);}
+.btn.danger{border-color:var(--accent3);color:var(--accent3);}
+.btn-row{display:flex;gap:8px;margin-top:6px;}
+.btn-row .btn{flex:1;}
+
+.stat-grid{display:grid;grid-template-columns:1fr 1fr;gap:6px;}
+.stat-card{background:#0a0e14;border:1px solid var(--border);border-radius:3px;padding:8px 10px;}
+.stat-card .sv{font-size:13px;font-weight:700;color:var(--accent2);line-height:1.2;letter-spacing:-.02em;}
+.stat-card .sl{font-size:7px;color:var(--label);margin-top:4px;letter-spacing:.1em;text-transform:uppercase;}
+
+.progress-bar{height:3px;background:var(--border);border-radius:1px;margin:8px 0;overflow:hidden;}
+.progress-fill{height:100%;background:var(--accent);width:0%;transition:width .1s;border-radius:1px;}
+
+.footer{padding:10px 20px;font-size:8px;color:var(--label);letter-spacing:.05em;margin-top:auto;border-top:1px solid var(--border);text-align:center;}
+
+/* MAIN */
+.main{flex:1;display:flex;flex-direction:column;overflow:hidden;}
+.toolbar{height:40px;background:var(--panel);border-bottom:1px solid var(--border);display:flex;align-items:center;padding:0 14px;gap:8px;flex-shrink:0;overflow-x:auto;}
+.toolbar-label{font-size:8px;color:var(--muted);letter-spacing:.15em;text-transform:uppercase;white-space:nowrap;}
+.view-btn{padding:4px 10px;border-radius:2px;font-size:9px;font-family:'JetBrains Mono',monospace;cursor:pointer;border:1px solid var(--border);background:transparent;color:var(--label);transition:all .2s;letter-spacing:.05em;white-space:nowrap;}
+.view-btn.active,.view-btn:hover{background:rgba(0,212,255,.1);border-color:var(--accent2);color:var(--accent2);}
+.sep{width:1px;height:18px;background:var(--border);flex-shrink:0;}
+.spacer{flex:1;}
+
+.viewport-area{flex:1;position:relative;overflow:hidden;}
+#threejs-canvas{position:absolute;top:0;left:0;width:100%;height:100%;}
+
+/* 2D MAP OVERLAY */
+#map-container{position:absolute;inset:0;background:var(--bg);z-index:10;display:none;flex-direction:column;justify-content:center;align-items:center;}
+#map-computing-overlay{display:none;position:absolute;inset:0;background:rgba(8,11,15,.8);z-index:20;justify-content:center;align-items:center;flex-direction:column;gap:12px;}
+@keyframes spin{to{transform:rotate(360deg);}}
+
+/* TOOLTIP */
+.tooltip{position:absolute;bottom:14px;left:14px;background:rgba(8,11,15,.92);border:1px solid var(--border);border-radius:3px;padding:8px 12px;font-size:9px;color:var(--label);pointer-events:none;z-index:100;line-height:1.8;}
+
+.flash-error {
+  border-color: var(--north) !important;
+  background-color: rgba(229, 62, 62, 0.1) !important;
+  transition: all 0.2s ease-in-out;
+}
+
+
+/* OPT STATUS */
+#opt-overlay{display:none;position:absolute;top:16px;right:16px;background:rgba(8,11,15,.9);border:1px solid var(--border);border-radius:4px;padding:12px 16px;font-size:10px;color:var(--accent);flex-direction:column;gap:4px;z-index:50;}
+</style>
+</head>
+<body>
+
+<!-- LEFT PANEL -->
+<div class="left">
+  <div class="brand">
+    <h1>Mandhala</h1>
+    <p>48-DIPOLE C60 MAGIC SPHERE SIMULATOR · v2.4</p>
+  </div>
+
+  <!-- GEOMETRY -->
+<div class="section">
+    <div class="section-title">Sphere Geometry</div>
+    <div class="three-col">
+      <div class="field-row"><label>Inner R (mm)</label><input type="number" id="baseRadius" value="40" step="5" onchange="onGeomChange()"></div>
+      <div class="field-row"><label>Outer R (mm)</label><input type="number" id="outerRadius" value="90" step="5" onchange="onGeomChange()"></div>
+      <div class="field-row"><label>Test R (mm)</label><input type="number" id="testRadius" value="10" step="1" oninput="onGeomChange()"></div>
+    </div>
+  </div>
+
+  <!-- MAGNETS -->
+<div class="section">
+    <div class="section-title">Cylinder Dipoles (48×)</div>
+    <div class="two-col">
+      <div class="field-row"><label>Diameter (mm)</label><input type="number" id="magDiam" value="10" step="0.5" onchange="onGeomChange()"></div>
+      <div class="field-row"><label>Length (mm)</label><input type="number" id="magLen" value="20" step="0.5" onchange="onGeomChange()"></div>
+    </div>
+    <div class="two-col">
+<div class="field-row"><label>Min Gap (mm)</label><input type="number" id="magGap" value="2" step="0.5" onchange="onGeomChange()"></div>
+      <div class="field-row"><label>Remanence Br (T)</label><input type="number" id="magBr" value="1.32" step="0.05" oninput="evaluateField()"></div>
+    </div>
+  </div>
+
+  <!-- COMPUTED FIELD -->
+  <div class="section">
+    <div class="section-title">Computed Field</div>
+    <div class="stat-grid">
+      <div class="stat-card"><div class="sv" id="sv-Bc">—</div><div class="sl">B center (T)</div></div>
+      <div class="stat-card"><div class="sv" id="sv-Bx">—</div><div class="sl">Bx center (T)</div></div>
+      <div class="stat-card"><div class="sv" id="sv-By">—</div><div class="sl">By center (T)</div></div>
+      <div class="stat-card"><div class="sv" id="sv-Bz">—</div><div class="sl">Bz center (T)</div></div>
+      <div class="stat-card"><div class="sv" id="sv-Var">—</div><div class="sl">Homogeneity (%)</div></div>
+      <div class="stat-card"><div class="sv" id="sv-Score">—</div><div class="sl">SA Score</div></div>
+    </div>
+  </div>
+
+  <!-- OPTIMIZER -->
+  <div class="section">
+    <div class="section-title">Simulated Annealing Optimizer</div>
+    <div class="two-col">
+      <div class="field-row"><label>Iterations</label><input type="number" id="optIters" value="200000" step="500"></div>
+      <div class="field-row"><label>Max Radial Nudge (mm)</label><input type="number" id="optNudge" value="4" step="1"></div>
+    </div>
+
+    <div class="field-row"><label>Objective</label>
+      <select id="optObj">
+        <option value="homogeneity">Maximize homogeneity</option>
+        <option value="field">Maximize |B| at center</option>
+        <option value="combined">Combined (field × homogeneity)</option>
+      </select>
+    </div>
+    <div class="progress-bar"><div class="progress-fill" id="opt-progress"></div></div>
+    <div class="btn-row">
+      <button class="btn primary" id="btn-opt" onclick="startOptimization()">▶ Run SA</button>
+      <button class="btn danger" id="btn-reset" onclick="resetGeometry()">↺ Reset</button>
+    </div>
+  </div>
+
+
+
+  <!-- ACTIONS -->
+<div class="section">
+    <div class="section-title">View & Actions</div>
+    <div class="field-row" style="flex-direction:row; align-items:center; gap:8px; margin-bottom:8px;">
+      <input type="checkbox" id="showLabels" onchange="drawScene()" style="width:auto;">
+      <label for="showLabels" style="margin:0; cursor:pointer;">Show Dipole Numbers</label>
+    </div>
+    <div class="btn-row">
+      <button class="btn" onclick="exportPDF()">PDF Export</button>
+      <button class="btn" onclick="resetOffsets()">Zero Offsets</button>
+    </div>
+  </div>
+
+  <div class="footer">NitaD · Univ Paris-Saclay · 18 april 2026</div>
+</div>
+
+<!-- MAIN -->
+<div class="main">
+  <div class="toolbar">
+    <span class="toolbar-label">View</span>
+    <button class="view-btn active" id="vbtn-3d" onclick="setView('3d')">3D</button>
+    <button class="view-btn" id="vbtn-top" onclick="setView('top')">Top (+Z)</button>
+    <button class="view-btn" id="vbtn-front" onclick="setView('front')">Front (+Y)</button>
+    <button class="view-btn" id="vbtn-side" onclick="setView('side')">Side (+X)</button>
+    <div class="sep"></div>
+    <span class="toolbar-label">Maps</span>
+    <button class="view-btn" id="vbtn-map-xy" onclick="setMapTab('xy')">XY</button>
+    <button class="view-btn" id="vbtn-map-xz" onclick="setMapTab('xz')">XZ</button>
+    <button class="view-btn" id="vbtn-map-yz" onclick="setMapTab('yz')">YZ</button>
+    <div class="sep"></div>
+    <span class="toolbar-label">Bore</span>
+    <button class="view-btn" id="vbtn-bore" onclick="drawBoreProfile()">Profile</button>
+    <div class="spacer"></div>
+    <span class="toolbar-label" style="color:var(--accent);font-size:8px;" id="coord-display"></span>
+  </div>
+
+  <div class="viewport-area">
+    <canvas id="threejs-canvas"></canvas>
+
+    <!-- 2D Map -->
+    <div id="map-container">
+      <canvas id="map-canvas" style="border:1px solid var(--border);"></canvas>
+      <div style="margin-top:10px;font-size:9px;color:var(--muted);" id="map-title"></div>
+    </div>
+
+    <!-- Computing overlay -->
+    <div id="map-computing-overlay">
+      <div style="width:32px;height:32px;border:3px solid var(--border);border-top-color:var(--accent);border-radius:50%;animation:spin .8s linear infinite;"></div>
+      <div style="font-size:10px;color:var(--accent);letter-spacing:.1em;">COMPUTING…</div>
+    </div>
+
+    <!-- Opt overlay -->
+    <div id="opt-overlay">
+      <div id="os-iter" style="color:var(--accent);">Iter: 0</div>
+      <div id="os-temp">T: 1.000</div>
+      <div id="os-score">Score: —</div>
+      <div id="os-best">Best: —</div>
+    </div>
+
+    <div class="tooltip" id="tooltip">
+      <b style="color:var(--accent)">MANDHALA</b> · 48 dipoles on C60 lattice<br>
+      Bore: Two 6:6 butterflies removed · All dipoles point to center<br>
+      Rotate: drag · Zoom: scroll · Pan: right-drag
+    </div>
+  </div>
+</div>
+
+<script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js"></script>
+<script>
+
+
+//   Biot-Savart via elliptic integrals
+//  Ref: Derby & Olbert, AJP 2010; Furlani 2001
+// ═══════════════════════════════════════════════════════════════
+const MU0 = 4e-7 * Math.PI;
+const N_RINGS = 32;
+
+function ellipticKE(m) {
+  if (m >= 1.0) m = 0.9999999;
+  if (m < 0) m = 0;
+  let a = 1.0, b = Math.sqrt(1.0 - m);
+  for (let i = 0; i < 20; i++) {
+    const a1 = (a + b) / 2, b1 = Math.sqrt(a * b);
+    a = a1; b = b1;
+    if (Math.abs(a - b) < 1e-12) break;
+  }
+  const K = Math.PI / (2 * a);
+  let a2 = 1.0, b2 = Math.sqrt(1.0 - m), power = 1.0, sum = 2.0 - m;
+  for (let i = 0; i < 20; i++) {
+    const a3 = (a2 + b2) / 2, b3 = Math.sqrt(a2 * b2);
+    power *= 2; sum -= power * Math.pow(a3 - b3, 2);
+    a2 = a3; b2 = b3;
+    if (Math.abs(a3 - b3) < 1e-12) break;
+  }
+  const E = (Math.PI / (4 * a)) * sum;
+  return [K, E];
+}
+
+function ringField(a, I, rho, zeta) {
+  const Q = (a + rho) * (a + rho) + zeta * zeta;
+  const D = (a - rho) * (a - rho) + zeta * zeta;
+  const m = 4 * a * rho / Q;
+  const sqQ = Math.sqrt(Q);
+  const [K, E] = ellipticKE(m);
+  const pre = (MU0 * I) / (2 * Math.PI * sqQ);
+  return {
+    Baxial: pre * (K + E * (a * a - rho * rho - zeta * zeta) / D),
+    Bradial: (rho < 1e-10) ? 0 : pre * (zeta / rho) * (-K + E * (a * a + rho * rho + zeta * zeta) / D)
+  };
+}
+
+// Full field of one finite cylinder magnet in the GLOBAL frame
+function cylinderField(px, py, pz, cx, cy, cz, mux, muy, muz, a_mm, halfL_mm, Br) {
+  const sc = 1e-3;
+  const a = a_mm * sc, halfL = halfL_mm * sc, K = Br / MU0;
+  const dx = (px - cx) * sc, dy = (py - cy) * sc, dz = (pz - cz) * sc;
+  let rx = 1, ry = 0, rz = 0;
+  if (Math.abs(mux) > 0.9) { rx = 0; ry = 1; }
+  const d2 = mux*rx + muy*ry + muz*rz;
+  let e1x = rx - d2*mux, e1y = ry - d2*muy, e1z = rz - d2*muz;
+  const e1n = Math.sqrt(e1x*e1x + e1y*e1y + e1z*e1z);
+  e1x /= e1n; e1y /= e1n; e1z /= e1n;
+  const e2x = muy*e1z - muz*e1y, e2y = muz*e1x - mux*e1z, e2z = mux*e1y - muy*e1x;
+  const d_ax = dx*mux + dy*muy + dz*muz;
+  const d_e1 = dx*e1x + dy*e1y + dz*e1z;
+  const d_e2 = dx*e2x + dy*e2y + dz*e2z;
+  const rho = Math.sqrt(d_e1*d_e1 + d_e2*d_e2);
+  const ds = 2 * halfL / N_RINGS, dI = K * ds;
+  let Bax = 0, Brad = 0;
+  for (let n = 0; n < N_RINGS; n++) {
+    const zeta = d_ax - (-halfL + (n + 0.5) * ds);
+    if (rho < a * 1.01 && Math.abs(zeta) < ds * 0.5) continue;
+    const { Baxial, Bradial } = ringField(a, dI, rho, zeta);
+    Bax += Baxial; Brad += Bradial;
+  }
+  if (rho < 1e-12) return { Bx: Bax*mux, By: Bax*muy, Bz: Bax*muz };
+  const inv = 1 / rho;
+  return {
+    Bx: Bax*mux + Brad*(d_e1*e1x + d_e2*e2x)*inv,
+    By: Bax*muy + Brad*(d_e1*e1y + d_e2*e2y)*inv,
+    Bz: Bax*muz + Brad*(d_e1*e1z + d_e2*e2z)*inv
+  };
+}
+
+// Helper to create 3D text labels
+function makeTextSprite(message) {
+  const canvas = document.createElement('canvas');
+  canvas.width = 128; canvas.height = 128;
+  const ctx = canvas.getContext('2d');
+  ctx.font = 'Bold 55px JetBrains Mono, monospace';
+  ctx.textAlign = 'center';
+  ctx.textBaseline = 'middle';
+  
+  // Black text with white outline for visibility on any background
+  ctx.lineWidth = 8;
+  ctx.strokeStyle = '#ffffff';
+  ctx.strokeText(message, 64, 64);
+  ctx.fillStyle = '#000000';
+  ctx.fillText(message, 64, 64);
+  
+  const tex = new THREE.CanvasTexture(canvas);
+  const sprite = new THREE.Sprite(new THREE.SpriteMaterial({ map: tex, depthTest: false }));
+  sprite.scale.set(16, 16, 1);
+  return sprite;
+}
+
+
+function generateC60Vertices() {
+  const phi = (1 + Math.sqrt(5)) / 2;
+  const raw = [];
+
+  const push = (x,y,z) => raw.push([x,y,z]);
+
+  // (0, ±1, ±3φ)
+  for (let s1 of [1,-1]) for (let s2 of [1,-1]) {
+    push(0, s1*1, s2*3*phi);
+    push(s1*1, s2*3*phi, 0);
+    push(s2*3*phi, 0, s1*1);
+  }
+
+  // (±1, ±(2+φ), ±2φ)
+  for (let sx of [1,-1]) for (let sy of [1,-1]) for (let sz of [1,-1]) {
+    push(sx*1, sy*(2+phi), sz*(2*phi));
+    push(sy*(2+phi), sz*(2*phi), sx*1);
+    push(sz*(2*phi), sx*1, sy*(2+phi));
+  }
+
+  // (±φ, ±2, ±(2φ+1))
+  for (let sx of [1,-1]) for (let sy of [1,-1]) for (let sz of [1,-1]) {
+    push(sx*phi, sy*2, sz*(2*phi+1));
+    push(sy*2, sz*(2*phi+1), sx*phi);
+    push(sz*(2*phi+1), sx*phi, sy*2);
+  }
+
+  // Deduplicate properly
+  const unique = [];
+  const EPS = 1e-6;
+
+  raw.forEach(([x,y,z]) => {
+    if (!unique.some(([ux,uy,uz]) =>
+      Math.abs(x-ux)<EPS &&
+      Math.abs(y-uy)<EPS &&
+      Math.abs(z-uz)<EPS
+    )) {
+      unique.push([x,y,z]);
+    }
+  });
+
+  return unique; // ✅ EXACTLY 60
+}
+
+
+function uniqueVertices(list) {
+  const EPS = 1e-6;
+  const out = [];
+
+  list.forEach(([x, y, z]) => {
+    if (!out.some(([ox, oy, oz]) =>
+      Math.abs(x - ox) < EPS &&
+      Math.abs(y - oy) < EPS &&
+      Math.abs(z - oz) < EPS
+    )) {
+      out.push([x, y, z]);
+    }
+  });
+
+  return out;
+}
+
+
+//3 js, avant le 16 avril, duplication dans les dipoles
+// modif le 16, l'axe Z est selon C3, on enlève deux heaxons, donc 48 aimants
+function generateMagicSphere48(R) {
+  // The default C60 generation already has a C2 axis perfectly aligned with the Z-axis.
+  let verts = generateC60Vertices().map(([x,y,z]) => {
+    const l = Math.hypot(x,y,z);
+    return new THREE.Vector3(x/l, y/l, z/l);
+  });
+
+  // The 6 poles closest to +Z have z > 0.8. The 6 closest to -Z have z < -0.8.
+  // Filtering them out removes the two polar caps, leaving exactly 48 poles with perfect C2 symmetry.
+  const finalVerts = verts.filter(v => Math.abs(v.z) < 0.8);
+
+  // Map to magnet objects, initializing the Transverse X field polarities:
+  // +X hemisphere -> Polarity 1 (N in / S out)
+  // -X hemisphere -> Polarity -1 (S in / N out)
+  return finalVerts.map(dir => ({
+    dir,
+    polarity: dir.x >= 0 ? 1 : -1,
+    offset: 0
+  }));
+}
+
+
+const canvas = document.getElementById('threejs-canvas');
+const renderer = new THREE.WebGLRenderer({ canvas, antialias: true, preserveDrawingBuffer: true });renderer.setPixelRatio(window.devicePixelRatio);
+renderer.shadowMap.enabled = true;
+renderer.shadowMap.type = THREE.PCFSoftShadowMap;
+
+const scene = new THREE.Scene();
+scene.background = new THREE.Color(0x080b0f);
+scene.fog = new THREE.Fog(0x080b0f, 400, 900);
+
+const camera = new THREE.PerspectiveCamera(45, 1, 0.1, 2000);
+
+// Lighting
+const ambLight = new THREE.AmbientLight(0x1a2535, 2.0);
+scene.add(ambLight);
+const dirLight = new THREE.DirectionalLight(0xffffff, 1.0);
+dirLight.position.set(1, 2, 1.5); dirLight.castShadow = true;
+scene.add(dirLight);
+const rimLight = new THREE.DirectionalLight(0xa8ff3e, 0.25);
+rimLight.position.set(-2, 0.5, -1);
+scene.add(rimLight);
+const fillLight = new THREE.PointLight(0x00d4ff, 0.3, 400);
+fillLight.position.set(0, -100, 50);
+scene.add(fillLight);
+
+const gridHelper = new THREE.GridHelper(400, 40, 0x1a2535, 0x111820);
+gridHelper.rotation.x = Math.PI / 2;
+scene.add(gridHelper);
+const axisHelper = new THREE.AxesHelper(25);
+axisHelper.position.set(-90,-90,0.5);
+scene.add(axisHelper);
+
+const magnetGroup = new THREE.Group();
+scene.add(magnetGroup);
+
+// ── Orbit controls (manual) ──
+let isMouseDown = false, mouseBtn = 0;
+let lastMouse = {x:0,y:0};
+let spherical = {theta:0.6, phi:1.15, radius:280};
+let panOffset = {x:0,y:0};
+let targetView = null;
+
+canvas.addEventListener('mousedown', e => {
+  isMouseDown = true; mouseBtn = e.button;
+  lastMouse = {x:e.clientX, y:e.clientY};
+  canvas.style.cursor = e.button===2 ? 'move' : 'grabbing';
+  e.preventDefault();
+});
+canvas.addEventListener('contextmenu', e => e.preventDefault());
+window.addEventListener('mouseup', () => { isMouseDown = false; canvas.style.cursor = 'default'; });
+window.addEventListener('mousemove', e => {
+  if (!isMouseDown) return;
+  const dx = e.clientX - lastMouse.x, dy = e.clientY - lastMouse.y;
+  if (mouseBtn === 2) {
+    panOffset.x -= dx * 0.18; panOffset.y += dy * 0.18;
+  } else {
+    spherical.theta -= dx * 0.008;
+    spherical.phi = Math.max(0.05, Math.min(Math.PI-0.05, spherical.phi + dy*0.008));
+  }
+  lastMouse = {x:e.clientX, y:e.clientY};
+  targetView = null;
+});
+canvas.addEventListener('wheel', e => {
+  spherical.radius = Math.max(60, Math.min(700, spherical.radius + e.deltaY*0.35));
+  targetView = null; e.preventDefault();
+}, {passive:false});
+
+// Touch support
+let lastTouchDist = 0;
+canvas.addEventListener('touchstart', e => {
+  if (e.touches.length===1) { isMouseDown=true; lastMouse={x:e.touches[0].clientX,y:e.touches[0].clientY}; }
+  if (e.touches.length===2) { lastTouchDist = Math.hypot(e.touches[0].clientX-e.touches[1].clientX, e.touches[0].clientY-e.touches[1].clientY); }
+  e.preventDefault();
+},{passive:false});
+canvas.addEventListener('touchmove', e => {
+  if (e.touches.length===1 && isMouseDown) {
+    const dx=e.touches[0].clientX-lastMouse.x, dy=e.touches[0].clientY-lastMouse.y;
+    spherical.theta -= dx*0.008;
+    spherical.phi = Math.max(0.05, Math.min(Math.PI-0.05, spherical.phi+dy*0.008));
+    lastMouse={x:e.touches[0].clientX,y:e.touches[0].clientY};
+    targetView=null;
+  }
+  if (e.touches.length===2) {
+    const d=Math.hypot(e.touches[0].clientX-e.touches[1].clientX,e.touches[0].clientY-e.touches[1].clientY);
+    spherical.radius=Math.max(60,Math.min(700,spherical.radius-(d-lastTouchDist)*0.5));
+    lastTouchDist=d; targetView=null;
+  }
+  e.preventDefault();
+},{passive:false});
+canvas.addEventListener('touchend',()=>{isMouseDown=false;},{passive:false});
+
+
+//  STATE
+
+let magnets = [];
+let bestScore = Infinity;
+let optRunning = false;
+let currentMapPlane = null;
+
+function onGeomChange() {
+  let R = parseFloat(document.getElementById('baseRadius').value);
+  let outerR = parseFloat(document.getElementById('outerRadius').value);
+  const diam = parseFloat(document.getElementById('magDiam').value);
+  const len = parseFloat(document.getElementById('magLen').value);
+  const gap = parseFloat(document.getElementById('magGap').value);
+
+  // Generate the directional vectors to measure angles
+  magnets = generateMagicSphere48(R);
+
+  // 1. Find the smallest angle between any two adjacent dipoles
+  let maxDot = -1;
+  for (let i = 0; i < magnets.length; i++) {
+    for (let j = i + 1; j < magnets.length; j++) {
+       let dot = magnets[i].dir.x * magnets[j].dir.x + 
+                 magnets[i].dir.y * magnets[j].dir.y + 
+                 magnets[i].dir.z * magnets[j].dir.z;
+       if (dot > maxDot && dot < 0.999) maxDot = dot; 
+    }
+  }
+  const minAngle = Math.acos(maxDot);
+  
+  // 2. Calculate the minimum allowed inner radius
+  const minR = (diam + gap) / (2 * Math.sin(minAngle / 2));
+
+  // 3. Enforce the inner radius limit and update UI
+  if (R < minR) {
+    R = Math.ceil(minR * 10) / 10; 
+    
+    const radiusInput = document.getElementById('baseRadius');
+    radiusInput.value = R;
+    
+    radiusInput.classList.add('flash-error');
+    setTimeout(() => { radiusInput.classList.remove('flash-error'); }, 800);
+
+    showTooltip(`Inner R auto-adjusted to ${R} mm to maintain the minimum gap.`, 4000);
+  }
+
+  // 4. Enforce the outer radius limit
+  const minOuter = R + len;
+  if (outerR < minOuter) {
+    outerR = minOuter;
+    
+    const outerRadiusInput = document.getElementById('outerRadius');
+    outerRadiusInput.value = outerR;
+    
+    outerRadiusInput.classList.add('flash-error');
+    setTimeout(() => { outerRadiusInput.classList.remove('flash-error'); }, 800);
+
+    showTooltip(`Outer R auto-adjusted to ${outerR} mm to fit the dipoles.`, 4000);
+  }
+
+  drawScene();
+  evaluateField();
+}
+
+
+function resetGeometry() {
+  magnets.forEach(m => m.offset = 0);
+  drawScene();
+  evaluateField();
+}
+function resetOffsets() { resetGeometry(); }
+
+//draw
+
+function totalFieldAt(px, py, pz) {
+  const R = parseFloat(document.getElementById('baseRadius').value);
+  const diam = parseFloat(document.getElementById('magDiam').value);
+  const len = parseFloat(document.getElementById('magLen').value);
+  const Br = parseFloat(document.getElementById('magBr').value);
+  let bx=0, by=0, bz=0;
+  
+  magnets.forEach(mag => {
+    const dist = R + mag.offset + len/2;
+    const cx = mag.dir.x * dist, cy = mag.dir.y * dist, cz = mag.dir.z * dist;
+    
+    // Purely radial orientation, flipped by polarity
+    const mux = -mag.dir.x * mag.polarity;
+    const muy = -mag.dir.y * mag.polarity;
+    const muz = -mag.dir.z * mag.polarity;
+    
+    const b = cylinderField(px, py, pz, cx, cy, cz, mux, muy, muz, diam/2, len/2, Br);
+    bx += b.Bx; by += b.By; bz += b.Bz;
+  });
+  
+  return {bx, by, bz, b: Math.sqrt(bx*bx + by*by + bz*bz)};
+}
+
+function clearGroup(group) {
+  while (group.children.length > 0) {
+    const child = group.children[0];
+    group.remove(child);
+    if (child.geometry) child.geometry.dispose();
+    if (child.material) {
+      if (Array.isArray(child.material)) child.material.forEach(m => m.dispose());
+      else child.material.dispose();
+    }
+    if (child.children && child.children.length > 0) clearGroup(child); // clear inner groups
+  }
+}
+
+
+function updateMagnetPositions() {
+  const R = parseFloat(document.getElementById('baseRadius').value);
+  const len = parseFloat(document.getElementById('magLen').value);
+  
+  // Safely separate the magnets and labels from the shells/test volumes
+  const dipoleGroups = magnetGroup.children.filter(c => c.type === 'Group');
+  const labelSprites = magnetGroup.children.filter(c => c.type === 'Sprite');
+
+  magnets.forEach((mag, i) => {
+    const dist = R + mag.offset + len / 2;
+    
+    // Update magnet positions
+    if (dipoleGroups[i]) {
+      dipoleGroups[i].position.copy(mag.dir).multiplyScalar(dist);
+    }
+    
+    // Update label positions so they follow the magnets during the animation
+    if (labelSprites[i]) {
+      const outerDist = R + mag.offset + len + 4;
+      labelSprites[i].position.copy(mag.dir).multiplyScalar(outerDist);
+    }
+  });
+}
+
+
+function drawScene() {
+  clearGroup(magnetGroup);
+  const R = parseFloat(document.getElementById('baseRadius').value);
+  const tr = parseFloat(document.getElementById('testRadius').value);
+  const diam = parseFloat(document.getElementById('magDiam').value);
+  const len = parseFloat(document.getElementById('magLen').value);
+  
+  const bodyGeo = new THREE.CylinderGeometry(diam/2, diam/2, len, 20, 1, true);
+  const capGeo  = new THREE.CircleGeometry(diam/2*1.01, 20);
+
+  const bodyMat = new THREE.MeshStandardMaterial({color: 0xcccccc, roughness: 0.3, metalness: 0.5});
+
+  const nCapMat = new THREE.MeshStandardMaterial({color:0xe53e3e, roughness:0.35, metalness:0.2, side:THREE.DoubleSide});
+  const sCapMat = new THREE.MeshStandardMaterial({color:0x3182ce, roughness:0.35, metalness:0.2, side:THREE.DoubleSide});
+  
+  const shellGeo = new THREE.SphereGeometry(R, 32, 32);
+  const shellMat = new THREE.MeshStandardMaterial({color:0x00d4ff, transparent:true, opacity:0.03, wireframe:false, side:THREE.BackSide});
+  magnetGroup.add(new THREE.Mesh(shellGeo, shellMat));
+
+  const rOuter = parseFloat(document.getElementById('outerRadius').value) || (R + len);
+  const outerShellGeo = new THREE.SphereGeometry(rOuter, 32, 32);
+  const outerShellMat = new THREE.MeshStandardMaterial({color:0xa8ff3e, transparent:true, opacity:0.1, wireframe:false, side:THREE.BackSide});
+  magnetGroup.add(new THREE.Mesh(outerShellGeo, outerShellMat));
+
+  // Dynamically sized yellow test volume (hides during white-background PDF export)
+  if (scene.background && scene.background.getHex() !== 0xffffff) {
+    const tvGeo = new THREE.EdgesGeometry(new THREE.SphereGeometry(tr, 16, 16));
+    const tvMat = new THREE.LineBasicMaterial({ color: 0xffff00, transparent: true, opacity: 0.4 });
+    magnetGroup.add(new THREE.LineSegments(tvGeo, tvMat));
+  }
+
+  magnets.forEach((mag, idx) => {
+    const grp = new THREE.Group();
+    grp.add(new THREE.Mesh(bodyGeo, bodyMat));
+
+    const tCap = new THREE.Mesh(capGeo, nCapMat);
+    tCap.position.y = len/2; tCap.rotation.x = -Math.PI/2;
+    grp.add(tCap);
+
+    const bCap = new THREE.Mesh(capGeo, sCapMat);
+    bCap.position.y = -(len/2); bCap.rotation.x = Math.PI/2;
+    grp.add(bCap);
+
+    const dist = R + mag.offset + len/2;
+    grp.position.copy(mag.dir).multiplyScalar(dist);
+
+    // Point in or out based on polarity
+    const targetDir = mag.polarity === 1 ? mag.dir.clone().negate() : mag.dir.clone();
+    grp.quaternion.setFromUnitVectors(new THREE.Vector3(0,1,0), targetDir);
+    magnetGroup.add(grp);
+
+    if (document.getElementById('showLabels')?.checked) {
+      const outerDist = R + mag.offset + len + 4; // Position just outside the outer face
+      const sprite = makeTextSprite((idx + 1).toString());
+      sprite.position.copy(mag.dir).multiplyScalar(outerDist);
+      magnetGroup.add(sprite);
+    }
+  });
+}
+
+
+function evaluateField() {
+  const tr = parseFloat(document.getElementById('testRadius').value);
+  const c = totalFieldAt(0,0,0);
+
+  document.getElementById('sv-Bc').textContent = c.b.toFixed(4);
+  document.getElementById('sv-Bx').textContent = c.bx.toFixed(4);
+  document.getElementById('sv-By').textContent = c.by.toFixed(4);
+  document.getElementById('sv-Bz').textContent = c.bz.toFixed(4);
+
+  if (c.b < 1e-5) {
+    document.getElementById('sv-Var').textContent = 'N/A';
+    document.getElementById('sv-Score').textContent = 'N/A';
+    return { bCenter: c.b, score: NaN };
+  }
+
+  const pts = [];
+  const N = 3;
+  // Evaluate 3D sphere volume
+  for (let ix=-N; ix<=N; ix++) for (let iy=-N; iy<=N; iy++) for (let iz=-N; iz<=N; iz++) {
+    const r = Math.sqrt(ix*ix+iy*iy+iz*iz);
+    if (r < 0.5 || r > N+0.1) continue;
+    const f = tr / r;
+    pts.push(totalFieldAt(ix*f, iy*f, iz*f));
+  }
+  
+  let minBx = c.bx, maxBx = c.bx;
+  let maxTransverse = 0;
+  
+  pts.forEach(p => {
+    if (p.bx < minBx) minBx = p.bx;
+    if (p.bx > maxBx) maxBx = p.bx;
+    const trans = Math.sqrt(p.by*p.by + p.bz*p.bz);
+    if (trans > maxTransverse) maxTransverse = trans;
+  });
+
+  const absBx = Math.max(Math.abs(c.bx), 1e-6);
+  
+  // 1. Peak-to-Peak variance of just the X component
+  const varBxPercent = ((maxBx - minBx) / absBx) * 100;
+  
+  // 2. Worst-case transverse field (Y/Z) as a percentage of X
+  const transPercent = (maxTransverse / absBx) * 100;
+
+  // Display it cleanly in the UI
+  document.getElementById('sv-Var').textContent = `${varBxPercent.toFixed(1)}% X | ${transPercent.toFixed(1)}% YZ`;
+  
+  const totalError = varBxPercent + (transPercent * 2.0);
+  let score = 0;
+  const obj = document.getElementById('optObj').value;
+  if (obj === 'homogeneity') score = totalError;
+  else if (obj === 'field') score = -absBx;
+  else score = totalError / absBx; 
+
+  document.getElementById('sv-Score').textContent = score.toFixed(4);
+  return { bCenter: c.b, score };
+}
+
+
+
+function quickScore() {
+  const tr = parseFloat(document.getElementById('testRadius').value);
+  const R = parseFloat(document.getElementById('baseRadius').value);
+  const diam = parseFloat(document.getElementById('magDiam').value);
+  const len = parseFloat(document.getElementById('magLen').value);
+  const Br = parseFloat(document.getElementById('magBr').value);
+
+  const getB = (px,py,pz) => {
+    let bx=0, by=0, bz=0;
+    magnets.forEach(mag => {
+      const dist = R + mag.offset + len/2;
+      const cx = mag.dir.x * dist, cy = mag.dir.y * dist, cz = mag.dir.z * dist;
+      const mux = -mag.dir.x * mag.polarity;
+      const muy = -mag.dir.y * mag.polarity;
+      const muz = -mag.dir.z * mag.polarity;
+      const b = cylinderField(px, py, pz, cx, cy, cz, mux, muy, muz, diam/2, len/2, Br);
+      bx += b.Bx; by += b.By; bz += b.Bz;
+    });
+    return {bx, by, bz};
+  };
+
+  const c = getB(0,0,0);
+  const s = tr/Math.SQRT2;
+  const pts = [
+    getB(tr,0,0), getB(-tr,0,0), getB(0,tr,0), getB(0,-tr,0), getB(0,0,tr), getB(0,0,-tr),
+    getB(s,s,0), getB(s,-s,0), getB(-s,s,0), getB(-s,-s,0),
+    getB(s,0,s), getB(s,0,-s), getB(0,s,s), getB(0,s,-s)
+  ];
+
+  let minBx = c.bx, maxBx = c.bx;
+  let maxTransverse = 0;
+  
+  pts.forEach(p => {
+    if (p.bx < minBx) minBx = p.bx;
+    if (p.bx > maxBx) maxBx = p.bx;
+    const trans = Math.sqrt(p.by*p.by + p.bz*p.bz);
+    if (trans > maxTransverse) maxTransverse = trans;
+  });
+
+  const absBx = Math.max(Math.abs(c.bx), 1e-6);
+  // Same custom error function as above for the optimizer loop
+  const totalError = (((maxBx - minBx) / absBx) * 100) + ((maxTransverse / absBx) * 200);
+
+  let score = 0;
+  const obj = document.getElementById('optObj').value;
+  if (obj === 'homogeneity') score = totalError;
+  else if (obj === 'field') score = -absBx;
+  else score = totalError / absBx; 
+
+  return { score };
+}
+//----- score
+function computeScore(bCenter, varPercent) {
+  const obj = document.getElementById('optObj').value;
+  if (obj==='homogeneity') return varPercent;
+  if (obj==='field') return -bCenter;
+  // combined: minimize ratio  (variance/field)
+  return varPercent / Math.max(bCenter, 1e-6);
+}
+
+
+//SA no polarity, 17 avril
+let activeWorkers = [];
+let lastDrawTime = 0; // Tracks when we last updated the 3D view
+
+async function startOptimization() {
+  if (optRunning) return;
+  optRunning = true;
+  
+  activeWorkers.forEach(w => w.terminate());
+  activeWorkers = [];
+
+  document.getElementById('btn-opt').textContent = '■ Stop';
+  document.getElementById('btn-opt').onclick = stopOptimization;
+  document.getElementById('opt-overlay').style.display = 'flex';
+
+  // Restore original polarity locking 
+  magnets.forEach(mag => { mag.polarity = mag.dir.x >= 0 ? 1 : -1; });
+  
+  let globalBestScore = quickScore().score;
+  document.getElementById('os-best').textContent = `Best: ${globalBestScore.toFixed(4)}`;
+  document.getElementById('os-score').textContent = `Score: ${globalBestScore.toFixed(4)}`;
+
+  const params = {
+    iters: parseInt(document.getElementById('optIters').value),
+    maxNudge: parseFloat(document.getElementById('optNudge').value),
+    R: parseFloat(document.getElementById('baseRadius').value),
+    R_outer: parseFloat(document.getElementById('outerRadius').value),
+    tr: parseFloat(document.getElementById('testRadius').value),
+    diam: parseFloat(document.getElementById('magDiam').value),
+    len: parseFloat(document.getElementById('magLen').value),
+    gap: parseFloat(document.getElementById('magGap').value),
+    Br: parseFloat(document.getElementById('magBr').value),
+    optObj: document.getElementById('optObj').value
+  };
+
+  const numThreads = Math.min(navigator.hardwareConcurrency || 4, 8);
+  console.log(`Starting SA on ${numThreads} parallel threads...`);
+  
+  let completedThreads = 0;
+  let totalProgress = new Array(numThreads).fill(0);
+  lastDrawTime = performance.now();
+
+  for (let i = 0; i < numThreads; i++) {
+    const worker = createOptimizationWorker();
+    activeWorkers.push(worker);
+
+    worker.onmessage = function(e) {
+      if (e.data.type === 'newBest') {
+        if (e.data.score < globalBestScore) {
+          globalBestScore = e.data.score;
+          e.data.magnets.forEach((st, idx) => {
+            magnets[idx].offset = st.off;
+            magnets[idx].polarity = st.pol;
+          });
+          document.getElementById('os-best').textContent = `Best: ${globalBestScore.toFixed(4)}`;
+        }
+      } 
+      else if (e.data.type === 'progress') {
+        totalProgress[i] = e.data.iter;
+        const avgIter = totalProgress.reduce((a,b) => a+b, 0) / numThreads;
+        const pct = ((avgIter / params.iters) * 100).toFixed(0);
+        document.getElementById('opt-progress').style.width = pct + '%';
+        document.getElementById('os-iter').textContent = `Avg Iter: ${Math.round(avgIter)} / ${params.iters}`;
+        document.getElementById('os-temp').textContent = `T: ${e.data.temp.toExponential(3)}`;
+        document.getElementById('os-score').textContent = `Score (T${i}): ${e.data.currentScore.toFixed(4)}`;
+        
+        const now = performance.now();
+        if (now - lastDrawTime > 250) {
+          updateMagnetPositions();
+          lastDrawTime = now;
+        }
+      }
+      else if (e.data.type === 'done') {
+        completedThreads++;
+        if (completedThreads === numThreads) finalizeOptimization();
+      }
+    };
+
+    // Stagger threads
+    const multiplier = Math.pow(0.5, i);
+    const workerParams = { ...params, threadMultiplier: multiplier };
+    worker.postMessage({ cmd: 'start', magnets: JSON.parse(JSON.stringify(magnets)), params: workerParams });
+  }
+}
+
+
+function stopOptimization() {
+  activeWorkers.forEach(w => w.terminate());
+  activeWorkers = [];
+  finalizeOptimization();
+}
+
+function finalizeOptimization() {
+  evaluateField();
+  if (currentMapPlane === 'bore') drawBoreProfile(false);
+  else if (currentMapPlane) _drawMap2DImpl(currentMapPlane, false);
+
+  document.getElementById('btn-opt').textContent = '▶ Run SA';
+  document.getElementById('btn-opt').onclick = startOptimization;
+  document.getElementById('opt-overlay').style.display = 'none';
+  document.getElementById('opt-progress').style.width = '100%';
+  optRunning = false;
+  showTooltip('Optimization finished on all threads.', 4000);
+}
+
+
+function createOptimizationWorker() {
+  const workerScript = `
+    const MU0 = 4e-7 * Math.PI;
+    const N_RINGS = 32;
+
+    ${ellipticKE.toString()}
+    ${ringField.toString()}
+    ${cylinderField.toString()}
+
+    let magnets = [];
+    let params = {};
+
+    function quickScoreLocal() {
+      const getB = (px, py, pz) => {
+        let bx=0, by=0, bz=0;
+        magnets.forEach(mag => {
+          const dist = params.R + mag.offset + params.len/2;
+          const cx = mag.dir.x * dist, cy = mag.dir.y * dist, cz = mag.dir.z * dist;
+          const mux = -mag.dir.x * mag.polarity, muy = -mag.dir.y * mag.polarity, muz = -mag.dir.z * mag.polarity;
+          const b = cylinderField(px, py, pz, cx, cy, cz, mux, muy, muz, params.diam/2, params.len/2, params.Br);
+          bx += b.Bx; by += b.By; bz += b.Bz;
+        });
+        return {bx, by, bz};
+      };
+
+      const c = getB(0,0,0);
+      const s = params.tr / Math.SQRT2;
+      const pts = [
+        getB(params.tr,0,0), getB(-params.tr,0,0), getB(0,params.tr,0), getB(0,-params.tr,0), getB(0,0,params.tr), getB(0,0,-params.tr),
+        getB(s,s,0), getB(s,-s,0), getB(-s,s,0), getB(-s,-s,0), getB(s,0,s), getB(s,0,-s), getB(0,s,s), getB(0,s,-s)
+      ];
+
+      let minBx = c.bx, maxBx = c.bx;
+      let maxTransverse = 0;
+      
+      pts.forEach(p => {
+        if (p.bx < minBx) minBx = p.bx;
+        if (p.bx > maxBx) maxBx = p.bx;
+        const trans = Math.sqrt(p.by*p.by + p.bz*p.bz);
+        if (trans > maxTransverse) maxTransverse = trans;
+      });
+
+      const absBx = Math.max(Math.abs(c.bx), 1e-6);
+      const totalError = (((maxBx - minBx) / absBx) * 100) + ((maxTransverse / absBx) * 200);
+
+      let score = 0;
+      if (params.optObj === 'homogeneity') score = totalError;
+      else if (params.optObj === 'field') score = -absBx;
+      else score = totalError / absBx; 
+      
+      return score;
+    }
+
+    self.onmessage = function(e) {
+      if (e.data.cmd === 'start') {
+        magnets = e.data.magnets;
+        params = e.data.params;
+
+        // LOCK POLARITIES
+        magnets.forEach(mag => {
+          mag.polarity = mag.dir.x >= 0 ? 1 : -1;
+        });
+
+
+
+
+// 1. Calculate Test Volume Limit
+
+const minOffTest = (params.tr + params.gap) - params.R;
+
+        let maxDot = -1;
+        for(let i=0; i<magnets.length; i++) {
+          for(let j=i+1; j<magnets.length; j++) {
+             let dot = magnets[i].dir.x*magnets[j].dir.x + magnets[i].dir.y*magnets[j].dir.y + magnets[i].dir.z*magnets[j].dir.z;
+             if(dot > maxDot && dot < 0.999) maxDot = dot; 
+          }
+        }
+        const minAngle = Math.acos(maxDot);
+        
+        // 2. Calculate Collision Limit
+        const minRadiusCenter = (params.diam + params.gap) / (2 * Math.sin(minAngle / 2));
+        const minOffCollision = minRadiusCenter - params.R - (params.len / 2);
+
+        // Enforce 0 as the absolute minimum offset to respect the Inner Radius
+        const minOffset = Math.max(0, minOffTest, minOffCollision);
+        const maxOffset = Math.max(minOffset, params.R_outer - params.R - params.len);
+
+
+
+
+        let currentScore = quickScoreLocal();
+        
+        // --- AUTO-TUNE INITIAL TEMPERATURE ---
+        let sumDe = 0;
+        let validSamples = 0;
+        
+        for (let s = 0; s < 50; s++) {
+          let testIdx = Math.floor(Math.random() * magnets.length);
+          let origOff = magnets[testIdx].offset;
+          
+          magnets[testIdx].offset = Math.max(minOffset, Math.min(maxOffset, magnets[testIdx].offset + (Math.random() - 0.5) * params.maxNudge));
+          
+          let testScore = quickScoreLocal();
+          let dE = testScore - currentScore;
+          
+          if (dE > 0) { 
+            sumDe += dE;
+            validSamples++;
+          }
+          
+          magnets[testIdx].offset = origOff;
+        }
+        
+        let avgDe = validSamples > 0 ? (sumDe / validSamples) : 1;
+        const threadMult = params.threadMultiplier || 1.0;
+        params.T0 = (-avgDe / Math.log(0.8)) * threadMult;
+        // --- END AUTO-TUNE ---
+
+        let bestSaved = magnets.map(m => m.offset);
+        let bestScoreVal = currentScore;
+
+        const coolingRate = Math.pow(1e-5, 1 / params.iters); 
+        let temp = params.T0; 
+        let lastBestIter = 0;
+
+        const progStep = Math.max(100, Math.floor(params.iters / 500));
+
+for (let i = 0; i < params.iters; i++) {
+          // Save the full state before mutating
+          const savedStates = magnets.map(m => m.offset);
+
+          const currentNudge = params.maxNudge * (0.05 + 0.95 * (temp / params.T0));
+
+
+
+          // 
+
+          if (Math.random() < 0.1) {
+            // 10% chance: GLOBAL SHIFT. Move ALL magnets uniformly.
+            // This allows it to easily plunge to the center for "Max Field"
+            const shift = (Math.random() - 0.5) * currentNudge;
+            magnets.forEach(mag => {
+              mag.offset = Math.max(minOffset, Math.min(maxOffset, mag.offset + shift));
+            });
+          } else {
+            // 90% chance: INDEPENDENT NUDGES. Move 1 to 5 magnets.
+            const numToMove = Math.floor(Math.random() * 5) + 1;
+            for (let k = 0; k < numToMove; k++) {
+              const idx = Math.floor(Math.random() * magnets.length);
+              const nudge = (Math.random() - 0.5) * 2 * currentNudge;
+              magnets[idx].offset = Math.max(minOffset, Math.min(maxOffset, magnets[idx].offset + nudge));
+            }
+          }
+
+          const newScore = quickScoreLocal();
+          const dE = newScore - currentScore;
+
+          if (dE < 0 || Math.random() < Math.exp(-dE / (temp + 1e-10))) {
+            currentScore = newScore;
+            if (newScore < bestScoreVal) {
+              bestScoreVal = newScore;
+              bestSaved = magnets.map(m => m.offset);
+              lastBestIter = i;
+              self.postMessage({
+                type: 'newBest',
+                score: bestScoreVal,
+                magnets: magnets.map(m => ({ off: m.offset, pol: m.polarity })),
+                iter: i
+              });
+            }
+          } else {
+            // Restore rejected states
+            magnets.forEach((mag, idx) => { mag.offset = savedStates[idx]; });
+          }
+
+          if (i - lastBestIter > params.iters * 0.20) {
+            // The Parachute: Scramble to a new random location if stuck
+            magnets.forEach(mag => {
+              mag.offset = minOffset + Math.random() * (maxOffset - minOffset);
+            });
+            currentScore = quickScoreLocal();
+            temp = params.T0;
+            lastBestIter = i;
+          } else {
+            temp *= coolingRate;
+          }
+
+          if (i % progStep === 0) {
+            self.postMessage({ type: 'progress', iter: i, temp, currentScore });
+          }
+        }
+
+
+
+        self.postMessage({ type: 'done' });
+      }
+    };
+  `;
+  const blob = new Blob([workerScript], { type: 'application/javascript' });
+  return new Worker(URL.createObjectURL(blob));
+}
+
+
+// bore profile
+function drawBoreProfile(isPrint = false) {
+  const range = parseFloat(document.getElementById('testRadius').value);
+  const nPts = 100;
+  const step = 2 * range / (nPts - 1);
+
+  const axLine = [], bxLine = [], byLine = [], bzLine = [];
+  for (let i = 0; i < nPts; i++) {
+    const t = -range + i * step;
+    const f = totalFieldAt(0, 0, t);
+    axLine.push(t);
+    bxLine.push(f.bx); byLine.push(f.by); bzLine.push(f.bz);
+  }
+
+  const mc = document.getElementById('map-container');
+  mc.style.display = 'flex';
+  document.querySelectorAll('.view-btn').forEach(b => b.classList.remove('active'));
+  document.getElementById('vbtn-bore').classList.add('active');
+  
+  currentMapPlane = 'bore';
+
+  const c = document.getElementById('map-canvas');
+  const size = Math.min(mc.clientWidth - 40, mc.clientHeight - 60, 600);
+  c.width = size; c.height = size;
+  const ctx = c.getContext('2d');
+  drawLineChart(ctx, size, axLine, bxLine, byLine, bzLine, 'Z', range, isPrint);
+  document.getElementById('map-title').textContent = `Bore field profile along Z axis (±${range} mm)`;
+}
+
+function drawLineChart(ctx, size, axLine, bxLine, byLine, bzLine, boreAxis, range, isPrint = false) {
+  const bg = isPrint ? '#ffffff' : '#080b0f';
+  const grid = isPrint ? '#e0e0e0' : '#1a2535';
+  const text = isPrint ? '#000000' : '#8899bb';
+  const zeroLine = isPrint ? '#aaaaaa' : '#2a3a4a';
+
+  ctx.fillStyle = bg; ctx.fillRect(0,0,size,size);
+
+  const pad=50, W=size-2*pad, H=size-2*pad;
+  const allVals=[...bxLine,...byLine,...bzLine];
+  const mn=Math.min(...allVals), mx=Math.max(...allVals);
+  const margin=(mx-mn)*0.1;
+  const vMin=mn-margin, vMax=mx+margin;
+  const tX=t=>(pad + (t+range)/(2*range)*W);
+  const tY=v=>(pad + H - (v-vMin)/(vMax-vMin)*H);
+
+  ctx.strokeStyle=grid; ctx.lineWidth=0.5;
+  for (let i=0;i<=8;i++) {
+    const y=pad+i*H/8; ctx.beginPath();ctx.moveTo(pad,y);ctx.lineTo(pad+W,y);ctx.stroke();
+    const x=pad+i*W/8; ctx.beginPath();ctx.moveTo(x,pad);ctx.lineTo(x,pad+H);ctx.stroke();
+  }
+
+  ctx.strokeStyle=zeroLine; ctx.lineWidth=1;
+  ctx.beginPath();ctx.moveTo(pad,tY(0));ctx.lineTo(pad+W,tY(0));ctx.stroke();
+
+  const drawSeries=(vals,color)=>{
+    ctx.beginPath();ctx.strokeStyle=color;ctx.lineWidth=1.8;
+    vals.forEach((v,i)=>{i===0?ctx.moveTo(tX(axLine[i]),tY(v)):ctx.lineTo(tX(axLine[i]),tY(v));});
+    ctx.stroke();
+  };
+  drawSeries(bxLine,'#e53e3e');
+  drawSeries(byLine,'#a8ff3e');
+  drawSeries(bzLine,'#00d4ff');
+
+  ctx.fillStyle=text; ctx.font='10px JetBrains Mono,monospace'; ctx.textAlign='center';
+  ctx.fillText(`Position along ${boreAxis} (mm)`, size/2, size-8);
+  ctx.save(); ctx.translate(12,size/2); ctx.rotate(-Math.PI/2);
+  ctx.fillText('B (T)', 0, 0); ctx.restore();
+
+  ctx.font='9px JetBrains Mono,monospace'; ctx.textAlign='center';
+  for (let i=0;i<=4;i++) {
+    const t=-range+i*range/2;
+    ctx.fillStyle=text; ctx.fillText(t.toFixed(0), tX(t), pad+H+14);
+  }
+  ctx.textAlign='right';
+  for (let i=0;i<=4;i++) {
+    const v=vMin+i*(vMax-vMin)/4;
+    ctx.fillStyle=text; ctx.fillText(v.toFixed(3), pad-6, tY(v)+4);
+  }
+
+  ctx.font='10px JetBrains Mono,monospace'; ctx.textAlign='left';
+  [['Bx','#e53e3e'],['By','#a8ff3e'],['Bz','#00d4ff']].forEach(([l,c],i)=>{
+    ctx.fillStyle=c; ctx.fillRect(pad+10+i*50,pad+8,14,3);
+    ctx.fillStyle=text; ctx.fillText(l,pad+26+i*50,pad+12);
+  });
+}
+
+
+function _drawMap2DImpl(plane, isPrint = false) {
+  const mc = document.getElementById('map-container');
+  const c  = document.getElementById('map-canvas');
+  const size = Math.min(mc.clientWidth - 40, mc.clientHeight - 60, 600);
+  c.width = size; c.height = size;
+  const ctx = c.getContext('2d');
+
+  const bg = isPrint ? '#ffffff' : '#080b0f';
+  const textCol = isPrint ? '#000000' : '#e2eaf5';
+  const borderCol = isPrint ? '#445566' : '#2a3a4a';
+  
+  ctx.fillStyle = bg;
+  ctx.fillRect(0, 0, size, size);
+
+  const ext = parseFloat(document.getElementById('testRadius').value);
+  const N = 100;
+  const vals = [], step = 2 * ext / (N - 1);
+  let vMin = Infinity, vMax = -Infinity;
+
+  for (let iy = 0; iy < N; iy++) {
+    const row = [];
+    for (let ix = 0; ix < N; ix++) {
+      const u = -ext + ix * step, v = -ext + iy * step;
+      let px = 0, py = 0, pz = 0;
+      if (plane === 'xy') { px = u; py = v; pz = 0; }
+      else if (plane === 'xz') { px = u; pz = v; py = 0; }
+      else { py = u; pz = v; px = 0; }
+      const bv = totalFieldAt(px, py, pz).b;
+      row.push(bv);
+      if (bv < vMin) vMin = bv; if (bv > vMax) vMax = bv;
+    }
+    vals.push(row);
+  }
+
+  // Margin for scales: 40px left/bottom, 70px right for colorbar
+  const padL = 45, padB = 45, padR = 90, padT = 20;
+  const mapSize = size - padL - padR;
+
+  // Render Heatmap
+  const img = ctx.createImageData(mapSize, mapSize);
+  const bpp = mapSize / N;
+  for (let iy = 0; iy < N; iy++) {
+    for (let ix = 0; ix < N; ix++) {
+      const t = (vals[iy][ix] - vMin) / (vMax - vMin);
+      const [r, g, b] = heatmap(t);
+      for (let dy = 0; dy < Math.ceil(bpp); dy++) for (let dx = 0; dx < Math.ceil(bpp); dx++) {
+        const px2 = Math.floor(ix * bpp) + dx, py2 = Math.floor(iy * bpp) + dy;
+        if (px2 >= mapSize || py2 >= mapSize) continue;
+        const i = (py2 * mapSize + px2) * 4;
+        img.data[i] = r; img.data[i+1] = g; img.data[i+2] = b; img.data[i+3] = 255;
+      }
+    }
+  }
+  ctx.putImageData(img, padL, padT);
+
+  // Draw Axes and Ticks
+  ctx.strokeStyle = borderCol;
+  ctx.fillStyle = textCol;
+  ctx.lineWidth = 1;
+  ctx.font = '9px JetBrains Mono, monospace';
+
+  // Y-Axis (Vertical)
+  ctx.textAlign = 'right';
+  for (let i = 0; i <= 4; i++) {
+    const val = ext - (i * (2 * ext) / 4);
+    const y = padT + (i * mapSize / 4);
+    ctx.beginPath(); ctx.moveTo(padL, y); ctx.lineTo(padL - 5, y); ctx.stroke();
+    ctx.fillText(val.toFixed(1), padL - 8, y + 3);
+  }
+
+  // X-Axis (Horizontal)
+  ctx.textAlign = 'center';
+  for (let i = 0; i <= 4; i++) {
+    const val = -ext + (i * (2 * ext) / 4);
+    const x = padL + (i * mapSize / 4);
+    const y = padT + mapSize;
+    ctx.beginPath(); ctx.moveTo(x, y); ctx.lineTo(x, y + 5); ctx.stroke();
+    ctx.fillText(val.toFixed(1), x, y + 15);
+  }
+
+  // Axis Labels
+  ctx.font = 'bold 10px JetBrains Mono, monospace';
+  ctx.fillText("mm", padL + mapSize + 15, padT + mapSize + 15);
+
+  // Colorbar (Adjusted position)
+// Colorbar (Adjusted position)
+  const cbX = padL + mapSize + 15, cbY = padT, cbW = 12, cbH = mapSize;
+  const cg = ctx.createLinearGradient(cbX, cbY, cbX, cbY + cbH);
+  
+  // same scale as heatmap() function
+  
+  cg.addColorStop(0,   'rgb(200,0,0)');    // Red (Max)
+  cg.addColorStop(0.2, 'rgb(255,50,0)');   // Orange/Red
+  cg.addColorStop(0.4, 'rgb(200,200,0)');  // Yellow
+  cg.addColorStop(0.6, 'rgb(0,200,80)');   // Green
+  cg.addColorStop(0.8, 'rgb(0,128,200)');  // Cyan
+  cg.addColorStop(1,   'rgb(0,0,128)');    // Dark Blue (Min)
+  
+  ctx.fillStyle = cg; ctx.fillRect(cbX, cbY, cbW, cbH);
+  ctx.strokeRect(cbX, cbY, cbW, cbH);
+
+  ctx.fillStyle = textCol; ctx.textAlign = 'left';
+  ctx.fillText(vMax.toFixed(4) + " T", cbX + 15, cbY + 10);
+  ctx.fillText(vMin.toFixed(4) + " T", cbX + 15, cbY + cbH);
+
+  document.getElementById('map-title').textContent = `${plane.toUpperCase()} plane field map (mm)`;
+  document.getElementById('map-computing-overlay').style.display = 'none';
+}
+
+
+// ─── 2D plane map (color map of |B|) ───
+let currentMapPlaneActive = null;
+function setMapTab(plane) {
+  currentMapPlane = plane;
+  currentMapPlaneActive = plane;
+  document.getElementById('map-container').style.display='flex';
+  document.querySelectorAll('.view-btn').forEach(b=>b.classList.remove('active'));
+  document.getElementById('vbtn-map-'+plane).classList.add('active');
+  drawMap2D(plane);
+}
+
+function drawMap2D(plane) {
+  const overlay = document.getElementById('map-computing-overlay');
+  overlay.style.display='flex';
+  setTimeout(()=>_drawMap2DImpl(plane),30);
+}
+
+
+
+function heatmap(t) {
+  // Viridis-like: dark blue → cyan → green → yellow → red
+  const stops = [[0,0,128],[0,128,200],[0,200,80],[200,200,0],[255,50,0],[200,0,0]];
+  const s = t*(stops.length-1), i=Math.min(Math.floor(s),stops.length-2), f=s-i;
+  return stops[i].map((c,j)=>Math.round(c+(stops[i+1][j]-c)*f));
+}
+
+// view
+function setView(mode) {
+  document.getElementById('map-container').style.display='none';
+  currentMapPlane = null;
+  document.querySelectorAll('.view-btn').forEach(b => b.classList.remove('active'));
+  document.getElementById('vbtn-' + mode).classList.add('active');
+  
+  // Dynamically calculate a comfortable zoom distance based on the sphere's radius
+  const R = parseFloat(document.getElementById('baseRadius').value) || 80;
+  const fitRadius = R * 4.0; 
+
+  if (mode === '3d')    targetView = {theta: 0.6, phi: 1.15, radius: fitRadius};
+  if (mode === 'top')   targetView = {theta: 0, phi: 0.01, radius: fitRadius};
+  if (mode === 'front') targetView = {theta: 0, phi: Math.PI / 2, radius: fitRadius};
+  if (mode === 'side')  targetView = {theta: Math.PI / 2, phi: Math.PI / 2, radius: fitRadius};
+}
+
+function drawSchlegelDiagram(ctx, size, isPrint = false) {
+  const bg = isPrint ? '#ffffff' : '#080b0f';
+  const textCol = isPrint ? '#000000' : '#e2eaf5';
+  const lineCol = isPrint ? '#cccccc' : '#2a3a4a';
+
+  ctx.fillStyle = bg;
+  ctx.fillRect(0, 0, size, size);
+
+  // 1. Stereographic projection from the Z-axis
+  const projected = magnets.map((mag, i) => {
+    // 1.05 factor ensures the projection doesn't warp to infinity near the top
+    const factor = 1 / (1.05 - mag.dir.z); 
+    return {
+      idx: i,
+      x: mag.dir.x * factor,
+      y: mag.dir.y * factor,
+      pol: mag.polarity,
+      v3: mag.dir
+    };
+  });
+
+  // 2. Center and scale perfectly around the true origin (0,0) to preserve symmetry
+  let maxR = 0;
+  projected.forEach(p => {
+    const r = Math.hypot(p.x, p.y);
+    if (r > maxR) maxR = r;
+  });
+
+  const pad = 40;
+  const cx = size / 2, cy = size / 2;
+  // Scale based on the maximum radial distance from the true center
+  const scale = (size / 2 - pad) / maxR;
+
+  projected.forEach(p => {
+    p.px = cx + p.x * scale;
+    p.py = cy - p.y * scale; // Invert Y for canvas drawing
+  });
+
+  // 3. Draw C60 edges
+  ctx.strokeStyle = lineCol;
+  ctx.lineWidth = 2;
+  for (let i = 0; i < projected.length; i++) {
+    for (let j = i + 1; j < projected.length; j++) {
+      // Adjacent nodes on a unit C60 sphere are ~0.40 units apart.
+      if (projected[i].v3.distanceTo(projected[j].v3) < 0.45) {
+        ctx.beginPath();
+        ctx.moveTo(projected[i].px, projected[i].py);
+        ctx.lineTo(projected[j].px, projected[j].py);
+        ctx.stroke();
+      }
+    }
+  }
+
+  // 4. Draw numbered nodes
+  projected.forEach(p => {
+    ctx.beginPath();
+    ctx.arc(p.px, p.py, 14, 0, Math.PI * 2);
+    
+    // Polarity 1 = North inward -> Outside is South (Blue)
+    // Polarity -1 = South inward -> Outside is North (Red)
+    ctx.fillStyle = p.pol === 1 ? (isPrint ? '#ddddff' : '#3182ce') : (isPrint ? '#ffdddd' : '#e53e3e');
+   
+    ctx.fill();
+    ctx.strokeStyle = isPrint ? '#000000' : '#ffffff';
+    ctx.lineWidth = 1.5;
+    ctx.stroke();
+
+    ctx.fillStyle = isPrint ? '#000000' : '#ffffff';
+    ctx.font = 'bold 11px JetBrains Mono, monospace';
+    ctx.textAlign = 'center';
+    ctx.textBaseline = 'middle';
+    ctx.fillText((p.idx + 1).toString(), p.px, p.py);
+  });
+}
+
+
+//with ui busy and all data, 17 avril
+async function exportPDF() {
+  // 1. Make the UI look busy
+  document.body.style.cursor = 'wait';
+  const exportBtn = document.querySelector('button[onclick="exportPDF()"]');
+  const originalBtnText = exportBtn ? exportBtn.textContent : 'PDF Export';
+  if (exportBtn) { 
+    exportBtn.disabled = true; 
+    exportBtn.textContent = 'Generating...'; 
+  }
+
+  // Yield thread to allow DOM to update the cursor and button before heavy lifting
+  await new Promise(resolve => setTimeout(resolve, 50));
+
+  try {
+    const { jsPDF } = window.jspdf;
+    const doc = new jsPDF();
+    const margin = 10;
+    const pageWidth = doc.internal.pageSize.getWidth();
+    const pageHeight = doc.internal.pageSize.getHeight();
+    const imgW = pageWidth - (margin * 2);
+    let y = 10;
+
+    // Generate Timestamps
+    const now = new Date();
+    const timestampFile = now.toISOString().replace(/[:.]/g, '-').slice(0, 19);
+    const timestampText = now.toLocaleString();
+
+    // --- PAGE 1: REPORT STRUCTURE ---
+    
+    // Title & Metadata
+    doc.setFontSize(16);
+    doc.text("Magic Sphere · Simulation Report", margin, y);
+    y += 8;
+
+    doc.setFontSize(9);
+    doc.setTextColor(100);
+    doc.text(`Generated on: ${timestampText}`, margin, y); y += 5;
+    doc.text(`Program URL: ${window.location.href}`, margin, y); y += 10;
+    doc.setTextColor(0);
+
+    // Geometry & Magnets
+    doc.setFontSize(12);
+    doc.text("1. Simulation Parameters", margin, y); y += 6;
+    doc.setFontSize(10);
+    const geomParams = [
+      `Sphere Radius (R): ${document.getElementById('baseRadius').value} mm`,
+      `Test Volume (r): ${document.getElementById('testRadius').value} mm`,
+      `Dipole Diameter: ${document.getElementById('magDiam').value} mm`,
+      `Dipole Length: ${document.getElementById('magLen').value} mm`,
+      `Remanence (Br): ${document.getElementById('magBr').value} T`
+    ];
+    geomParams.forEach(p => { doc.text(`• ${p}`, margin + 5, y); y += 5; });
+    y += 4;
+
+    // Computed Field
+    doc.setFontSize(12);
+    doc.text("2. Computed Field (Center)", margin, y); y += 6;
+    doc.setFontSize(10);
+    const fields = [
+      `|B|: ${document.getElementById('sv-Bc').textContent} T`,
+      `Bx: ${document.getElementById('sv-Bx').textContent} T`,
+      `By: ${document.getElementById('sv-By').textContent} T`,
+      `Bz: ${document.getElementById('sv-Bz').textContent} T`,
+      `Error: ${document.getElementById('sv-Var').textContent}`
+    ];
+    doc.text(fields.join('   |   '), margin + 5, y);
+    y += 8;
+
+    // Optimizer Parameters
+    doc.setFontSize(12);
+
+    // Optimizer Parameters
+    doc.setFontSize(12);
+    doc.text("3. Simulated Annealing Parameters", margin, y); y += 6;
+    doc.setFontSize(10);
+    const optObjSelect = document.getElementById('optObj');
+    const optObjText = optObjSelect.options[optObjSelect.selectedIndex].text;
+    const flipText = document.getElementById('optFlipField')?.checked ? "Yes" : "No";
+
+    const optParams = [
+      `Iterations: ${document.getElementById('optIters').value}`,
+      `Max Radial Nudge: ${document.getElementById('optNudge').value} mm`,
+      `Temperature (T0 / Tf): Auto-tuned`,
+      `Objective: ${optObjText}`,
+      `Field Flipping Allowed: ${flipText}`
+    ];
+    optParams.forEach(p => { doc.text(`• ${p}`, margin + 5, y); y += 5; });
+
+    // --- PAGE 2+: 3D VIEWS ---
+    
+    const origBg = scene.background;
+    scene.background = new THREE.Color(0xffffff);
+    gridHelper.visible = false;
+    axisHelper.visible = false;
+
+    const prevLabelsState = document.getElementById('showLabels').checked;
+    document.getElementById('showLabels').checked = true; // Force labels ON
+    drawScene(); 
+
+    const origCam = { radius: spherical.radius, theta: spherical.theta, phi: spherical.phi };
+    const R = parseFloat(document.getElementById('baseRadius').value);
+    spherical.radius = R * 4.5; 
+
+    const views = [
+      { name: 'Top', theta: 0, phi: 0.01 },
+      { name: 'Front', theta: 0, phi: Math.PI / 2 },
+      { name: 'Side', theta: Math.PI / 2, phi: Math.PI / 2 }
+    ];
+
+    for (let i = 0; i < views.length; i++) {
+      doc.addPage();
+      spherical.theta = views[i].theta; spherical.phi = views[i].phi;
+      camera.position.x = spherical.radius * Math.sin(spherical.phi) * Math.sin(spherical.theta);
+      camera.position.y = spherical.radius * Math.sin(spherical.phi) * Math.cos(spherical.theta);
+      camera.position.z = spherical.radius * Math.cos(spherical.phi);
+      camera.lookAt(0, 0, 0);
+      renderer.render(scene, camera);
+      
+      const imgData = canvas.toDataURL("image/jpeg", 1.0);
+      doc.setFontSize(14);
+      doc.text(`3D View: ${views[i].name} (Dipole Numbers)`, margin, 10);
+      doc.addImage(imgData, 'JPEG', margin, 15, imgW, imgW * (canvas.height / canvas.width));
+    }
+
+    // Restore 3D Scene
+    scene.background = origBg;
+    gridHelper.visible = true; axisHelper.visible = true;
+    spherical.theta = origCam.theta; spherical.phi = origCam.phi; spherical.radius = origCam.radius;
+    document.getElementById('showLabels').checked = prevLabelsState;
+    drawScene();
+    renderer.render(scene, camera);
+
+
+    // --- 2D MAPS ---
+
+    const mapCanvas = document.getElementById('map-canvas');
+    const activePlane = currentMapPlane;
+    const mapDisplay = document.getElementById('map-container').style.display;
+    
+    const plots = [
+      { name: 'Bore Field Profile (Z-axis)', run: () => drawBoreProfile(true) },
+      { name: 'XY Plane Field Map', run: () => _drawMap2DImpl('xy', true) },
+      { name: 'XZ Plane Field Map', run: () => _drawMap2DImpl('xz', true) },
+      { name: 'YZ Plane Field Map', run: () => _drawMap2DImpl('yz', true) },
+      { name: 'Schlegel Projection (color of outside pole)', run: () => drawSchlegelDiagram(mapCanvas.getContext('2d'), mapCanvas.width, true) }
+    ];
+
+    for (let i = 0; i < plots.length; i++) {
+      doc.addPage();
+      doc.setFontSize(14);
+      doc.text(plots[i].name, margin, 10);
+      plots[i].run(); 
+      const chartData = mapCanvas.toDataURL("image/png", 1.0);
+      doc.addImage(chartData, 'PNG', margin, 15, imgW, imgW * (mapCanvas.height / mapCanvas.width));
+    }
+
+    // Restore 2D UI State
+    if (activePlane === 'bore') drawBoreProfile(false);
+    else if (activePlane) _drawMap2DImpl(activePlane, false);
+    document.getElementById('map-container').style.display = mapDisplay;
+
+
+    // --- DIPOLE LIST ---
+
+    doc.addPage(); 
+    y = 10;
+    doc.setFontSize(14);
+    doc.text("Dipole Positions (radius)", margin, y);
+    y += 8;
+    
+    doc.setFontSize(10);
+    const len = parseFloat(document.getElementById('magLen').value);
+    
+    magnets.forEach((mag, i) => {
+      const distInner = R + mag.offset;
+      const distOuter = R + mag.offset + len;
+      const posN = mag.polarity === 1 ? distInner : distOuter;
+      const posS = mag.polarity === 1 ? distOuter : distInner;
+      
+      if (y > pageHeight - 15) { doc.addPage(); y = 10; }
+      doc.text(`Dipole ${i + 1}: N face at ${posN.toFixed(2)} mm, S face at ${posS.toFixed(2)} mm`, margin, y);
+      y += 6;
+    });
+
+    // 2. Add Timestamp to Filename
+    doc.save(`MagicSphere_Report_${timestampFile}.pdf`);
+
+  } catch (error) {
+    console.error("PDF generation failed:", error);
+  } finally {
+    // 3. Restore the UI 
+    document.body.style.cursor = 'default';
+    if (exportBtn) { 
+      exportBtn.disabled = false; 
+      exportBtn.textContent = originalBtnText; 
+    }
+  }
+}
+
+
+
+// tooltip
+function showTooltip(msg, dur) {
+  const t=document.getElementById('tooltip');
+  t.innerHTML=msg.replace(/\n/g,'<br>');
+  clearTimeout(t._timer);
+  t._timer=setTimeout(()=>{
+    t.innerHTML='<b style="color:var(--accent)">MANDHALA</b> · 48 dipoles on C60 lattice<br>Bore: top pentagon removed · All dipoles point to center<br>Rotate: drag · Zoom: scroll · Pan: right-drag';
+  },dur||4000);
+}
+
+// ═══════════════════════════════════════════════════════════════
+//  RENDER LOOP
+// ═══════════════════════════════════════════════════════════════
+let prevTime=0;
+function animate(time) {
+  requestAnimationFrame(animate);
+  const dt=(time-prevTime)*0.001; prevTime=time;
+
+  if (targetView) {
+    spherical.theta += (targetView.theta-spherical.theta)*0.09;
+    spherical.phi   += (targetView.phi-spherical.phi)*0.09;
+    spherical.radius+= (targetView.radius-spherical.radius)*0.09;
+    if (Math.abs(spherical.theta-targetView.theta)<0.0001 &&
+        Math.abs(spherical.phi-targetView.phi)<0.0001) targetView=null;
+  }
+
+  camera.position.x = spherical.radius*Math.sin(spherical.phi)*Math.sin(spherical.theta)+panOffset.x;
+  camera.position.y = spherical.radius*Math.sin(spherical.phi)*Math.cos(spherical.theta)+panOffset.y;
+  camera.position.z = spherical.radius*Math.cos(spherical.phi);
+  camera.up.set(0,0,1);
+  camera.lookAt(panOffset.x,panOffset.y,0);
+
+  if (!isMouseDown && !targetView && !optRunning) spherical.theta += 0.0003;
+  renderer.render(scene,camera);
+}
+
+function resize() {
+  const W=canvas.parentElement.clientWidth, H=canvas.parentElement.clientHeight;
+  renderer.setSize(W,H);
+  camera.aspect=W/H;
+  camera.updateProjectionMatrix();
+}
+window.addEventListener('resize',()=>{
+  resize();
+  if (currentMapPlane) drawMap2D(currentMapPlane);
+});
+
+
+// Input debounce for live stats, maps, and profile
+let mapTimer=null;
+document.querySelectorAll('input, select').forEach(el=>{
+  el.addEventListener('input',()=>{
+    evaluateField(); // <-- Updates Computed Field instantly on any UI change
+    if (currentMapPlane) {
+      clearTimeout(mapTimer);
+      mapTimer=setTimeout(()=>{
+        if (currentMapPlane === 'bore') drawBoreProfile();
+        else drawMap2D(currentMapPlane);
+      }, 300);
+    }
+  });
+});
+
+
+
+//  INIT
+// 
+resize();
+onGeomChange();
+animate(0);
+</script>
+</body>
+</html>
