@@ -87,15 +87,16 @@ There is an interactive 3D view (Three.js) with camera presets: 3D, top, front, 
   - Test volume
   - Magnet polarity (color-coded)
 
-
 ### Field Mapping
 - 2D field maps in XY, XZ, YZ planes
 - Bore profile along Z axis
 - Real-time computation
 
 ### Optimization (Simulated Annealing)
-- Multi-threaded using Web Workers (from 4 to 12 cores, adaptable dpeending on the user CPU). Some parameters are adjustable:
+Multi-threaded using Web Workers (from 4 to 12 cores, adaptable dpeending on the user CPU). Some parameters are adjustable:
   Iterations, Maximum displacement in a cycle (confined to the sphere). Objective functions are Maximize homogeneity, Maximize field strength or Combined objective of the previous two.
+  
+  There is a hardcoded restriction: the dipoles are moved symmetrically.
 
 - Features:
   - Automatic temperature tuning
