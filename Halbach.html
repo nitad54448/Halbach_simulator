@@ -16,8 +16,6 @@
   --text: #e2eaf5;
   --muted: #99aed4;
   --label: #7a8fa6;
-  --north: #e53e3e;
-  --south: #3182ce;
   --button: #1c3247;
 }
 
@@ -37,8 +35,8 @@ body {
   flex-direction: row !important;
   align-items: center;
   gap: 8px;
-  height: 33px; 
-  margin-top: 18px; 
+  height: 33px;
+  margin-top: 18px;
 }
 .checkbox-row input {
   width: auto !important;
@@ -137,40 +135,6 @@ body {
 
 .two-col { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; }
 
-/* STATS */
-.stats-grid {
-  display: grid;
-  grid-template-columns: 1fr 1fr;
-  gap: 8px;
-}
-.stat-card {
-  background: #0d1117;
-  border: 1px solid #2a3a4a;
-  border-radius: 4px;
-  padding: 10px 8px;
-}
-.stat-card .sv {
-  font-family: 'JetBrains Mono', monospace;
-  font-size: 15px;
-  font-weight: 700;
-  color: #00d4ff;
-  line-height: 1.2;
-  letter-spacing: -0.02em;
-  word-break: break-all;
-}
-.stat-card .sl {
-  font-size: 8px;
-  color: #7a8fa6;
-  margin-top: 5px;
-  letter-spacing: 0.08em;
-  text-transform: uppercase;
-}
-
-/* LEGEND */
-.legend { display: flex; gap: 12px; flex-wrap: wrap; }
-.leg-item { display: flex; align-items: center; gap: 6px; font-size: 10px; color: var(--label); }
-.leg-dot { width: 10px; height: 10px; border-radius: 50%; flex-shrink: 0; }
-
 /* BUTTONS */
 .btn-group { display: flex; gap: 8px; margin-top: 6px; }
 .btn {
@@ -235,8 +199,6 @@ body {
 }
 .sep { width: 1px; height: 20px; background: var(--border); margin: 0 4px; }
 .spacer { flex: 1; }
-.coord-display { font-size: 10px; color: var(--muted); letter-spacing: 0.05em; }
-
 /* VIEWPORT AREA */
 .viewport-area {
   flex: 1;
@@ -249,56 +211,6 @@ body {
   position: absolute;
   top: 0; left: 0;
   width: 100%; height: 100%;
-}
-
-/* PROJECTION PANEL */
-.proj-panel {
-  width: 220px;
-  background: var(--panel);
-  border-left: 1px solid var(--border);
-  display: flex;
-  flex-direction: column;
-  overflow: hidden;
-  flex-shrink: 0;
-  transition: width 0.3s;
-}
-.proj-panel.hidden { width: 0; overflow: hidden; }
-
-.proj-header {
-  padding: 10px 14px;
-  border-bottom: 1px solid var(--border);
-  font-size: 9px;
-  font-weight: 600;
-  letter-spacing: 0.15em;
-  color: var(--muted);
-  text-transform: uppercase;
-}
-
-.proj-view {
-  flex: 1;
-  display: flex;
-  flex-direction: column;
-  overflow: hidden;
-}
-.proj-view-title {
-  font-size: 9px;
-  color: var(--accent);
-  letter-spacing: 0.1em;
-  padding: 6px 14px 2px;
-  text-transform: uppercase;
-}
-.proj-canvas {
-  flex: 1;
-  border-bottom: 1px solid var(--border);
-}
-canvas.proj { display: block; width: 100%; }
-
-/* FIELD INDICATOR */
-.field-arrow {
-  padding: 8px 14px;
-  font-size: 9px;
-  color: var(--muted);
-  border-bottom: 1px solid var(--border);
 }
 
 /* TOOLTIP */
@@ -335,7 +247,7 @@ canvas.proj { display: block; width: 100%; }
 <div class="left">
   <div class="brand">
     <h1>Halbach Ring</h1>
-    <p>MAGNETIC ARRAY SIMULATOR · v2.3</p>
+    <p>MAGNETIC ARRAY SIMULATOR · v2.4</p>
   </div>
 
 
@@ -363,7 +275,7 @@ canvas.proj { display: block; width: 100%; }
 <!-- MAGNET -->
 <div class="section">
   <div class="section-title">Magnets</div>
-  
+
   <div class="two-col">
     <div class="field-row">
       <label>Rings</label>
@@ -381,14 +293,14 @@ canvas.proj { display: block; width: 100%; }
 
 <div id="phaseOffsetContainer" style="display:none; margin-top:4px;">
     <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 10px; align-items: end;">
-      
+
       <div class="field-row" style="margin-bottom: 0;">
         <label>Phase Offset (°)</label>
         <input type="number" id="phaseOffset2" value="0" step="1" oninput="update()">
       </div>
-      
+
       <button class="btn" id="btn-estimate" onclick="estimateOptimalOffset()" style="width: 100%; margin: 0; height: 33px; padding: 0; box-sizing: border-box;">Optimize</button>
-      
+
     </div>
   </div>
 
@@ -400,7 +312,7 @@ canvas.proj { display: block; width: 100%; }
 
   <div style="border-top:1px solid var(--border); padding-top:10px; margin-top:10px;">
     <div class="section-title" style="color:var(--accent);">Ring 1 (Inner)</div>
-    
+
     <div class="two-col">
       <div class="field-row">
         <label>Field Br (T)</label>
@@ -438,7 +350,7 @@ canvas.proj { display: block; width: 100%; }
 
   <div id="ring2-params" style="display:none; border-top:1px solid var(--border); padding-top:10px; margin-top:5px;">
     <div class="section-title" style="color:var(--accent2);">Ring 2 (Outer)</div>
-    
+
     <div class="two-col">
       <div class="field-row">
         <label>Field Br (T)</label>
@@ -496,6 +408,29 @@ canvas.proj { display: block; width: 100%; }
   </div>
 </div>
 
+<!-- MONTE CARLO OPTIMIZATION -->
+<div class="section">
+  <div class="section-title">Position Optimizer (Monte Carlo)</div>
+  <div class="two-col">
+    <div class="field-row">
+      <label>Max Nudge (mm)</label>
+      <input type="number" id="mcNudge" value="2" min="0.1" max="20" step="0.1">
+    </div>
+    <div class="field-row">
+      <label>Iterations</label>
+      <input type="number" id="mcIterations" value="500" min="50" max="5000" step="50">
+    </div>
+  </div>
+  <div class="field-row" style="margin-top:4px;">
+    <label>Optimizer Status</label>
+    <input type="text" id="mcStatus" value="Ready" readonly style="color: var(--muted); background: var(--bg); border: 1px solid var(--border); font-size:11px; text-align:center;">
+  </div>
+  <div class="btn-group" style="margin-top:8px;">
+    <button class="btn" id="btn-mc-optimize" onclick="runMonteCarloOptimize()">Optimize</button>
+    <button class="btn" id="btn-mc-reset" onclick="resetOptimizedPositions()">Reset</button>
+  </div>
+</div>
+
 <div class="section">
   <div class="section-title">Holder</div>
   <div class="two-col">
@@ -533,7 +468,7 @@ canvas.proj { display: block; width: 100%; }
       <input type="text" id="stat-Bouter" value="—" readonly style="color: var(--accent); font-weight: 700; background: var(--bg); text-align: center; border: 1px solid var(--border);">
     </div>
   </div>
-  
+
 
  <div class="two-col" style="margin-top: 12px;">
     <div class="field-row">
@@ -548,26 +483,21 @@ canvas.proj { display: block; width: 100%; }
 </div>
 
 
- 
+
   <!-- ACTIONS -->
 <div class="section">
   <div class="section-title">Actions</div>
   <div class="btn-group">
     <button class="btn" onclick="exportSTL()">STL 3D Model</button>
-  
+
     <button class="btn" onclick="generatePDF()">Report PDF</button>
   </div>
 </div>
 
-  <div class="footer">NitaD · Univ. Paris-Saclay · 15 april 2026</div>
+  <div class="footer">NitaD · Univ. Paris-Saclay · 18 april 2026</div>
 </div>
 
 <!-- MAIN -->
-<div class="main">
-
-
-
-
 <div class="main">
   <div class="toolbar">
     <span class="toolbar-label">View</span>
@@ -583,7 +513,7 @@ canvas.proj { display: block; width: 100%; }
     <span class="toolbar-label">2D Maps</span>
     <button class="view-btn" id="vbtn-map-xy" onclick="setMapTab('xy')">XY Plane</button>
     <button class="view-btn" id="vbtn-map-xz" onclick="setMapTab('xz')">XZ Plane</button>
-    
+
     <button class="view-btn" id="vbtn-map-yz" onclick="setMapTab('yz')">YZ Plane</button>
     <button class="view-btn" id="vbtn-map-sphere" onclick="showSphereMap()">Sphere Map</button>
 
@@ -632,7 +562,7 @@ canvas.proj { display: block; width: 100%; }
 
 <script>
 
-// 3JS 
+// 3JS
 
 const canvas = document.getElementById('threejs-canvas');
 const renderer = new THREE.WebGLRenderer({ canvas, antialias: true, alpha: false });
@@ -682,7 +612,6 @@ let lastMouse = { x: 0, y: 0 };
 let spherical = { theta: 0.4, phi: 1.1, radius: 220 };
 let panOffset = { x: 0, y: 0 };
 let targetView = null;
-let animating = false;
 
 canvas.addEventListener('mousedown', e => {
   isMouseDown = true; mouseButton = e.button;
@@ -721,34 +650,34 @@ function setView(mode) {
   document.getElementById('map-container').style.display = 'none';
   document.getElementById('sphere-colorbar').style.display = 'none'; // Hide colorbar
   currentMapPlane = null;
-  
+
   document.querySelectorAll('.view-btn').forEach(b => b.classList.remove('active'));
   document.getElementById('vbtn-' + mode).classList.add('active');
   document.getElementById('dbtn-' + displayMode).classList.add('active');
 
   if (mode === '3d') targetView = { theta: 0.4, phi: 1.1, radius: 220 };
-  else if (mode === 'top') targetView = { theta: 0, phi: 0.01, radius: 200 };   
-  else if (mode === 'front') targetView = { theta: 0, phi: Math.PI / 2, radius: 200 };  
-  else if (mode === 'side') targetView = { theta: Math.PI / 2, phi: Math.PI / 2, radius: 200 }; 
-  
+  else if (mode === 'top') targetView = { theta: 0, phi: 0.01, radius: 200 };
+  else if (mode === 'front') targetView = { theta: 0, phi: Math.PI / 2, radius: 200 };
+  else if (mode === 'side') targetView = { theta: Math.PI / 2, phi: Math.PI / 2, radius: 200 };
+
   update();
 }
 
 function setMapTab(plane) {
   window.isSphereView = false;
-  plane = plane.toLowerCase(); 
+  plane = plane.toLowerCase();
   const container = document.getElementById('map-container');
   if (container) container.style.display = 'flex';
   document.getElementById('sphere-colorbar').style.display = 'none'; // Hide colorbar
-  
+
   document.querySelectorAll('.view-btn').forEach(b => b.classList.remove('active'));
-  
+
   const tabBtn = document.getElementById('vbtn-map-' + plane) || document.getElementById('tab-' + plane);
   if (tabBtn) tabBtn.classList.add('active');
-  
+
   const dispBtn = document.getElementById('dbtn-' + displayMode);
-  if (dispBtn) dispBtn.classList.add('active'); 
-  
+  if (dispBtn) dispBtn.classList.add('active');
+
   currentMapPlane = plane;
   if (typeof drawSingleMap === 'function') {
     drawSingleMap(plane);
@@ -761,13 +690,13 @@ function showSphereMap() {
   document.getElementById('map-container').style.display = 'none';
   document.getElementById('sphere-colorbar').style.display = 'flex'; // Show colorbar
   currentMapPlane = null;
-  
+
   document.querySelectorAll('.view-btn').forEach(b => b.classList.remove('active'));
   document.getElementById('vbtn-map-sphere').classList.add('active');
-  
+
   const targetR = parseFloat(document.getElementById('testRadius').value) || 10;
   targetView = { theta: 0.4, phi: 1.1, radius: Math.max(80, targetR * 3) };
-  
+
   update();
 }
 
@@ -804,7 +733,7 @@ function ellipticKE(m) {
   if (m >= 1.0) m = 0.9999999;
   if (m < 0)    m = 0;
   // K via AGM
-  let a = 1.0, b = Math.sqrt(1.0 - m), c = 1.0;
+  let a = 1.0, b = Math.sqrt(1.0 - m);
   for (let i = 0; i < 20; i++) {
     const a1 = (a + b) / 2;
     const b1 = Math.sqrt(a * b);
@@ -812,21 +741,8 @@ function ellipticKE(m) {
     if (Math.abs(a - b) < 1e-12) break;
   }
   const K = Math.PI / (2 * a);
-  // E via Landen's series (fast convergence)
-  let a2 = 1.0, b2 = Math.sqrt(1.0 - m), sum = 1.0 - m / 2, pw = 0.5;
-  for (let i = 0; i < 20; i++) {
-    const a3 = (a2 + b2) / 2;
-    const b3 = Math.sqrt(a2 * b2);
-    pw *= 2;
-    sum -= pw * Math.pow(a3 - b3, 2) / 4;   // correction term
-    a2 = a3; b2 = b3;
-    if (Math.abs(a3 - b3) < 1e-12) break;
-  }
-  const E = K * sum;   // E = K · (1 − Σ corrections)
-  // Fallback: simpler sum-based E
-  // Use direct polynomial for robustness:
-  const E2 = ellipticE_agm(m);
-  return [K, E2];
+  const E = ellipticE_agm(m);
+  return [K, E];
 }
 
 function ellipticE_agm(m) {
@@ -973,10 +889,10 @@ function onMagnetShapeChange() {
 function updateUIToggle() {
   const numRings = document.getElementById('numRings').value;
   const isTwoRings = (numRings === '2');
-  
+
   document.getElementById('ring2-params').style.display = isTwoRings ? 'block' : 'none';
   document.getElementById('phaseOffsetContainer').style.display = isTwoRings ? 'flex' : 'none';
-  
+
   update();
 }
 
@@ -1043,7 +959,7 @@ function cuboidField(px, py, pz,          // eval point (mm)
   for (let i = 0; i <= 1; i++) {
     for (let j = 0; j <= 1; j++) {
       for (let kk = 0; kk <= 1; kk++) {
-        const sign = Math.pow(-1, i + j + kk);
+        const sign = ((i + j + kk) & 1) ? -1 : 1;  // faster than Math.pow(-1,n)
         const xi = u + (2*i  - 1) * hL;
         const yj = v + (2*j  - 1) * hW;
         const zk = w + (2*kk - 1) * hH;
@@ -1088,7 +1004,7 @@ function getMagnetParams() {
   for (let i = 1; i <= numRings; i++) {
     const Br = parseFloat(document.getElementById(`magB${i}`).value) || 1.2;
     const rPlace = (parseFloat(document.getElementById(`magRadius${i}`).value) || 70) / 2;
-    const zOffset = parseFloat(document.getElementById(`magZ${i}`).value) || 0; // NEW: Z-Shift
+    const zOffset = parseFloat(document.getElementById(`magZ${i}`).value) || 0;
     const phaseOffset = i === 2 ? (parseFloat(document.getElementById('phaseOffset2').value) * Math.PI / 180) : 0;
 
     let magDiam, magLen, magWidth, magHeight;
@@ -1107,45 +1023,11 @@ function getMagnetParams() {
 }
 
 
-// ── Vector Field 
-// 1. Replace fieldVectorAt
-function fieldVectorAt(x, y, z) {
-  const { shape, nPoles, k, rings } = getMagnetParams();
-  let Bx = 0, By = 0, Bz = 0;
-  const angleStep = (2 * Math.PI) / nPoles;
-
-  for (let r = 0; r < rings.length; r++) {
-    const ring = rings[r];
-
-    for (let i = 0; i < nPoles; i++) {
-      const theta0 = i * angleStep;
-      const phi0   = k * theta0; 
-
-      const theta = theta0 + ring.phaseOffset;
-      const phi   = phi0   + ring.phaseOffset;
-
-      const cx = ring.rPlace * Math.cos(theta);
-      const cy = ring.rPlace * Math.sin(theta);
-      const cz = ring.zOffset; // NEW: Apply Z Shift
-
-      const mux = Math.cos(phi);
-      const muy = Math.sin(phi);
-      const muz = 0;
-
-      let contrib;
-      if (shape === 'cylinder') {
-        contrib = cylinderField(x, y, z, cx, cy, cz, mux, muy, muz, ring.magDiam/2, ring.magLen/2, ring.Br);
-      } else {
-        contrib = cuboidField(x, y, z, cx, cy, cz, mux, muy, muz, ring.magWidth/2, ring.magHeight/2, ring.magLen/2, ring.Br);
-      }
-      Bx += contrib.Bx; By += contrib.By; Bz += contrib.Bz;
-    }
-  }
-  return { Bx, By, Bz };
-}
-
-// 2. Replace fieldAtWithParams
-function fieldAtWithParams(x, y, z, params) {
+// ── Core field summation ──────────────────────────────────────────────────────
+// Shared inner loop used by fieldVectorAt and fieldAtWithParams.
+// params: from getMagnetParams(). offsets: optimizedOffsets or null (use Halbach positions).
+// Returns {Bx, By, Bz}.
+function _sumField(x, y, z, params, offsets) {
   const { shape, nPoles, k, rings } = params;
   let Bx = 0, By = 0, Bz = 0;
   const angleStep = (2 * Math.PI) / nPoles;
@@ -1154,33 +1036,43 @@ function fieldAtWithParams(x, y, z, params) {
     const ring = rings[r];
     for (let i = 0; i < nPoles; i++) {
       const theta0 = i * angleStep;
-      const phi0   = k * theta0;
-      const theta = theta0 + ring.phaseOffset;
-      const phi   = phi0   + ring.phaseOffset;
+      const theta  = theta0 + ring.phaseOffset;
+      const phi    = k * theta0 + ring.phaseOffset;
 
-      const cx = ring.rPlace * Math.cos(theta);
-      const cy = ring.rPlace * Math.sin(theta);
-      const cz = ring.zOffset; // NEW: Apply Z Shift
-      
+      const cx = (offsets && offsets[r] && offsets[r][i])
+        ? offsets[r][i].cx : ring.rPlace * Math.cos(theta);
+      const cy = (offsets && offsets[r] && offsets[r][i])
+        ? offsets[r][i].cy : ring.rPlace * Math.sin(theta);
+      const cz  = ring.zOffset;
       const mux = Math.cos(phi);
       const muy = Math.sin(phi);
 
-      let contrib;
-      if (shape === 'cylinder') {
-        contrib = cylinderField(x, y, z, cx, cy, cz, mux, muy, 0, ring.magDiam/2, ring.magLen/2, ring.Br);
-      } else {
-        contrib = cuboidField(x, y, z, cx, cy, cz, mux, muy, 0, ring.magWidth/2, ring.magHeight/2, ring.magLen/2, ring.Br);
-      }
+      const contrib = (shape === 'cylinder')
+        ? cylinderField(x, y, z, cx, cy, cz, mux, muy, 0, ring.magDiam/2, ring.magLen/2, ring.Br)
+        : cuboidField(x, y, z, cx, cy, cz, mux, muy, 0, ring.magWidth/2, ring.magHeight/2, ring.magLen/2, ring.Br);
+
       Bx += contrib.Bx; By += contrib.By; Bz += contrib.Bz;
     }
   }
+  return { Bx, By, Bz };
+}
+
+// Returns full vector {Bx,By,Bz} using current UI params + any optimized positions.
+function fieldVectorAt(x, y, z) {
+  const v = _sumField(x, y, z, getMagnetParams(), optimizedOffsets);
+  return v;
+}
+
+// Returns scalar |B| using explicit params + any optimized positions.
+// Used by calculateVariance, buildSphereGeometry, estimateOptimalOffset.
+function fieldAtWithParams(x, y, z, params) {
+  const { Bx, By, Bz } = _sumField(x, y, z, params, optimizedOffsets);
   return Math.sqrt(Bx*Bx + By*By + Bz*Bz);
 }
 
-
 function fieldAt(x, y, z) {
-  const v = fieldVectorAt(x, y, z);
-  return Math.sqrt(v.Bx*v.Bx + v.By*v.By + v.Bz*v.Bz);
+  const { Bx, By, Bz } = _sumField(x, y, z, getMagnetParams(), optimizedOffsets);
+  return Math.sqrt(Bx*Bx + By*By + Bz*Bz);
 }
 
 function drawSingleMap(plane) {
@@ -1228,7 +1120,7 @@ function _drawSingleMapImpl(plane) {
   if (boreRi <= 0) return;
 
   let reqX, reqY, xLabel, yLabel;
- 
+
   if (plane === 'xy') {
     reqX = boreRi;
     reqY = boreRi;
@@ -1281,13 +1173,13 @@ function _drawSingleMapImpl(plane) {
       else if (plane === 'xz') { rx = u; ry = 0; rz = v; }
       else if (plane === 'yz') { rx = 0; ry = u; rz = v; }
 
-      const rad = Math.sqrt(rx * rx + ry * ry); 
+      const rad = Math.sqrt(rx * rx + ry * ry);
 
       let inside = false;
       if (plane === 'xy') {
-        inside = (rad <= boreRi); 
+        inside = (rad <= boreRi);
       } else {
-        inside = (rad <= boreRi) && (Math.abs(rz) <= halfZ); 
+        inside = (rad <= boreRi) && (Math.abs(rz) <= halfZ);
       }
 
       const idx = j * plotW + i;
@@ -1297,13 +1189,13 @@ function _drawSingleMapImpl(plane) {
         if (B > maxB) maxB = B;
         if (B < minB) minB = B;
       } else {
-        values[idx] = -1; 
+        values[idx] = -1;
       }
     }
   }
 
   if (minB === Infinity) { minB = 0; maxB = 1; }
-  if (maxB === minB) maxB = minB + 0.001; 
+  if (maxB === minB) maxB = minB + 0.001;
 
   const offCanvas = document.createElement('canvas');
   offCanvas.width = plotW;
@@ -1326,7 +1218,7 @@ function _drawSingleMapImpl(plane) {
   }
   offCtx.putImageData(heatImg, 0, 0);
 
-  ctx.imageSmoothingEnabled = false; 
+  ctx.imageSmoothingEnabled = false;
   ctx.drawImage(offCanvas, ml, mt, plotW, plotH);
 
   // map isolines, in log
@@ -1337,10 +1229,10 @@ function _drawSingleMapImpl(plane) {
 
   if (numContours > 0) {
     const levels = [];
-    
+
     // Log scales cannot start at 0. Clamp minimum to a small positive baseline.
-    const safeMin = Math.max(minB, 1e-4); 
-    const safeMax = Math.max(maxB, safeMin * 1.01); 
+    const safeMin = Math.max(minB, 1e-4);
+    const safeMax = Math.max(maxB, safeMin * 1.01);
     const logMin = Math.log(safeMin);
     const logMax = Math.log(safeMax);
 
@@ -1357,12 +1249,12 @@ function _drawSingleMapImpl(plane) {
       ctx.lineJoin = "round";
 
       const step = 2; // Pixel increment for speed
-      
+
       for (let L of levels) {
         ctx.beginPath();
-        ctx.strokeStyle = "rgba(255, 255, 255, 0.35)"; 
+        ctx.strokeStyle = "rgba(255, 255, 255, 0.35)";
         ctx.lineWidth = 1;
-        
+
         const labelCandidates = [];
 
         for (let j = 0; j < plotH - step; j += step) {
@@ -1389,9 +1281,9 @@ function _drawSingleMapImpl(plane) {
             if ((v3 >= L) !== (v0 >= L)) left = [i, j + step * (L - v0) / (v3 - v0)];
 
             const drawLine = (p1, p2) => {
-              if (p1 && p2) { 
-                ctx.moveTo(p1[0], p1[1]); 
-                ctx.lineTo(p2[0], p2[1]); 
+              if (p1 && p2) {
+                ctx.moveTo(p1[0], p1[1]);
+                ctx.lineTo(p2[0], p2[1]);
                 labelCandidates.push([(p1[0] + p2[0]) / 2, (p1[1] + p2[1]) / 2]);
               }
             };
@@ -1411,18 +1303,18 @@ function _drawSingleMapImpl(plane) {
 
         // ONLY draw the label in some conditions
         if (showLabels && labelCandidates.length > 0) {
-          
+
           const pt = labelCandidates[Math.floor(labelCandidates.length * 0.5)];
-          
+
           ctx.save();
           const text = L < 0.01 ? L.toExponential(1) : L.toFixed(3);
           ctx.font = "9px 'JetBrains Mono', monospace";
           const tw = ctx.measureText(text).width;
-          
+
           ctx.fillStyle = "rgba(10, 12, 16, 0.75)";
           ctx.fillRect(pt[0] - tw / 2 - 2, pt[1] - 6, tw + 4, 12);
-          
-          ctx.fillStyle = "#a8ff3e"; 
+
+          ctx.fillStyle = "#a8ff3e";
           ctx.textAlign = "center";
           ctx.textBaseline = "middle";
           ctx.fillText(text, pt[0], pt[1]);
@@ -1438,13 +1330,13 @@ function _drawSingleMapImpl(plane) {
   if (displayMode === 'field') {
     ctx.save();
     ctx.translate(ml, mt);
-    ctx.strokeStyle = "rgba(255, 255, 255, 0.75)"; 
+    ctx.strokeStyle = "rgba(255, 255, 255, 0.75)";
     ctx.lineWidth = 1.2;
 
     const step = 24; // Pixel spacing between vectors
     for (let j = step/2; j < plotH; j += step) {
       for (let i = step/2; i < plotW; i += step) {
-        
+
         const u = (i / (plotW - 1)) * 2 * xRange - xRange;
         const v = ((plotH - 1 - j) / (plotH - 1)) * 2 * yRange - yRange;
 
@@ -1461,8 +1353,8 @@ function _drawSingleMapImpl(plane) {
         if (inside) {
           const vec = fieldVectorAt(rx, ry, rz);
           let vx = 0, vy = 0, vOut = 0;
-          
-          // Map 3D vectors to the 2D canvas axes (vx, vy) 
+
+          // Map 3D vectors to the 2D canvas axes (vx, vy)
           // and the out-of-screen axis (vOut). Positive vOut = towards viewer.
           if (plane === 'xy') { vx = vec.Bx; vy = vec.By; vOut = vec.Bz; }
           else if (plane === 'xz') { vx = vec.Bx; vy = vec.Bz; vOut = -vec.By; }
@@ -1474,16 +1366,16 @@ function _drawSingleMapImpl(plane) {
           if (totalMag > 1e-5) {
              // Scale size based on field strength relative to the local max
              const normalizedMag = Math.min(1, totalMag / maxB);
-             
+
              // If the field is overwhelmingly pointing into/out of the screen
              if (Math.abs(vOut) > inPlaneMag * 2) {
-                
+
                 // Scale radius with magnitude
                 const radius = step * 0.1 + (step * 0.15) * Math.pow(normalizedMag, 0.5);
                 ctx.beginPath();
                 ctx.arc(i, j, radius, 0, Math.PI * 2);
                 ctx.stroke();
-                
+
                 if (vOut > 0) {
                   // Out of page: Dot
                   ctx.beginPath();
@@ -1500,12 +1392,12 @@ function _drawSingleMapImpl(plane) {
                 }
              } else {
                // Draw Standard Arrow
-               vx /= inPlaneMag; 
+               vx /= inPlaneMag;
                vy /= inPlaneMag;
-               
+
                // Dynamic length: min 20% of step, max 90% of step
                const arrowLen = step * 0.2 + (step * 0.7) * Math.pow(normalizedMag, 0.5);
-               
+
                // Canvas Y grows downward, so invert vy
                const startX = i - vx * (arrowLen/2);
                const startY = j + vy * (arrowLen/2);
@@ -1515,7 +1407,7 @@ function _drawSingleMapImpl(plane) {
                ctx.beginPath();
                ctx.moveTo(startX, startY);
                ctx.lineTo(endX, endY);
-               
+
                // Draw Arrowhead (scale head with line length)
                const headlen = Math.max(2.5, arrowLen * 0.25);
                const angle = Math.atan2(-vy, vx);
@@ -1548,7 +1440,7 @@ function _drawSingleMapImpl(plane) {
     ctx.beginPath(); ctx.moveTo(xPos, mt + plotH); ctx.lineTo(xPos, mt + plotH + 5); ctx.stroke();
     ctx.fillText(val.toFixed(1), xPos, mt + plotH + 8);
   }
-  
+
   ctx.fillStyle = isExport ? "#005bb5" : "#00d4ff";
   ctx.fillText(xLabel, ml + plotW / 2, mt + plotH + 28);
 
@@ -1557,11 +1449,11 @@ function _drawSingleMapImpl(plane) {
   ctx.textAlign = "right"; ctx.textBaseline = "middle";
   for (let i = 0; i <= 4; i++) {
     const yPos = mt + i * (plotH / 4);
-    const val = yRange - i * (2 * yRange / 4); 
+    const val = yRange - i * (2 * yRange / 4);
     ctx.beginPath(); ctx.moveTo(ml, yPos); ctx.lineTo(ml - 5, yPos); ctx.stroke();
     ctx.fillText(val.toFixed(1), ml - 8, yPos);
   }
-  
+
   ctx.save();
   ctx.translate(ml - 45, mt + plotH / 2);
   ctx.rotate(-Math.PI / 2);
@@ -1572,7 +1464,7 @@ function _drawSingleMapImpl(plane) {
 
   const cbX = ml + plotW + 20;
   const cbW = 15;
-  
+
   const grad = ctx.createLinearGradient(0, mt + plotH, 0, mt);
   for (let i = 0; i <= 10; i++) {
     const v = i / 10;
@@ -1592,11 +1484,11 @@ function _drawSingleMapImpl(plane) {
     const yPos = mt + plotH - i * (plotH / 5);
     const v = i / 5;
     const B_val = minB + v * (maxB - minB);
-    
+
     ctx.beginPath(); ctx.moveTo(cbX + cbW, yPos); ctx.lineTo(cbX + cbW + 4, yPos); ctx.stroke();
     ctx.fillText(B_val.toFixed(3) + " T", cbX + cbW + 8, yPos);
   }
-  
+
   ctx.fillStyle = isExport ? "#111827" : "#e2eaf5";
   ctx.textAlign = "center";
   ctx.fillText("B Field", cbX + cbW / 2, mt - 15);
@@ -1637,9 +1529,9 @@ async function estimateOptimalOffset() {
   const btn = document.getElementById('btn-estimate');
   const originalBtnText = btn.innerText;
   btn.innerText = "Computing...";
-  
+
   // Yield thread so the UI updates before the heavy math starts
-  await new Promise(r => setTimeout(r, 50)); 
+  await new Promise(r => setTimeout(r, 50));
 
   // 2. Generate 256 points evenly on the sphere surface (Fibonacci Sphere)
   const points = [];
@@ -1696,7 +1588,7 @@ async function estimateOptimalOffset() {
   // Clean up UI
   document.body.style.cursor = 'default';
   btn.innerText = originalBtnText;
-  
+
   // Show results
   const variancePct = (bestScore * 100).toFixed(2);
   showTooltip(`Optimization Complete!\nTarget Sphere: Ø${targetR*2} mm\nBest Phase Offset: ${bestAngle}°\nField Variance: ${variancePct}%`, 6000);
@@ -1705,9 +1597,7 @@ async function estimateOptimalOffset() {
 
 
 
-function resetView() { targetView = { theta: 0.4, phi: 1.1, radius: 220 }; panOffset = { x: 0, y: 0 }; }
 
-// nodes
 let displayMode = 'solid';
 
 
@@ -1716,24 +1606,14 @@ function setDisplay(mode) {
   document.querySelectorAll('[id^=dbtn-]').forEach(b => b.classList.remove('active'));
   document.getElementById('dbtn-' + mode).classList.add('active');
   buildScene();
-  
+
   // Force map redraw when toggling Field Arrows
   if (currentMapPlane) {
     drawSingleMap(currentMapPlane);
   }
 }
 
-// Projections
-let activeProj = 'xy';
-
-
-// materials
-function getMaterial(color, roughness = 0.35, metalness = 0.7) {
-  return new THREE.MeshStandardMaterial({ color, roughness, metalness });
-}
-
-// Halbach magnet colors by direction index
-const COLORS_HEX = [0xe53e3e, 0x00d4ff, 0x3182ce, 0xf6c90e]; // N-out, CCW, S-out, CW
+// scene globals
 
 // scene
 let magnetGroup = null;
@@ -1747,7 +1627,7 @@ function buildSphereGeometry() {
   const params = getMagnetParams();
 
   // 128x128 resolution ensures a beautifully smooth gradient
-  const geometry = new THREE.SphereGeometry(targetR, 128, 128); 
+  const geometry = new THREE.SphereGeometry(targetR, 128, 128);
   const pos = geometry.attributes.position;
   const vCount = pos.count;
 
@@ -1781,10 +1661,10 @@ function buildSphereGeometry() {
   }
 
   geometry.setAttribute('color', new THREE.Float32BufferAttribute(colors, 3));
-  
+
   const material = new THREE.MeshBasicMaterial({ vertexColors: true });
   const sphere = new THREE.Mesh(geometry, material);
-  
+
   // Add a very faint wireframe overlay for depth perception
   const wireMat = new THREE.MeshBasicMaterial({ color: 0x1e2730, wireframe: true, transparent: true, opacity: 0.1 });
   const wireSphere = new THREE.Mesh(geometry, wireMat);
@@ -1801,7 +1681,7 @@ function buildSphereGeometry() {
   if (cb && window.isSphereView) {
     document.getElementById('cb-max').textContent = maxB.toFixed(3) + ' T';
     document.getElementById('cb-min').textContent = minB.toFixed(3) + ' T';
-    
+
     // Generate a CSS gradient that perfectly matches our Math.pow color scale
     let gradStops = [];
     for(let i = 0; i <= 10; i++) {
@@ -1820,7 +1700,7 @@ function buildScene() {
   if (magnetGroup) scene.remove(magnetGroup);
   if (arrowGroup) scene.remove(arrowGroup);
   if (window.sphereMapGroup) scene.remove(window.sphereMapGroup);
-  
+
   magnetGroup = new THREE.Group();
   arrowGroup = new THREE.Group();
   window.sphereMapGroup = new THREE.Group();
@@ -1829,11 +1709,11 @@ function buildScene() {
     buildSphereGeometry();
     scene.add(window.sphereMapGroup);
     computeStats();
-    return; 
+    return;
   }
   const { shape, nPoles: nPolesRaw, k: halbachK, rings } = getMagnetParams();
   const nPoles = Math.max(2, Math.min(32, nPolesRaw));
-  
+
   const holderIn = parseFloat(document.getElementById('holderIn').value) || 60;
   const holderOut = parseFloat(document.getElementById('holderOut').value) || 120;
   const holderThick = parseFloat(document.getElementById('holderThick').value) || 40;
@@ -1876,9 +1756,16 @@ function buildScene() {
       const angle = theta0 + ring.phaseOffset;
       const magAngle = phi0 + ring.phaseOffset;
 
-      const px = ring.rPlace * Math.cos(angle) * scale;
-      const py = ring.rPlace * Math.sin(angle) * scale;
-      const pz = ring.zOffset * scale; // NEW: Z-Shift variable
+      // Use optimized positions if available (only shift cx/cy, keep magnetisation angle)
+      let px, py;
+      if (optimizedOffsets && optimizedOffsets[rIdx] && optimizedOffsets[rIdx][i]) {
+        px = optimizedOffsets[rIdx][i].cx * scale;
+        py = optimizedOffsets[rIdx][i].cy * scale;
+      } else {
+        px = ring.rPlace * Math.cos(angle) * scale;
+        py = ring.rPlace * Math.sin(angle) * scale;
+      }
+      const pz = ring.zOffset * scale;
       const mx = Math.cos(magAngle);
       const my = Math.sin(magAngle);
 
@@ -1911,7 +1798,7 @@ function buildScene() {
         bodyMesh.castShadow = true; bodyMesh.receiveShadow = true;
         magnetGroup.add(bodyMesh);
 
-        let capGeo = shape === 'cylinder' 
+        let capGeo = shape === 'cylinder'
           ? new THREE.CircleGeometry(ring.magDiam / 2 * scale * 1.01, 24)
           : new THREE.PlaneGeometry(ring.magWidth * scale * 1.01, ring.magHeight * scale * 1.01);
 
@@ -1961,12 +1848,12 @@ function buildScene() {
           const x = -R_max + ix * stepSize;
           const y = -R_max + iy * stepSize;
           const z = zSteps > 1 ? -Z_max + iz * zStepSize : 0;
-          
+
           if (Math.sqrt(x*x + y*y) > R_max) continue;
 
           const v = fieldVectorAt(x, y, z);
           const mag = Math.sqrt(v.Bx*v.Bx + v.By*v.By + v.Bz*v.Bz);
-          if (mag > maxMag && mag < maxBr * 2) maxMag = mag; 
+          if (mag > maxMag && mag < maxBr * 2) maxMag = mag;
           samples.push({x, y, z, vx: v.Bx, vy: v.By, vz: v.Bz, mag});
         }
       }
@@ -1978,7 +1865,7 @@ function buildScene() {
         const origin = new THREE.Vector3(s.x, s.y, s.z);
         const normMag = Math.min(1, s.mag / maxMag);
         const arrowLen = stepSize * 0.3 + (stepSize * 0.6) * Math.pow(normMag, 0.4);
-        
+
         const color = new THREE.Color();
         color.setHSL((1.0 - normMag) * 0.7, 1.0, 0.5);
         arrowGroup.add(new THREE.ArrowHelper(dir, origin, arrowLen, color.getHex(), arrowLen * 0.3, arrowLen * 0.2));
@@ -2003,8 +1890,8 @@ function computeStats() {
   const Ro = holderOut / 2; // Outer edge radius
 
   if (Ri <= 0) {
-    document.getElementById('stat-Binner').textContent = 'N/A';
-    document.getElementById('stat-Bouter').textContent = 'N/A';
+    document.getElementById('stat-Binner').value = 'N/A';
+    document.getElementById('stat-Bouter').value = 'N/A';
     return;
   }
 
@@ -2013,7 +1900,7 @@ function computeStats() {
 
   // 2. Leakage Sampling exactly at the holder's outer edge
   let peakBouter = 0;
-  const numSamples = 32; 
+  const numSamples = 32;
   for (let i = 0; i < numSamples; i++) {
     const a = (i / numSamples) * Math.PI * 2;
     const b = fieldAt(Ro * Math.cos(a), Ro * Math.sin(a), 0);
@@ -2034,7 +1921,7 @@ function computeStats() {
 function calculateVariance() {
   const targetR = parseFloat(document.getElementById('testRadius').value);
   const resultField = document.getElementById('varianceResult');
-  
+
   if (isNaN(targetR) || targetR <= 0) {
     resultField.value = "N/A";
     return;
@@ -2042,8 +1929,8 @@ function calculateVariance() {
 
   const params = getMagnetParams();
   const numPoints = 256;
-  const phi = Math.PI * (3 - Math.sqrt(5)); 
-  
+  const phi = Math.PI * (3 - Math.sqrt(5));
+
   let minB = Infinity;
   let maxB = -Infinity;
   let sumB = 0;
@@ -2052,10 +1939,10 @@ function calculateVariance() {
     const y_norm = 1 - (i / (numPoints - 1)) * 2;
     const radiusAtY = Math.sqrt(1 - y_norm * y_norm);
     const theta = phi * i;
-    
+
     // BUG FIX: y_norm is now scaled by targetR
     const x = Math.cos(theta) * radiusAtY * targetR;
-    const y = y_norm * targetR; 
+    const y = y_norm * targetR;
     const z = Math.sin(theta) * radiusAtY * targetR;
 
     const B = fieldAtWithParams(x, y, z, params);
@@ -2092,7 +1979,7 @@ const overlay = document.createElement('div');
 
   const { jsPDF } = window.jspdf;
   const doc = new jsPDF();
-  
+
   const pageWidth = doc.internal.pageSize.getWidth();
   const margin = 10;
   const contentWidth = pageWidth - 2 * margin;
@@ -2103,28 +1990,32 @@ const overlay = document.createElement('div');
 
   doc.setFont("helvetica", "normal");
   doc.setFontSize(10);
-  
+
   // --- PARAMETERS ---
   const p = getMagnetParams();
   const holderIn = document.getElementById('holderIn').value;
   const holderOut = document.getElementById('holderOut').value;
   const holderThick = document.getElementById('holderThick').value;
   const numContours = document.getElementById('numContours').value;
-  
+
   let y = 25;
 
   doc.setFont("helvetica", "bold");
   doc.text("Magnet Parameters", margin, y); y += 6;
   doc.setFont("helvetica", "normal");
-  doc.text(`Shape: ${p.shape.toUpperCase()} | Poles: ${p.nPoles} | Field Br: ${p.Br} T | Halbach k: ${p.k}`, margin, y); y += 6;
-  
-  if (p.shape === 'cylinder') {
-    doc.text(`Dimensions: Diameter ${p.magDiam} mm x Length ${p.magLen} mm`, margin, y); y += 6;
-  } else {
-    doc.text(`Dimensions: Width ${p.magWidth} mm x Height Z ${p.magHeight} mm x Length N->S ${p.magLen} mm`, margin, y); y += 6;
-  }
+  doc.text(`Shape: ${p.shape.toUpperCase()} | Poles: ${p.nPoles} | Halbach k: ${p.k}`, margin, y); y += 6;
 
-  doc.text(`Placement Ø: ${p.rPlace * 2} mm`, margin, y); y += 10;
+  for (let ri = 0; ri < p.rings.length; ri++) {
+    const ring = p.rings[ri];
+    const ringLabel = p.rings.length > 1 ? `Ring ${ri+1}: ` : '';
+    doc.text(`${ringLabel}Br: ${ring.Br} T | Placement Ø: ${(ring.rPlace*2).toFixed(1)} mm | Z: ${ring.zOffset} mm`, margin, y); y += 5;
+    if (p.shape === 'cylinder') {
+      doc.text(`  Dimensions: Ø${ring.magDiam} mm x L${ring.magLen} mm`, margin, y); y += 5;
+    } else {
+      doc.text(`  Dimensions: W${ring.magWidth} x H${ring.magHeight} x L${ring.magLen} mm`, margin, y); y += 5;
+    }
+  }
+  y += 5;
 
   doc.setFont("helvetica", "bold");
   doc.text("Holder Parameters", margin, y); y += 6;
@@ -2135,8 +2026,76 @@ const overlay = document.createElement('div');
   doc.text("Computed & Display Parameters", margin, y); y += 6;
   doc.setFont("helvetica", "normal");
   doc.text(`Contour Lines: ${numContours}`, margin, y); y += 6;
-  doc.text(`Center Field: ${document.getElementById('stat-Binner').textContent}`, margin, y); y += 6;
-  doc.text(`Outside Field (Leakage): ${document.getElementById('stat-Bouter').textContent}`, margin, y); y += 15;
+  doc.text(`Center Field: ${document.getElementById('stat-Binner').value}`, margin, y); y += 6;
+  doc.text(`Outside Field (Leakage): ${document.getElementById('stat-Bouter').value}`, margin, y); y += 6;
+  doc.text(`Field Variance (Test R=${document.getElementById('testRadius').value} mm): ${document.getElementById('varianceResult').value}`, margin, y); y += 10;
+
+  // --- OPTIMIZED MAGNET POSITIONS TABLE ---
+  const posSource = optimizedOffsets ? optimizedOffsets : buildNominalPositions(p);
+  const isOptimized = !!optimizedOffsets;
+
+  doc.setFont("helvetica", "bold");
+  doc.text(`Magnet Barycenter Positions ${isOptimized ? "(Monte Carlo Optimized)" : "(Halbach Nominal)"}`, margin, y); y += 6;
+  doc.setFont("helvetica", "normal");
+
+  // Table header
+  const colW = [12, 16, 26, 26, 26, 26];
+  const colX = [margin];
+  for (let c = 1; c < colW.length; c++) colX.push(colX[c-1] + colW[c-1]);
+  const headers = ['Ring', 'Mag #', 'X (mm)', 'Y (mm)', 'R (mm)', 'Angle (°)'];
+
+  doc.setFillColor(30, 39, 48);
+  doc.rect(margin, y - 4, colW.reduce((a,b)=>a+b,0), 5.5, 'F');
+  doc.setTextColor(0, 212, 255);
+  doc.setFontSize(8);
+  headers.forEach((h, ci) => doc.text(h, colX[ci] + 1, y));
+  y += 6;
+  doc.setTextColor(40, 40, 40);
+
+  let rowCount = 0;
+  for (let r = 0; r < posSource.length; r++) {
+    for (let i = 0; i < posSource[r].length; i++) {
+      const m = posSource[r][i];
+      const rad = Math.sqrt(m.cx * m.cx + m.cy * m.cy);
+      const angleDeg = (Math.atan2(m.cy, m.cx) * 180 / Math.PI + 360) % 360;
+      const rowData = [
+        `R${r+1}`,
+        `${i+1}`,
+        m.cx.toFixed(3),
+        m.cy.toFixed(3),
+        rad.toFixed(3),
+        angleDeg.toFixed(2) + '°'
+      ];
+
+      // Zebra stripe
+      if (rowCount % 2 === 0) {
+        doc.setFillColor(245, 247, 250);
+        doc.rect(margin, y - 3.5, colW.reduce((a,b)=>a+b,0), 5, 'F');
+      }
+      rowData.forEach((val, ci) => doc.text(val, colX[ci] + 1, y));
+      y += 5;
+      rowCount++;
+
+      // Page break if needed
+      if (y > doc.internal.pageSize.getHeight() - 20) {
+        doc.addPage();
+        y = 20;
+        doc.setFont("helvetica", "bold");
+        doc.text("Magnet Barycenter Positions (continued)", margin, y); y += 6;
+        doc.setFont("helvetica", "normal");
+        // Reprint header
+        doc.setFillColor(30, 39, 48);
+        doc.rect(margin, y - 4, colW.reduce((a,b)=>a+b,0), 5.5, 'F');
+        doc.setTextColor(0, 212, 255);
+        headers.forEach((h, ci) => doc.text(h, colX[ci] + 1, y));
+        y += 6;
+        doc.setTextColor(40, 40, 40);
+      }
+    }
+  }
+  doc.setTextColor(0, 0, 0); // reset
+  doc.setFontSize(10);
+  y += 8;
 
   // --- SAVE CAMERA ---
   const origSpherical = { ...spherical };
@@ -2181,7 +2140,7 @@ const overlay = document.createElement('div');
   if (ambientLight) ambientLight.intensity = 2.0;
   if (dirLight) dirLight.intensity = 1.0;
 
-  
+
   // --- RENDER ---
   renderer.render(scene, camera);
 
@@ -2216,19 +2175,19 @@ const overlay = document.createElement('div');
   window.isExportingPDF = true;
   const mapContainer = document.getElementById('map-container');
   const wasHidden = mapContainer.style.display === 'none';
-  
+
   if (wasHidden) {
     mapContainer.style.visibility = 'hidden';
     mapContainer.style.display = 'flex';
   }
 
   const mapCanvas = document.getElementById('map-canvas');
-  const originalPlane = currentMapPlane; 
+  const originalPlane = currentMapPlane;
   const planes = ['xy', 'xz', 'yz'];
-  
+
   for (let i = 0; i < planes.length; i++) {
     doc.addPage();
-    
+
     const plane = planes[i];
     _drawSingleMapImpl(plane);
     doc.setFont("helvetica", "bold");
@@ -2256,12 +2215,12 @@ const blob = doc.output('blob');
   document.getElementById('pdf-status').textContent = 'PDF READY';
   document.getElementById('pdf-status').style.color = '#e2eaf5';
   document.getElementById('pdf-sub').style.display = 'none';
-  
+
   const btn = document.getElementById('pdf-download-btn');
   btn.style.display = 'block';
   btn.onmouseover = () => btn.style.transform = 'scale(1.05)';
   btn.onmouseout = () => btn.style.transform = 'scale(1)';
-  
+
   btn.onclick = () => {
     const a = document.createElement('a');
     a.href = url;
@@ -2311,7 +2270,7 @@ async function exportSTL() {
   document.getElementById('stl-status').textContent = 'STL READY';
   document.getElementById('stl-status').style.color = '#e2eaf5';
   document.getElementById('stl-sub').style.display = 'none';
-  
+
   const btn = document.getElementById('stl-download-btn');
   btn.style.display = 'block';
   btn.onmouseover = () => btn.style.transform = 'scale(1.05)';
@@ -2326,6 +2285,273 @@ async function exportSTL() {
     overlay.remove();
     showTooltip(`STL exported successfully.\nReady for CAD or 3D Printing.`, 4000);
   };
+}
+
+
+// ── Monte Carlo Position Optimizer ────────────────────────────────────────────
+// Stores per-magnet radial offsets from the nominal Halbach circle.
+// optimizedOffsets[ringIdx][magnetIdx] = { dx, dy }  (mm, in XY plane)
+// null means "use Halbach default positions".
+let optimizedOffsets = null;
+
+function resetOptimizedPositions() {
+  optimizedOffsets = null;
+  document.getElementById('mcStatus').value = 'Ready (Halbach positions)';
+  document.getElementById('mcStatus').style.color = 'var(--muted)';
+  update();
+  showTooltip("Positions reset to Halbach distribution.", 3000);
+}
+
+// Compute variance score (lower = better).
+// Uses IDENTICAL 256-point Fibonacci sphere sampling as calculateVariance()
+// so that the optimizer score and the displayed Variance % are always consistent.
+function computeVarianceScore(positions, params, targetR) {
+  const numPoints = 256;
+  const phi = Math.PI * (3 - Math.sqrt(5)); // golden angle - same constant as calculateVariance
+  let minB = Infinity, maxB = -Infinity, sumB = 0;
+
+  for (let i = 0; i < numPoints; i++) {
+    const y_norm = 1 - (i / (numPoints - 1)) * 2;
+    const radiusAtY = Math.sqrt(1 - y_norm * y_norm);
+    const theta = phi * i;
+    const x = Math.cos(theta) * radiusAtY * targetR;
+    const y = y_norm * targetR;
+    const z = Math.sin(theta) * radiusAtY * targetR;
+
+    const B = fieldAtWithCustomPositions(x, y, z, params, positions);
+    if (B < minB) minB = B;
+    if (B > maxB) maxB = B;
+    sumB += B;
+  }
+  const avgB = sumB / numPoints;
+  return avgB > 1e-9 ? (maxB - minB) / avgB : Infinity;
+}
+
+// Like fieldAtWithParams but uses custom {cx,cy} positions per magnet.
+// positions = array of arrays: positions[ringIdx][magnetIdx] = {cx, cy, cz, mux, muy}
+function fieldAtWithCustomPositions(px, py, pz, params, positions) {
+  const { shape } = params;
+  let Bx = 0, By = 0, Bz = 0;
+
+  for (let r = 0; r < positions.length; r++) {
+    const ring = params.rings[r];
+    const ringPos = positions[r];
+    for (let i = 0; i < ringPos.length; i++) {
+      const m = ringPos[i];
+      let contrib;
+      if (shape === 'cylinder') {
+        contrib = cylinderField(px, py, pz, m.cx, m.cy, m.cz, m.mux, m.muy, 0,
+                                ring.magDiam / 2, ring.magLen / 2, ring.Br);
+      } else {
+        contrib = cuboidField(px, py, pz, m.cx, m.cy, m.cz, m.mux, m.muy, 0,
+                              ring.magWidth / 2, ring.magHeight / 2, ring.magLen / 2, ring.Br);
+      }
+      Bx += contrib.Bx; By += contrib.By; Bz += contrib.Bz;
+    }
+  }
+  return Math.sqrt(Bx * Bx + By * By + Bz * Bz);
+}
+
+// Build nominal Halbach positions array from params (no offsets).
+function buildNominalPositions(params) {
+  const { nPoles, k: halbachK, rings } = params;
+  const angleStep = (2 * Math.PI) / nPoles;
+  return rings.map(ring => {
+    const arr = [];
+    for (let i = 0; i < nPoles; i++) {
+      const theta0 = i * angleStep;
+      const phi0   = halbachK * theta0;
+      const angle  = theta0 + ring.phaseOffset;
+      const magA   = phi0   + ring.phaseOffset;
+      arr.push({
+        cx: ring.rPlace * Math.cos(angle),
+        cy: ring.rPlace * Math.sin(angle),
+        cz: ring.zOffset,
+        mux: Math.cos(magA),
+        muy: Math.sin(magA),
+        nomR: ring.rPlace,   // nominal radius for bounds checking
+        angle                // keep angular position fixed — only radial nudge
+      });
+    }
+    return arr;
+  });
+}
+
+// Check that no two magnets (across all rings) overlap or are closer than minGap mm.
+function checkNoOverlap(positions, params, minGap = 1.0) {
+  // Collect all magnets with their effective radius
+  const all = [];
+  for (let r = 0; r < positions.length; r++) {
+    const ring = params.rings[r];
+    const halfSize = (ring.magDiam ?? Math.max(ring.magWidth || 0, ring.magHeight || 0)) / 2;
+    for (let i = 0; i < positions[r].length; i++) {
+      all.push({ ...positions[r][i], halfSize });
+    }
+  }
+  for (let a = 0; a < all.length; a++) {
+    for (let b = a + 1; b < all.length; b++) {
+      const dx = all[a].cx - all[b].cx;
+      const dy = all[a].cy - all[b].cy;
+      const dz = all[a].cz - all[b].cz;
+      const dist = Math.sqrt(dx*dx + dy*dy + dz*dz);
+      const minDist = all[a].halfSize + all[b].halfSize + minGap;
+      if (dist < minDist) return false;
+    }
+  }
+  return true;
+}
+
+async function runMonteCarloOptimize() {
+  const targetR = parseFloat(document.getElementById('testRadius').value);
+  if (isNaN(targetR) || targetR <= 0) {
+    showTooltip("Invalid Test Radius.", 3000); return;
+  }
+  const maxNudge = parseFloat(document.getElementById('mcNudge').value) || 2;
+  const iterations = Math.max(50, parseInt(document.getElementById('mcIterations').value) || 500);
+
+  const params = getMagnetParams();
+  const statusEl = document.getElementById('mcStatus');
+  const btn = document.getElementById('btn-mc-optimize');
+  btn.disabled = true;
+  btn.style.opacity = '0.5';
+  document.body.style.cursor = 'wait';
+
+  // Start from existing optimized positions or Halbach defaults
+  let current = optimizedOffsets
+    ? JSON.parse(JSON.stringify(optimizedOffsets))
+    : buildNominalPositions(params);
+
+  let currentScore = computeVarianceScore(current, params, targetR);
+
+  let improved = 0;
+  const BATCH = 20;        // iterations between status-bar updates
+  const PREVIEW_EVERY = 50; // iterations between live 3D scene refreshes
+
+  for (let iter = 0; iter < iterations; iter++) {
+
+    // ── Status bar update (cheap, every BATCH iters) ──────────────────────
+    if (iter % BATCH === 0) {
+      statusEl.value = `Iter ${iter}/${iterations} · Variance ${(currentScore * 100).toFixed(3)}%`;
+      statusEl.style.color = 'var(--accent2)';
+      await new Promise(r => setTimeout(r, 0)); // yield to browser paint
+    }
+
+    // ── Live 3D preview (heavier, every PREVIEW_EVERY iters) ─────────────
+    if (iter > 0 && iter % PREVIEW_EVERY === 0) {
+      optimizedOffsets = current; // expose current best to the global state
+      _updateMagnetMeshPositions(); // reposition meshes without full rebuild
+      await new Promise(r => setTimeout(r, 0));
+    }
+
+    // Pick a random ring and magnet to nudge
+    const rIdx = Math.floor(Math.random() * current.length);
+    const mIdx = Math.floor(Math.random() * current[rIdx].length);
+    const m = current[rIdx][mIdx];
+
+    // Nudge radially (keep angle fixed to preserve Halbach symmetry of dipole directions)
+    const nudge = (Math.random() - 0.5) * 2 * maxNudge;
+    const newCx = (m.nomR + nudge) * Math.cos(m.angle);
+    const newCy = (m.nomR + nudge) * Math.sin(m.angle);
+
+    // Tentative update
+    const oldCx = m.cx, oldCy = m.cy;
+    m.cx = newCx; m.cy = newCy;
+
+    // Check overlap constraint
+    const valid = checkNoOverlap(current, params, 1.0);
+    if (!valid) {
+      m.cx = oldCx; m.cy = oldCy;
+      continue;
+    }
+
+    // Evaluate score
+    const newScore = computeVarianceScore(current, params, targetR);
+    if (newScore < currentScore) {
+      currentScore = newScore;
+      improved++;
+      m.nomR += nudge; // commit new radius for future nudges
+    } else {
+      m.cx = oldCx; m.cy = oldCy; // reject
+    }
+  }
+
+  // ── Finalise ─────────────────────────────────────────────────────────────
+  optimizedOffsets = current;
+  buildScene();
+  if (currentMapPlane) drawSingleMap(currentMapPlane);
+
+  // Update the Variance % field in the UI
+  calculateVariance();
+
+  document.body.style.cursor = 'default';
+  btn.disabled = false;
+  btn.style.opacity = '1';
+  statusEl.value = `Done · Variance ${(currentScore * 100).toFixed(3)}% · ${improved} improvements`;
+  statusEl.style.color = 'var(--accent)';
+
+  showTooltip(`Monte Carlo Complete!\n${iterations} iterations · ${improved} improvements\nVariance: ${(currentScore * 100).toFixed(3)}%`, 6000);
+}
+
+// ── Lightweight 3D update: reposition existing magnet meshes in-place ────────
+// Avoids the cost of geometry/material teardown+rebuild during live preview.
+// We traverse magnetGroup children and update .position for body + caps.
+// Each magnet = 3 consecutive children: [body, nCap, sCap]
+// (holder is child[0] if visible, so we skip it)
+function _updateMagnetMeshPositions() {
+  if (!magnetGroup) return;
+  const { nPoles: nPolesRaw, k: halbachK, rings } = getMagnetParams();
+  const nPoles = Math.max(2, Math.min(32, nPolesRaw));
+  const angleStep = (2 * Math.PI) / nPoles;
+  const showHolder = document.getElementById('showHolder')?.checked ?? true;
+  const showMagnets = document.getElementById('showMagnets')?.checked ?? true;
+  if (!showMagnets) return;
+
+  // Children layout: [holderMesh?], then for each magnet: body, nCap, sCap
+  const startIdx = showHolder ? 1 : 0;
+  const CHILDREN_PER_MAGNET = 3;
+
+  let flatIdx = 0; // magnet index across all rings
+  for (let rIdx = 0; rIdx < rings.length; rIdx++) {
+    const ring = rings[rIdx];
+    for (let i = 0; i < nPoles; i++) {
+      const theta0 = i * angleStep;
+      const phi0   = halbachK * theta0;
+      const angle  = theta0 + ring.phaseOffset;
+      const magAngle = phi0 + ring.phaseOffset;
+
+      let px, py;
+      if (optimizedOffsets && optimizedOffsets[rIdx] && optimizedOffsets[rIdx][i]) {
+        px = optimizedOffsets[rIdx][i].cx;
+        py = optimizedOffsets[rIdx][i].cy;
+      } else {
+        px = ring.rPlace * Math.cos(angle);
+        py = ring.rPlace * Math.sin(angle);
+      }
+      const pz = ring.zOffset;
+      const mx = Math.cos(magAngle);
+      const my = Math.sin(magAngle);
+      const halfL = (document.getElementById('magnetShape').value === 'cylinder'
+        ? ring.magLen : ring.magLen) / 2;
+      const capOffset = 0.15;
+
+      const base = startIdx + flatIdx * CHILDREN_PER_MAGNET;
+      const body  = magnetGroup.children[base];
+      const nCap  = magnetGroup.children[base + 1];
+      const sCap  = magnetGroup.children[base + 2];
+
+      if (body)  body.position.set(px, py, pz);
+      if (nCap) {
+        nCap.position.set(px + mx * (halfL + capOffset), py + my * (halfL + capOffset), pz);
+        nCap.lookAt(px + mx * (halfL + capOffset + 1), py + my * (halfL + capOffset + 1), pz);
+      }
+      if (sCap) {
+        sCap.position.set(px - mx * (halfL + capOffset), py - my * (halfL + capOffset), pz);
+        sCap.lookAt(px - mx * (halfL + capOffset + 1), py - my * (halfL + capOffset + 1), pz);
+      }
+
+      flatIdx++;
+    }
+  }
 }
 
 
@@ -2410,6 +2636,17 @@ document.querySelectorAll('input, select').forEach(el => {
 
 // Update scene and redraw active map if sliders change
 function update() {
+  // If structural params changed (nPoles, numRings), optimized positions are stale — reset them
+  if (optimizedOffsets) {
+    const p = getMagnetParams();
+    const totalMagnets = p.rings.length * p.nPoles;
+    const optTotal = optimizedOffsets.reduce((s, r) => s + r.length, 0);
+    if (optTotal !== totalMagnets || optimizedOffsets.length !== p.rings.length) {
+      optimizedOffsets = null;
+      const statusEl = document.getElementById('mcStatus');
+      if (statusEl) { statusEl.value = 'Reset (config changed)'; statusEl.style.color = 'var(--accent2)'; }
+    }
+  }
   buildScene();
   if (currentMapPlane) {
     drawSingleMap(currentMapPlane);
