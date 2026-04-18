@@ -3,7 +3,7 @@ In this repository there are two web based simulators for calculating and visual
 
 # 1. Halbach Ring Simulator
 
-The Mandhala.html is an interactive, web-based 3D simulator for calculating and visualizing the magnetic fields of finite-length Halbach cylinders. This program was initially created in Labview dyring several years, 2014-2018 for a Hall measuring system (see my repos) and upgraded recently with a local Qwen-Coder 70b and further improved with Gemini 3.1 and Claude Sonnet 4.6.
+The Halbach.html is an interactive, web-based 3D simulator for calculating and visualizing the magnetic fields of finite-length Halbach cylinders. This program was initially created in Labview dyring several years, 2014-2018 for a Hall measuring system (see my repos) and upgraded recently with a local Qwen-Coder 70b and further improved with Gemini 3.1 and Claude Sonnet 4.6.
 With the version 2, the ability to use two concentric rings makes it a powerful tool to build your own magnets.
 
 ## A. Mathematical Model
