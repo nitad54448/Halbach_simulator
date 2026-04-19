@@ -4,7 +4,7 @@
 <meta charset="UTF-8">
 <title>Mandhala (Bx)</title>
 <style>
-@import url('https://fonts.googleapis.com/css2?family=JetBrains+Mono:wght@300;400;600;700&family=Syne:wght@400;600;800&display=swap');
+@import url('https://fonts.googleapis.com/css2?family=IBM+Plex+Mono:wght@300;400;600;700&family=Syne:wght@400;600;800&display=swap');
 :root {
   --bg:#080b0f; --panel:#0d1218; --panel2:#121820; --border:#2a3a4a;
   --accent:#a8ff3e; --accent2:#00d4ff; --accent3:#ff6b35;
@@ -12,7 +12,7 @@
   --north:#e53e3e; --south:#3182ce;
 }
 *{box-sizing:border-box;margin:0;padding:0;}
-body{font-family:'JetBrains Mono',monospace;background:var(--bg);color:var(--text);display:flex;height:100vh;overflow:hidden;}
+body{font-family:'IBM Plex Mono',monospace;background:var(--bg);color:var(--text);display:flex;height:100vh;overflow:hidden;}
 
 ::-webkit-scrollbar{width:6px;}
 ::-webkit-scrollbar-track{background:var(--panel);}
@@ -26,13 +26,13 @@ body{font-family:'JetBrains Mono',monospace;background:var(--bg);color:var(--tex
 .section-title{font-size:8px;font-weight:700;letter-spacing:.22em;color:var(--muted);text-transform:uppercase;margin-bottom:12px;}
 .field-row{display:flex;flex-direction:column;margin-bottom:10px;}
 .field-row label{font-size:9px;color:var(--label);margin-bottom:4px;letter-spacing:.04em;}
-.field-row input,.field-row select{background:var(--panel2);border:1px solid var(--border);color:var(--text);font-family:'JetBrains Mono',monospace;font-size:11px;padding:7px 9px;border-radius:3px;outline:none;transition:border-color .2s;width:100%;}
+.field-row input,.field-row select{background:var(--panel2);border:1px solid var(--border);color:var(--text);font-family:'IBM Plex Mono',monospace;font-size:11px;padding:7px 9px;border-radius:3px;outline:none;transition:border-color .2s;width:100%;}
 .field-row input:focus{border-color:var(--accent);}
 .field-row input[readonly]{color:var(--accent2);text-align:center;font-weight:700;background:var(--bg);border-color:var(--border);}
 .two-col{display:grid;grid-template-columns:1fr 1fr;gap:8px;}
 .three-col{display:grid;grid-template-columns:1fr 1fr 1fr;gap:6px;}
 
-.btn{width:100%;padding:9px;background:var(--button);color:var(--text);border:1px solid var(--border);border-radius:2px;font-family:'JetBrains Mono',monospace;font-size:10px;font-weight:700;cursor:pointer;text-transform:uppercase;letter-spacing:.08em;transition:all .2s;}
+.btn{width:100%;padding:9px;background:var(--button);color:var(--text);border:1px solid var(--border);border-radius:2px;font-family:'IBM Plex Mono',monospace;font-size:10px;font-weight:700;cursor:pointer;text-transform:uppercase;letter-spacing:.08em;transition:all .2s;}
 .btn:hover{border-color:var(--accent);color:var(--accent);}
 .btn.primary{background:rgba(168,255,62,.08);border-color:var(--accent);color:var(--accent);}
 .btn.primary:hover{background:rgba(168,255,62,.16);}
@@ -63,7 +63,7 @@ body{font-family:'JetBrains Mono',monospace;background:var(--bg);color:var(--tex
 .main{flex:1;display:flex;flex-direction:column;overflow:hidden;}
 .toolbar{height:40px;background:var(--panel);border-bottom:1px solid var(--border);display:flex;align-items:center;padding:0 14px;gap:8px;flex-shrink:0;overflow-x:auto;}
 .toolbar-label{font-size:8px;color:var(--muted);letter-spacing:.15em;text-transform:uppercase;white-space:nowrap;}
-.view-btn{padding:4px 10px;border-radius:2px;font-size:9px;font-family:'JetBrains Mono',monospace;cursor:pointer;border:1px solid var(--border);background:transparent;color:var(--label);transition:all .2s;letter-spacing:.05em;white-space:nowrap;}
+.view-btn{padding:4px 10px;border-radius:2px;font-size:9px;font-family:'IBM Plex Mono',monospace;cursor:pointer;border:1px solid var(--border);background:transparent;color:var(--label);transition:all .2s;letter-spacing:.05em;white-space:nowrap;}
 .view-btn.active,.view-btn:hover{background:rgba(0,212,255,.1);border-color:var(--accent2);color:var(--accent2);}
 .sep{width:1px;height:18px;background:var(--border);flex-shrink:0;}
 .spacer{flex:1;}
@@ -966,7 +966,7 @@ function makeTextSprite(message, bgHex = '#ffffff', fgHex = '#000000') {
   const c = document.createElement('canvas');
   c.width = 128; c.height = 128;
   const ctx = c.getContext('2d');
-  ctx.font = 'Bold 55px JetBrains Mono, monospace';
+  ctx.font = 'Bold 55px IBM Plex Mono, monospace';
   ctx.textAlign = 'center'; ctx.textBaseline = 'middle';
   ctx.lineWidth = 8; ctx.strokeStyle = bgHex;
   ctx.strokeText(message, 64, 64);
@@ -1472,12 +1472,12 @@ function drawLineChart(ctx, size, axLine, bxLine, byLine, bzLine, boreAxis, rang
   drawSeries(byLine, '#a8ff3e');
   drawSeries(bzLine, '#00d4ff');
 
-  ctx.fillStyle = text; ctx.font = '10px JetBrains Mono, monospace'; ctx.textAlign = 'center';
+  ctx.fillStyle = text; ctx.font = '10px IBM Plex Mono, monospace'; ctx.textAlign = 'center';
   ctx.fillText(`Position along ${boreAxis} (mm)`, size/2, size - 8);
   ctx.save(); ctx.translate(12, size/2); ctx.rotate(-Math.PI/2);
   ctx.fillText('B (T)', 0, 0); ctx.restore();
 
-  ctx.font = '9px JetBrains Mono, monospace'; ctx.textAlign = 'center';
+  ctx.font = '9px IBM Plex Mono, monospace'; ctx.textAlign = 'center';
   for (let i = 0; i <= 4; i++) {
     const t = -range + i*range/2;
     ctx.fillStyle = text; ctx.fillText(t.toFixed(0), tX(t), pad + H + 14);
@@ -1488,7 +1488,7 @@ function drawLineChart(ctx, size, axLine, bxLine, byLine, bzLine, boreAxis, rang
     ctx.fillStyle = text; ctx.fillText(v.toFixed(4), pad - 6, tY(v) + 4);
   }
 
-  ctx.font = '10px JetBrains Mono, monospace'; ctx.textAlign = 'left';
+  ctx.font = '10px IBM Plex Mono, monospace'; ctx.textAlign = 'left';
   [['Bx','#e53e3e'],['By','#a8ff3e'],['Bz','#00d4ff']].forEach(([l, c], i) => {
     ctx.fillStyle = c; ctx.fillRect(pad + 10 + i*50, pad + 8, 14, 3);
     ctx.fillStyle = text; ctx.fillText(l, pad + 26 + i*50, pad + 12);
@@ -1497,17 +1497,26 @@ function drawLineChart(ctx, size, axLine, bxLine, byLine, bzLine, boreAxis, rang
 
 //cartes 2D pour B
 function _drawMap2DImpl(plane, isPrint = false) {
-  const mc = document.getElementById('map-container');
+ 
+ const mc = document.getElementById('map-container');
   const c  = document.getElementById('map-canvas');
   const size = Math.min(mc.clientWidth - 40, mc.clientHeight - 60, 600);
-  c.width = size; c.height = size;
+  
+  const padL = 45, padB = 40, padR = 90, padT = 20;
+  const mapSize = size - padL - padR;
+
+  c.width = size; 
+  c.height = padT + mapSize + padB;
   const ctx = c.getContext('2d');
   const params = getParams();
 
   const bg = isPrint ? '#ffffff' : '#080b0f';
   const textCol = isPrint ? '#000000' : '#e2eaf5';
   const borderCol = isPrint ? '#445566' : '#2a3a4a';
-  ctx.fillStyle = bg; ctx.fillRect(0, 0, size, size);
+  ctx.fillStyle = bg; ctx.fillRect(0, 0, c.width, c.height);
+
+
+
 
   const ext = parseFloat(document.getElementById('testRadius').value);
   const N = 80;
@@ -1529,8 +1538,10 @@ function _drawMap2DImpl(plane, isPrint = false) {
     vals.push(row);
   }
 
-  const padL = 45, padB = 45, padR = 90, padT = 20;
-  const mapSize = size - padL - padR;
+
+
+
+
   const img = ctx.createImageData(mapSize, mapSize);
   const bpp = mapSize / N;
   for (let iy = 0; iy < N; iy++) {
@@ -1548,7 +1559,7 @@ function _drawMap2DImpl(plane, isPrint = false) {
   ctx.putImageData(img, padL, padT);
 
   ctx.strokeStyle = borderCol; ctx.fillStyle = textCol; ctx.lineWidth = 1;
-  ctx.font = '9px JetBrains Mono, monospace';
+  ctx.font = '9px IBM Plex Mono, monospace';
   ctx.textAlign = 'right';
   for (let i = 0; i <= 4; i++) {
     const val = ext - (i * 2*ext / 4);
@@ -1564,7 +1575,7 @@ function _drawMap2DImpl(plane, isPrint = false) {
     ctx.beginPath(); ctx.moveTo(x, y); ctx.lineTo(x, y + 5); ctx.stroke();
     ctx.fillText(val.toFixed(1), x, y + 15);
   }
-  ctx.font = 'bold 10px JetBrains Mono, monospace';
+  ctx.font = 'bold 10px IBM Plex Mono, monospace';
   ctx.fillText("mm", padL + mapSize + 15, padT + mapSize + 15);
 
   const cbX = padL + mapSize + 15, cbY = padT, cbW = 12, cbH = mapSize;
@@ -1689,7 +1700,7 @@ function drawSchlegelDiagram(ctx, size, view = 'north', isPrint = false) {
     ctx.stroke();
 
     ctx.fillStyle = isPrint ? '#000000' : '#ffffff';
-    ctx.font = 'bold 11px JetBrains Mono, monospace';
+    ctx.font = 'bold 11px IBM Plex Mono, monospace';
     ctx.textAlign = 'center';
     ctx.textBaseline = 'middle';
     ctx.fillText((p.idx + 1).toString(), p.px, p.py);
