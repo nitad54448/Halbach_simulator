@@ -2,7 +2,7 @@
 <html lang="en">
 <head>
 <meta charset="UTF-8">
-<title>Mandhala · 48-Dipole</title>
+<title>Mandhala (Bx)</title>
 <style>
 @import url('https://fonts.googleapis.com/css2?family=JetBrains+Mono:wght@300;400;600;700&family=Syne:wght@400;600;800&display=swap');
 :root {
@@ -14,13 +14,11 @@
 *{box-sizing:border-box;margin:0;padding:0;}
 body{font-family:'JetBrains Mono',monospace;background:var(--bg);color:var(--text);display:flex;height:100vh;overflow:hidden;}
 
-/* SCROLLBAR */
 ::-webkit-scrollbar{width:6px;}
 ::-webkit-scrollbar-track{background:var(--panel);}
 ::-webkit-scrollbar-thumb{background:var(--border);border-radius:2px;}
 
-/* LEFT PANEL */
-.left{width:320px;min-width:320px;background:var(--panel);border-right:1px solid var(--border);display:flex;flex-direction:column;overflow-y:auto;overflow-x:hidden;}
+.left{width:340px;min-width:340px;background:var(--panel);border-right:1px solid var(--border);display:flex;flex-direction:column;overflow-y:auto;overflow-x:hidden;}
 .brand{padding:18px 20px 14px;border-bottom:1px solid var(--border);text-align:center;}
 .brand h1{font-family:'Syne',sans-serif;font-size:16px;font-weight:800;color:var(--accent);letter-spacing:.08em;text-transform:uppercase;}
 .brand p{font-size:9px;color:var(--muted);margin-top:4px;letter-spacing:.1em;}
@@ -50,114 +48,115 @@ body{font-family:'JetBrains Mono',monospace;background:var(--bg);color:var(--tex
 .progress-bar{height:3px;background:var(--border);border-radius:1px;margin:8px 0;overflow:hidden;}
 .progress-fill{height:100%;background:var(--accent);width:0%;transition:width .1s;border-radius:1px;}
 
-.footer{padding:10px 20px;font-size:8px;color:var(--label);letter-spacing:.05em;margin-top:auto;border-top:1px solid var(--border);text-align:center;}
-
-/* MAIN */
-.main{flex:1;display:flex;flex-direction:column;overflow:hidden;}
-.toolbar{height:40px;background:var(--panel);border-bottom:1px solid var(--border);display:flex;align-items:center;padding:0 14px;gap:8px;flex-shrink:0;overflow-x:auto;}
-.toolbar-label{font-size:8px;color:var(--muted);letter-spacing:.15em;text-transform:uppercase;white-space:nowrap;}
-.view-btn{padding:4px 10px;border-radius:2px;font-size:9px;font-family:'JetBrains Mono',monospace;cursor:pointer;border:1px solid var(--border);background:transparent;color:var(--label);transition:all .2s;letter-spacing:.05em;white-space:nowrap;}
-.view-btn:hover{border-color:var(--accent2);color:var(--accent2);}
-.view-btn.active{background:rgba(0,212,255,.1);border-color:var(--accent2);color:var(--accent2);}
-.sep{width:1px;height:18px;background:var(--border);flex-shrink:0;}
-.spacer{flex:1;}
-
-.viewport-area{flex:1;position:relative;overflow:hidden;}
-#threejs-canvas{position:absolute;top:0;left:0;width:100%;height:100%;}
-
-/* 2D MAP OVERLAY */
-#map-container{position:absolute;inset:0;background:var(--bg);z-index:10;display:none;flex-direction:column;justify-content:center;align-items:center;}
-#map-computing-overlay{display:none;position:absolute;inset:0;background:rgba(8,11,15,.8);z-index:20;justify-content:center;align-items:center;flex-direction:column;gap:12px;}
-@keyframes spin{to{transform:rotate(360deg);}}
-
-/* TOOLTIP */
-.tooltip{position:absolute;bottom:14px;left:14px;background:rgba(8,11,15,.92);border:1px solid var(--border);border-radius:3px;padding:8px 12px;font-size:9px;color:var(--label);pointer-events:none;z-index:100;line-height:1.8;}
-
-.flash-error {
-  border-color: var(--north) !important;
-  background-color: rgba(229, 62, 62, 0.1) !important;
-  transition: all 0.2s ease-in-out;
-}
-
-
-/* OPT STATUS */
-#opt-overlay{display:none;position:absolute;top:16px;right:16px;background:rgba(8,11,15,.9);border:1px solid var(--border);border-radius:4px;padding:12px 16px;font-size:10px;color:var(--accent);flex-direction:column;gap:4px;z-index:50;}
-
-/* WEIGHT SLIDER */
+/* Objective slider (Mandhala-style; labels uncolored) */
 .weight-labels{display:flex;justify-content:space-between;align-items:center;margin-bottom:5px;}
-.weight-end{font-size:8px;letter-spacing:.08em;text-transform:uppercase;white-space:nowrap;font-weight:700;}
-.weight-end-left{color:var(--accent);}
-.weight-end-right{color:var(--accent3);}
+.weight-end{font-size:8px;letter-spacing:.08em;text-transform:uppercase;white-space:nowrap;font-weight:700;color:var(--muted);}
 .weight-slider{-webkit-appearance:none;appearance:none;width:100%;height:4px;background:linear-gradient(to right,var(--accent),var(--accent3));border-radius:2px;outline:none;cursor:pointer;padding:0;border:none;}
 .weight-slider::-webkit-slider-thumb{-webkit-appearance:none;appearance:none;width:14px;height:14px;border-radius:50%;background:var(--text);border:2px solid var(--panel);box-shadow:0 0 0 1px var(--border);cursor:grab;transition:transform .15s;}
 .weight-slider::-webkit-slider-thumb:hover{transform:scale(1.15);}
 .weight-slider::-webkit-slider-thumb:active{cursor:grabbing;transform:scale(1.25);}
 .weight-slider::-moz-range-thumb{width:14px;height:14px;border-radius:50%;background:var(--text);border:2px solid var(--panel);box-shadow:0 0 0 1px var(--border);cursor:grab;}
 .weight-readout{font-size:9px;color:var(--accent2);text-align:center;margin-top:6px;letter-spacing:.06em;font-weight:700;}
+
+.footer{padding:10px 20px;font-size:8px;color:var(--label);letter-spacing:.05em;margin-top:auto;border-top:1px solid var(--border);text-align:center;}
+
+.main{flex:1;display:flex;flex-direction:column;overflow:hidden;}
+.toolbar{height:40px;background:var(--panel);border-bottom:1px solid var(--border);display:flex;align-items:center;padding:0 14px;gap:8px;flex-shrink:0;overflow-x:auto;}
+.toolbar-label{font-size:8px;color:var(--muted);letter-spacing:.15em;text-transform:uppercase;white-space:nowrap;}
+.view-btn{padding:4px 10px;border-radius:2px;font-size:9px;font-family:'JetBrains Mono',monospace;cursor:pointer;border:1px solid var(--border);background:transparent;color:var(--label);transition:all .2s;letter-spacing:.05em;white-space:nowrap;}
+.view-btn.active,.view-btn:hover{background:rgba(0,212,255,.1);border-color:var(--accent2);color:var(--accent2);}
+.sep{width:1px;height:18px;background:var(--border);flex-shrink:0;}
+.spacer{flex:1;}
+
+.viewport-area{flex:1;position:relative;overflow:hidden;}
+#threejs-canvas{position:absolute;top:0;left:0;width:100%;height:100%;}
+
+#map-container{position:absolute;inset:0;background:var(--bg);z-index:10;display:none;flex-direction:column;justify-content:center;align-items:center;}
+#map-computing-overlay{display:none;position:absolute;inset:0;background:rgba(8,11,15,.8);z-index:20;justify-content:center;align-items:center;flex-direction:column;gap:12px;}
+@keyframes spin{to{transform:rotate(360deg);}}
+
+.tooltip{position:absolute;bottom:14px;left:14px;background:rgba(8,11,15,.92);border:1px solid var(--border);border-radius:3px;padding:8px 12px;font-size:9px;color:var(--label);pointer-events:none;z-index:100;line-height:1.8;}
+
+#opt-overlay{display:none;position:absolute;top:16px;right:16px;background:rgba(8,11,15,.9);border:1px solid var(--border);border-radius:4px;padding:12px 16px;font-size:10px;color:var(--accent);flex-direction:column;gap:4px;z-index:50;}
 </style>
 </head>
 <body>
 
-<!-- LEFT PANEL -->
 <div class="left">
   <div class="brand">
     <h1>Mandhala</h1>
-    <p>48-DIPOLE C60 MAGIC SPHERE SIMULATOR · v2.5</p>
+    <p>RADIAL DIPOLES · LEBEDEV / C60 / FIBONACCI · v2.4</p>
   </div>
 
-  <!-- GEOMETRY -->
-<div class="section">
+  <div class="section">
+    <div class="section-title">Lattice</div>
+    <div class="field-row"><label>Distribution</label>
+      <select id="lattice" oninput="onLatticeChange()">
+        <option value="lebedev">Lebedev-98 (symmetric)</option>
+        <option value="c60" selected>C60 Mandhala-48 (very symmetric)</option>
+        <option value="fibonacci">Fibonacci (N-tunable)</option>
+      </select>
+    </div>
+    <div class="field-row"><label>Poles</label><input type="number" id="fibN" value="48" step="1" min="20" max="400" onchange="onGeomChange()" disabled></div>
+    <div id="lattice-info" style="font-size:9px;margin-top:4px;text-align:center;color:var(--muted);letter-spacing:.05em;">—</div>
+  </div>
+
+  <div class="section">
     <div class="section-title">Sphere Geometry</div>
     <div class="three-col">
       <div class="field-row"><label>Inner R (mm)</label><input type="number" id="baseRadius" value="36" step="5" onchange="onGeomChange()"></div>
-      <div class="field-row"><label>Outer R (mm)</label><input type="number" id="outerRadius" value="72" step="5" onchange="onGeomChange()"></div>
-      <div class="field-row"><label>Test R (mm)</label><input type="number" id="testRadius" value="10" step="1" oninput="onGeomChange()"></div>
+      <div class="field-row"><label>Outer R (mm)</label><input type="number" id="outerRadius" value="70" step="5" onchange="onGeomChange()"></div>
+      <div class="field-row"><label>Test R (mm)</label><input type="number" id="testRadius" value="10" step="1" onchange="onGeomChange()"></div>
     </div>
   </div>
 
-  <!-- MAGNETS -->
-<div class="section">
-    <div class="section-title">Cylinder Dipoles (48×)</div>
+  <div class="section">
+    <div class="section-title" id="cylinder-section-title">Cylinder Dipoles</div>
     <div class="two-col">
       <div class="field-row"><label>Diameter (mm)</label><input type="number" id="magDiam" value="10" step="0.5" onchange="onGeomChange()"></div>
       <div class="field-row"><label>Length (mm)</label><input type="number" id="magLen" value="20" step="0.5" onchange="onGeomChange()"></div>
     </div>
     <div class="two-col">
-<div class="field-row"><label>Min Gap (mm)</label><input type="number" id="magGap" value="2" step="0.5" onchange="onGeomChange()"></div>
+      <div class="field-row"><label>Min Gap (mm)</label><input type="number" id="magGap" value="2" step="0.5" onchange="onGapChange()"></div>
       <div class="field-row"><label>Remanence Br (T)</label><input type="number" id="magBr" value="1.32" step="0.05" oninput="evaluateField()"></div>
     </div>
+    <div id="feasibility-status" style="font-size:9px;margin-top:6px;text-align:center;letter-spacing:.05em;color:var(--accent);">—</div>
   </div>
 
-  <!-- COMPUTED FIELD -->
   <div class="section">
     <div class="section-title">Computed Field</div>
     <div class="stat-grid">
-      <div class="stat-card"><div class="sv" id="sv-Bc">—</div><div class="sl">B center (T)</div></div>
+      <div class="stat-card"><div class="sv" id="sv-Bc">—</div><div class="sl">|B| center (T)</div></div>
       <div class="stat-card"><div class="sv" id="sv-Bx">—</div><div class="sl">Bx center (T)</div></div>
       <div class="stat-card"><div class="sv" id="sv-By">—</div><div class="sl">By center (T)</div></div>
       <div class="stat-card"><div class="sv" id="sv-Bz">—</div><div class="sl">Bz center (T)</div></div>
-      <div class="stat-card"><div class="sv" id="sv-Var">—</div><div class="sl">Homogeneity (%)</div></div>
+      <div class="stat-card"><div class="sv" id="sv-Var">—</div><div class="sl">Homog. ppm</div></div>
       <div class="stat-card"><div class="sv" id="sv-Score">—</div><div class="sl">SA Score</div></div>
     </div>
   </div>
 
-  <!-- OPTIMIZER -->
   <div class="section">
-    <div class="section-title">Simulated Annealing Optimizer</div>
+    <div class="section-title">Simulated Annealing</div>
     <div class="two-col">
-      <div class="field-row"><label>Iterations</label><input type="number" id="optIters" value="200000" step="500"></div>
-      <div class="field-row"><label>Max Radial Nudge (mm)</label><input type="number" id="optNudge" value="8" step="1"></div>
+      <div class="field-row"><label>Iterations</label><input type="number" id="optIters" value="50000" step="500"></div>
+      <div class="field-row"><label>Max Nudge (mm)</label><input type="number" id="optNudge" value="4" step="1"></div>
     </div>
 
     <div class="field-row">
       <label>Objective Weight</label>
       <div class="weight-labels">
-        <span class="weight-end weight-end-left">Homogeneity</span>
-        <span class="weight-end weight-end-right">Field</span>
+        <span class="weight-end">Homogeneity</span>
+        <span class="weight-end">Field</span>
       </div>
-      <input type="range" id="optWeight" min="0" max="100" value="50" step="1" class="weight-slider">
-      <div class="weight-readout" id="weight-readout">Homog 50% · Field 50%</div>
+      <input type="range" id="optWeight" min="0" max="100" value="50" step="1" class="weight-slider" oninput="updateWeightReadout()">
+      <div class="weight-readout" id="weightReadout">Homog 50% · Field 50%</div>
     </div>
+
+    <div class="field-row" style="flex-direction:row;align-items:center;gap:8px;margin-bottom:4px;">
+      <input type="checkbox" id="symLock" checked style="width:auto;">
+      <label for="symLock" id="symLockLabel" style="margin:0;cursor:pointer;">Lock symmetry (13 DOF)</label>
+    </div>
+
     <div class="progress-bar"><div class="progress-fill" id="opt-progress"></div></div>
     <div class="btn-row">
       <button class="btn primary" id="btn-opt" onclick="startOptimization()">▶ Run SA</button>
@@ -165,25 +164,29 @@ body{font-family:'JetBrains Mono',monospace;background:var(--bg);color:var(--tex
     </div>
   </div>
 
-
-
-  <!-- ACTIONS -->
-<div class="section">
+  <div class="section">
     <div class="section-title">View & Actions</div>
-    <div class="field-row" style="flex-direction:row; align-items:center; gap:8px; margin-bottom:8px;">
+    <div class="field-row" style="flex-direction:row;align-items:center;gap:8px;margin-bottom:8px;">
       <input type="checkbox" id="showLabels" onchange="drawScene()" style="width:auto;">
-      <label for="showLabels" style="margin:0; cursor:pointer;">Show Dipole Numbers</label>
+      <label for="showLabels" style="margin:0;cursor:pointer;">Show dipole numbers</label>
+    </div>
+    <div class="field-row" style="flex-direction:row;align-items:center;gap:8px;margin-bottom:8px;">
+      <input type="checkbox" id="showOrbitColors" onchange="drawScene()" style="width:auto;">
+      <label for="showOrbitColors" style="margin:0;cursor:pointer;">Color by symmetry orbit</label>
     </div>
     <div class="btn-row">
-      <button class="btn" onclick="exportPDF()">PDF Export</button>
+      <button class="btn" onclick="exportPDF()">PDF Report</button>
+      <button class="btn" onclick="exportCSV()">CSV (shop)</button>
+    </div>
+    <div class="btn-row">
+      <button class="btn" onclick="exportSTEP()">STEP (CAD)</button>
       <button class="btn" onclick="resetOffsets()">Zero Offsets</button>
     </div>
   </div>
 
-  <div class="footer" id="footer-text">NitaD · Univ Paris-Saclay</div>
+  <div class="footer">NitaD · Univ Paris-Saclay · rev. 19 April 2026</div>
 </div>
 
-<!-- MAIN -->
 <div class="main">
   <div class="toolbar">
     <span class="toolbar-label">View</span>
@@ -198,7 +201,7 @@ body{font-family:'JetBrains Mono',monospace;background:var(--bg);color:var(--tex
     <button class="view-btn" id="vbtn-map-yz" onclick="setMapTab('yz')">YZ</button>
     <div class="sep"></div>
     <span class="toolbar-label">Bore</span>
-    <button class="view-btn" id="vbtn-bore" onclick="drawBoreProfile()">Profile</button>
+    <button class="view-btn" id="vbtn-bore" onclick="drawBoreProfile()">Z-Profile</button>
     <div class="spacer"></div>
     <span class="toolbar-label" style="color:var(--accent);font-size:8px;" id="coord-display"></span>
   </div>
@@ -206,19 +209,16 @@ body{font-family:'JetBrains Mono',monospace;background:var(--bg);color:var(--tex
   <div class="viewport-area">
     <canvas id="threejs-canvas"></canvas>
 
-    <!-- 2D Map -->
     <div id="map-container">
       <canvas id="map-canvas" style="border:1px solid var(--border);"></canvas>
       <div style="margin-top:10px;font-size:9px;color:var(--muted);" id="map-title"></div>
     </div>
 
-    <!-- Computing overlay -->
     <div id="map-computing-overlay">
       <div style="width:32px;height:32px;border:3px solid var(--border);border-top-color:var(--accent);border-radius:50%;animation:spin .8s linear infinite;"></div>
       <div style="font-size:10px;color:var(--accent);letter-spacing:.1em;">COMPUTING…</div>
     </div>
 
-    <!-- Opt overlay -->
     <div id="opt-overlay">
       <div id="os-iter" style="color:var(--accent);">Iter: 0</div>
       <div id="os-temp">T: 1.000</div>
@@ -227,8 +227,8 @@ body{font-family:'JetBrains Mono',monospace;background:var(--bg);color:var(--tex
     </div>
 
     <div class="tooltip" id="tooltip">
-      <b style="color:var(--accent)">MANDHALA</b> · 48 dipoles on C60 lattice<br>
-      Bore: Two 6:6 butterflies removed · All dipoles point to center<br>
+      <b style="color:var(--accent)">MANDHALA</b> · Lebedev / C60 / Fibonacci radial dipoles (bore ‖ Z)<br>
+      Each dipole points radially · +x hemisphere S-in, −x hemisphere N-in · Field along +X<br>
       Rotate: drag · Zoom: scroll · Pan: right-drag
     </div>
   </div>
@@ -238,12 +238,13 @@ body{font-family:'JetBrains Mono',monospace;background:var(--bg);color:var(--tex
 <script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js"></script>
 <script>
 
-
-//   Biot-Savart via elliptic integrals
+//finite cylinder magnet via elliptic integrals
 //  Ref: Derby & Olbert, AJP 2010; Furlani 2001
+//  Note: N_RINGS slices a uniformly magnetized cylinder into current
+//  sheets (surface currents K = Br/mu0 along the lateral surface).
 // ═══════════════════════════════════════════════════════════════
 const MU0 = 4e-7 * Math.PI;
-const N_RINGS = 32;
+const N_RINGS = 24;
 
 function ellipticKE(m) {
   if (m >= 1.0) m = 0.9999999;
@@ -269,6 +270,7 @@ function ellipticKE(m) {
 function ringField(a, I, rho, zeta) {
   const Q = (a + rho) * (a + rho) + zeta * zeta;
   const D = (a - rho) * (a - rho) + zeta * zeta;
+  if (D < 1e-20) return { Baxial: 0, Bradial: 0 }; // on the wire
   const m = 4 * a * rho / Q;
   const sqQ = Math.sqrt(Q);
   const [K, E] = ellipticKE(m);
@@ -279,32 +281,35 @@ function ringField(a, I, rho, zeta) {
   };
 }
 
-// Full field of one finite cylinder magnet in the GLOBAL frame
+// Cylinder field in GLOBAL frame.
+// cx,cy,cz = cylinder geometric center; mux,muy,muz = UNIT moment axis;
+// a_mm = radius; halfL_mm = half-length; Br = remanence.
 function cylinderField(px, py, pz, cx, cy, cz, mux, muy, muz, a_mm, halfL_mm, Br) {
   const sc = 1e-3;
   const a = a_mm * sc, halfL = halfL_mm * sc, K = Br / MU0;
   const dx = (px - cx) * sc, dy = (py - cy) * sc, dz = (pz - cz) * sc;
-  // Pick a reference vector that is NOT parallel to mu.
-  // Choose the axis where mu has its smallest component -> guaranteed non-parallel.
-  const amx = Math.abs(mux), amy = Math.abs(muy), amz = Math.abs(muz);
-  let rx, ry, rz;
-  if (amx <= amy && amx <= amz)      { rx = 1; ry = 0; rz = 0; }
-  else if (amy <= amx && amy <= amz) { rx = 0; ry = 1; rz = 0; }
-  else                                { rx = 0; ry = 0; rz = 1; }
+
+  // Build orthonormal frame (e1, e2, m) around moment axis
+  let rx = 1, ry = 0, rz = 0;
+  if (Math.abs(mux) > 0.9) { rx = 0; ry = 1; }
   const d2 = mux*rx + muy*ry + muz*rz;
   let e1x = rx - d2*mux, e1y = ry - d2*muy, e1z = rz - d2*muz;
   const e1n = Math.sqrt(e1x*e1x + e1y*e1y + e1z*e1z);
   e1x /= e1n; e1y /= e1n; e1z /= e1n;
   const e2x = muy*e1z - muz*e1y, e2y = muz*e1x - mux*e1z, e2z = mux*e1y - muy*e1x;
+
   const d_ax = dx*mux + dy*muy + dz*muz;
   const d_e1 = dx*e1x + dy*e1y + dz*e1z;
   const d_e2 = dx*e2x + dy*e2y + dz*e2z;
   const rho = Math.sqrt(d_e1*d_e1 + d_e2*d_e2);
+
   const ds = 2 * halfL / N_RINGS, dI = K * ds;
   let Bax = 0, Brad = 0;
   for (let n = 0; n < N_RINGS; n++) {
     const zeta = d_ax - (-halfL + (n + 0.5) * ds);
-    if (rho < a * 1.01 && Math.abs(zeta) < ds * 0.5) continue;
+    // Skip ring only if the field point sits ON the ring's wire (true singularity).
+    // Do NOT skip when on-axis or just outside a cap; those are finite.
+    if (Math.abs(rho - a) < ds * 0.1 && Math.abs(zeta) < ds * 0.5) continue;
     const { Baxial, Bradial } = ringField(a, dI, rho, zeta);
     Bax += Baxial; Brad += Bradial;
   }
@@ -317,118 +322,173 @@ function cylinderField(px, py, pz, cx, cy, cz, mux, muy, muz, a_mm, halfL_mm, Br
   };
 }
 
-// Helper to create 3D text labels
-function makeTextSprite(message) {
-  const canvas = document.createElement('canvas');
-  canvas.width = 128; canvas.height = 128;
-  const ctx = canvas.getContext('2d');
-  ctx.font = 'Bold 55px JetBrains Mono, monospace';
-  ctx.textAlign = 'center';
-  ctx.textBaseline = 'middle';
-  
-  // Black text with white outline for visibility on any background
-  ctx.lineWidth = 8;
-  ctx.strokeStyle = '#ffffff';
-  ctx.strokeText(message, 64, 64);
-  ctx.fillStyle = '#000000';
-  ctx.fillText(message, 64, 64);
-  
-  const tex = new THREE.CanvasTexture(canvas);
-  const sprite = new THREE.Sprite(new THREE.SpriteMaterial({ map: tex, depthTest: false }));
-  sprite.scale.set(16, 16, 1);
-  return sprite;
+// 
+// Lebedev-110 with 2×5 pole caps removed (bore ‖ Z)
+// ═══════════════════════════════════════════════════════════════
+function generateLebedev110Points() {
+  const points = [];
+  const EPS = 1e-5;
+  const add = (x, y, z) => {
+    const r = Math.sqrt(x*x + y*y + z*z);
+    const v = [x/r, y/r, z/r];
+    const perms = [
+      [v[0],v[1],v[2]], [v[0],v[2],v[1]], [v[1],v[0],v[2]],
+      [v[1],v[2],v[0]], [v[2],v[0],v[1]], [v[2],v[1],v[0]]
+    ];
+    perms.forEach(p => {
+      for (const sx of [1,-1]) for (const sy of [1,-1]) for (const sz of [1,-1]) {
+        const nx = p[0]*sx, ny = p[1]*sy, nz = p[2]*sz;
+        let dup = false;
+        for (const g of points) {
+          if (Math.abs(g.x-nx)<EPS && Math.abs(g.y-ny)<EPS && Math.abs(g.z-nz)<EPS) { dup = true; break; }
+        }
+        if (!dup) points.push(new THREE.Vector3(nx, ny, nz));
+      }
+    });
+  };
+  // Lebedev-110 orbits: 6 + 8 + 24 + 24 + 48 = 110
+  add(1.0, 0.0, 0.0);
+  add(0.577350, 0.577350, 0.577350);
+  add(0.183060, 0.183060, 0.965880); // the near-pole 24-orbit (8 points within |z|>0.9)
+  add(0.695051, 0.695051, 0.174780);
+  add(0.353553, 0.612372, 0.707106);
+  return points;
 }
 
+// Radial hemispheric-flip moment rule:
+//   +x hemisphere: S-pole faces inward (toward origin) → moment vector points outward → m = +dir
+//   -x hemisphere: N-pole faces inward                 → moment vector points inward  → m = -dir
+// The x-components of these moments both contribute to Bx with the same (positive) sign,
+// while By/Bz contributions cancel across the x-mirror pairs. Result: pure +Bx at center.
+function radialMoment(dir) {
+  const sign = dir.x > 0 ? +1 : -1;
+  return new THREE.Vector3(sign * dir.x, sign * dir.y, sign * dir.z);
+}
 
-function generateC60Vertices() {
+// C60 (buckminsterfullerene): 60 icosahedrally symmetric vertices.
+// With the top and bottom hexagonal caps removed (|z| ≥ 0.8), you get 48 magnets
+// with full D₂ₕ symmetry, all nearest-neighbour angles = 23.3°, and 7 symmetry orbits.
+function generateC60Points() {
   const phi = (1 + Math.sqrt(5)) / 2;
   const raw = [];
-
-  const push = (x,y,z) => raw.push([x,y,z]);
-
-  // (0, ±1, ±3φ)
-  for (let s1 of [1,-1]) for (let s2 of [1,-1]) {
+  const push = (x, y, z) => raw.push([x, y, z]);
+  // (0, ±1, ±3φ) and cyclic permutations
+  for (const s1 of [1,-1]) for (const s2 of [1,-1]) {
     push(0, s1*1, s2*3*phi);
     push(s1*1, s2*3*phi, 0);
     push(s2*3*phi, 0, s1*1);
   }
-
-  // (±1, ±(2+φ), ±2φ)
-  for (let sx of [1,-1]) for (let sy of [1,-1]) for (let sz of [1,-1]) {
+  // (±1, ±(2+φ), ±2φ) and cyclic permutations
+  for (const sx of [1,-1]) for (const sy of [1,-1]) for (const sz of [1,-1]) {
     push(sx*1, sy*(2+phi), sz*(2*phi));
     push(sy*(2+phi), sz*(2*phi), sx*1);
     push(sz*(2*phi), sx*1, sy*(2+phi));
   }
-
-  // (±φ, ±2, ±(2φ+1))
-  for (let sx of [1,-1]) for (let sy of [1,-1]) for (let sz of [1,-1]) {
+  // (±φ, ±2, ±(2φ+1)) and cyclic permutations
+  for (const sx of [1,-1]) for (const sy of [1,-1]) for (const sz of [1,-1]) {
     push(sx*phi, sy*2, sz*(2*phi+1));
     push(sy*2, sz*(2*phi+1), sx*phi);
     push(sz*(2*phi+1), sx*phi, sy*2);
   }
-
-  // Deduplicate via rounded coordinate key (O(n) instead of O(n²))
-  const keyOf = ([x,y,z]) => `${x.toFixed(5)},${y.toFixed(5)},${z.toFixed(5)}`;
-  const unique = [...new Map(raw.map(v => [keyOf(v), v])).values()];
-
-  if (unique.length !== 60) {
-    console.warn(`generateC60Vertices: expected 60, got ${unique.length}`);
+  // Dedup by rounded key and normalize to unit sphere
+  const seen = new Map();
+  for (const v of raw) {
+    const key = `${v[0].toFixed(5)},${v[1].toFixed(5)},${v[2].toFixed(5)}`;
+    if (!seen.has(key)) seen.set(key, v);
   }
-
-  return unique;
-}
-
-
-function uniqueVertices(list) {
-  const EPS = 1e-6;
-  const out = [];
-
-  list.forEach(([x, y, z]) => {
-    if (!out.some(([ox, oy, oz]) =>
-      Math.abs(x - ox) < EPS &&
-      Math.abs(y - oy) < EPS &&
-      Math.abs(z - oz) < EPS
-    )) {
-      out.push([x, y, z]);
-    }
-  });
-
-  return out;
-}
-
-
-//3 js, avant le 16 avril, duplication dans les dipoles
-// modif le 16, l'axe Z est selon C3, on enlève deux heaxons, donc 48 aimants
-function generateMagicSphere48(R) {
-  // The default C60 generation already has a C2 axis perfectly aligned with the Z-axis.
-  let verts = generateC60Vertices().map(([x,y,z]) => {
-    const l = Math.hypot(x,y,z);
+  return [...seen.values()].map(([x,y,z]) => {
+    const l = Math.sqrt(x*x + y*y + z*z);
     return new THREE.Vector3(x/l, y/l, z/l);
   });
+}
 
-  // The 6 poles closest to +Z have z > 0.8. The 6 closest to -Z have z < -0.8.
-  // Filtering them out removes the two polar caps, leaving exactly 48 poles with perfect C2 symmetry.
-  const finalVerts = verts.filter(v => Math.abs(v.z) < 0.8);
+// Fibonacci sphere: very uniform angular distribution, no exact symmetries.
+// Golden-angle spiral: better packing than Lebedev, tunable N, but By/Bz won't
+// be exactly zero at center — the SA will drive them down, hopefully.
+function generateFibonaccipoints(N) {
+  const points = [];
+  const phi = Math.PI * (3 - Math.sqrt(5)); // golden angle
+  for (let i = 0; i < N; i++) {
+    const z = 1 - (2*i + 1) / N;
+    const r = Math.sqrt(Math.max(0, 1 - z*z));
+    const theta = phi * i;
+    points.push(new THREE.Vector3(r * Math.cos(theta), r * Math.sin(theta), z));
+  }
+  return points;
+}
 
-  if (finalVerts.length !== 48) {
-    console.warn(`generateMagicSphere48: expected 48 vertices, got ${finalVerts.length}. Check polar-cap threshold.`);
+// Returns the current lattice mode: 'lebedev' or 'fibonacci'
+function currentLattice() {
+  const el = document.getElementById('lattice');
+  return el ? el.value : 'lebedev';
+}
+
+function buildRadialArray() {
+  let verts;
+  const mode = currentLattice();
+  if (mode === 'fibonacci') {
+    const N = Math.max(20, Math.min(400, parseInt(document.getElementById('fibN').value) || 100));
+    verts = generateFibonaccipoints(N);
+    verts = verts.filter(v => Math.abs(v.z) < 0.9);
+    verts = verts.filter(v => Math.abs(v.x) > 1e-3);
+  } else if (mode === 'c60') {
+    // C60: cap-cut threshold 0.8 gives exactly 48 magnets with full D₂ₕ symmetry
+    verts = generateC60Points();
+    verts = verts.filter(v => Math.abs(v.z) < 0.8);
+    verts = verts.filter(v => Math.abs(v.x) > 1e-3);
+  } else {
+    // Default: Lebedev-98
+    verts = generateLebedev110Points();
+    verts = verts.filter(v => Math.abs(v.z) < 0.9);
+    verts = verts.filter(v => Math.abs(v.x) > 1e-3);
   }
 
-  // Map to magnet objects, initializing the Transverse X field polarities:
-  // +X hemisphere -> Polarity 1 (N in / S out)
-  // -X hemisphere -> Polarity -1 (S in / N out)
-  return finalVerts.map(dir => ({
-    dir,
-    polarity: dir.x >= 0 ? 1 : -1,
-    offset: 0
-  }));
+  return verts.map(dir => {
+    const mu = radialMoment(dir);
+    return { dir, mu, offset: 0 };
+  });
+}
+
+// Build D₂ₕ symmetry orbits: {e, σ_yz (x→−x), σ_xz (y→−y), σ_xy (z→−z), and their products}.
+// This is the full symmetry group relevant here. All 8 members of a generic orbit share
+// the same radial offset, and by construction By = Bz = 0 everywhere on the x axis and
+// the net field at the center is exactly along ±x.
+function buildOrbits(mags) {
+  const EPS = 1e-4;
+  const orbits = [];
+  const assigned = new Array(mags.length).fill(-1);
+
+  for (let i = 0; i < mags.length; i++) {
+    if (assigned[i] !== -1) continue;
+    const d = mags[i].dir;
+    // All 8 D₂ₕ images of this magnet
+    const images = [];
+    for (const sx of [1, -1]) for (const sy of [1, -1]) for (const sz of [1, -1]) {
+      images.push([sx*d.x, sy*d.y, sz*d.z]);
+    }
+    const partners = new Set([i]);
+    for (const [ix, iy, iz] of images) {
+      for (let j = 0; j < mags.length; j++) {
+        if (partners.has(j) || assigned[j] !== -1) continue;
+        const q = mags[j].dir;
+        if (Math.abs(q.x-ix)<EPS && Math.abs(q.y-iy)<EPS && Math.abs(q.z-iz)<EPS) {
+          partners.add(j);
+          break;
+        }
+      }
+    }
+    const orb = [...partners];
+    orbits.push(orb);
+    orb.forEach(k => assigned[k] = orbits.length - 1);
+  }
+  return orbits;
 }
 
 
+//three.js
 const canvas = document.getElementById('threejs-canvas');
-const renderer = new THREE.WebGLRenderer({ canvas, antialias: true, preserveDrawingBuffer: true });renderer.setPixelRatio(window.devicePixelRatio);
-renderer.shadowMap.enabled = true;
-renderer.shadowMap.type = THREE.PCFSoftShadowMap;
+const renderer = new THREE.WebGLRenderer({ canvas, antialias: true, preserveDrawingBuffer: true });
+renderer.setPixelRatio(window.devicePixelRatio);
 
 const scene = new THREE.Scene();
 scene.background = new THREE.Color(0x080b0f);
@@ -436,11 +496,9 @@ scene.fog = new THREE.Fog(0x080b0f, 400, 900);
 
 const camera = new THREE.PerspectiveCamera(45, 1, 0.1, 2000);
 
-// Lighting
-const ambLight = new THREE.AmbientLight(0x1a2535, 2.0);
-scene.add(ambLight);
+scene.add(new THREE.AmbientLight(0x1a2535, 2.0));
 const dirLight = new THREE.DirectionalLight(0xffffff, 1.0);
-dirLight.position.set(1, 2, 1.5); dirLight.castShadow = true;
+dirLight.position.set(1, 2, 1.5);
 scene.add(dirLight);
 const rimLight = new THREE.DirectionalLight(0xa8ff3e, 0.25);
 rimLight.position.set(-2, 0.5, -1);
@@ -449,30 +507,28 @@ const fillLight = new THREE.PointLight(0x00d4ff, 0.3, 400);
 fillLight.position.set(0, -100, 50);
 scene.add(fillLight);
 
-const axesScene = new THREE.Scene();
-const axesCamera = new THREE.PerspectiveCamera(50, 1, 0.1, 100);
-axesCamera.position.set(0, 0, 40); // Pull camera back to see the axes
-const axesHelper = new THREE.AxesHelper(15);
-axesScene.add(axesHelper);
-
-// do not to erase the main scene when drawing the HUD
-renderer.autoClear = false;
-let hideAxesHUD = false; // Set true during PDF export to skip HUD gizmo
+const gridHelper = new THREE.GridHelper(400, 40, 0x1a2535, 0x111820);
+gridHelper.rotation.x = Math.PI / 2;
+gridHelper.visible = false;
+scene.add(gridHelper);
+const axisHelper = new THREE.AxesHelper(25);
+axisHelper.position.set(-90, -90, 0.5);
+scene.add(axisHelper);
 
 const magnetGroup = new THREE.Group();
 scene.add(magnetGroup);
 
-// ── Orbit controls (manual) ──
+// Orbit controls (manual)
 let isMouseDown = false, mouseBtn = 0;
-let lastMouse = {x:0,y:0};
-let spherical = {theta:0.6, phi:1.15, radius:280};
-let panOffset = {x:0,y:0};
+let lastMouse = { x: 0, y: 0 };
+let spherical = { theta: 0.6, phi: 1.15, radius: 280 };
+let panOffset = { x: 0, y: 0 };
 let targetView = null;
 
 canvas.addEventListener('mousedown', e => {
   isMouseDown = true; mouseBtn = e.button;
-  lastMouse = {x:e.clientX, y:e.clientY};
-  canvas.style.cursor = e.button===2 ? 'move' : 'grabbing';
+  lastMouse = { x: e.clientX, y: e.clientY };
+  canvas.style.cursor = e.button === 2 ? 'move' : 'grabbing';
   e.preventDefault();
 });
 canvas.addEventListener('contextmenu', e => e.preventDefault());
@@ -484,138 +540,416 @@ window.addEventListener('mousemove', e => {
     panOffset.x -= dx * 0.18; panOffset.y += dy * 0.18;
   } else {
     spherical.theta -= dx * 0.008;
-    spherical.phi = Math.max(0.05, Math.min(Math.PI-0.05, spherical.phi + dy*0.008));
+    spherical.phi = Math.max(0.05, Math.min(Math.PI - 0.05, spherical.phi + dy * 0.008));
   }
-  lastMouse = {x:e.clientX, y:e.clientY};
+  lastMouse = { x: e.clientX, y: e.clientY };
   targetView = null;
 });
 canvas.addEventListener('wheel', e => {
-  spherical.radius = Math.max(60, Math.min(700, spherical.radius + e.deltaY*0.35));
+  spherical.radius = Math.max(60, Math.min(700, spherical.radius + e.deltaY * 0.35));
   targetView = null; e.preventDefault();
-}, {passive:false});
+}, { passive: false });
 
-// Touch support
 let lastTouchDist = 0;
 canvas.addEventListener('touchstart', e => {
-  if (e.touches.length===1) { isMouseDown=true; lastMouse={x:e.touches[0].clientX,y:e.touches[0].clientY}; }
-  if (e.touches.length===2) { lastTouchDist = Math.hypot(e.touches[0].clientX-e.touches[1].clientX, e.touches[0].clientY-e.touches[1].clientY); }
+  if (e.touches.length === 1) { isMouseDown = true; lastMouse = { x: e.touches[0].clientX, y: e.touches[0].clientY }; }
+  if (e.touches.length === 2) { lastTouchDist = Math.hypot(e.touches[0].clientX - e.touches[1].clientX, e.touches[0].clientY - e.touches[1].clientY); }
   e.preventDefault();
-},{passive:false});
+}, { passive: false });
 canvas.addEventListener('touchmove', e => {
-  if (e.touches.length===1 && isMouseDown) {
-    const dx=e.touches[0].clientX-lastMouse.x, dy=e.touches[0].clientY-lastMouse.y;
-    spherical.theta -= dx*0.008;
-    spherical.phi = Math.max(0.05, Math.min(Math.PI-0.05, spherical.phi+dy*0.008));
-    lastMouse={x:e.touches[0].clientX,y:e.touches[0].clientY};
-    targetView=null;
+  if (e.touches.length === 1 && isMouseDown) {
+    const dx = e.touches[0].clientX - lastMouse.x, dy = e.touches[0].clientY - lastMouse.y;
+    spherical.theta -= dx * 0.008;
+    spherical.phi = Math.max(0.05, Math.min(Math.PI - 0.05, spherical.phi + dy * 0.008));
+    lastMouse = { x: e.touches[0].clientX, y: e.touches[0].clientY };
+    targetView = null;
   }
-  if (e.touches.length===2) {
-    const d=Math.hypot(e.touches[0].clientX-e.touches[1].clientX,e.touches[0].clientY-e.touches[1].clientY);
-    spherical.radius=Math.max(60,Math.min(700,spherical.radius-(d-lastTouchDist)*0.5));
-    lastTouchDist=d; targetView=null;
+  if (e.touches.length === 2) {
+    const d = Math.hypot(e.touches[0].clientX - e.touches[1].clientX, e.touches[0].clientY - e.touches[1].clientY);
+    spherical.radius = Math.max(60, Math.min(700, spherical.radius - (d - lastTouchDist) * 0.5));
+    lastTouchDist = d; targetView = null;
   }
   e.preventDefault();
-},{passive:false});
-canvas.addEventListener('touchend',()=>{isMouseDown=false;},{passive:false});
+}, { passive: false });
+canvas.addEventListener('touchend', () => { isMouseDown = false; }, { passive: false });
 
 
-//  STATE
-
+//state
 let magnets = [];
-let bestScore = Infinity;
+let orbits = [];
+let orbitOf = []; // orbit index per magnet
 let optRunning = false;
 let currentMapPlane = null;
+let activeWorkers = [];
+let lastDrawTime = 0;
+
+function updateWeightReadout() {
+  const w = parseInt(document.getElementById('optWeight').value);
+  // Slider: 0 (left) = pure Homogeneity, 100 (right) = pure Field
+  const field = w, homog = 100 - w;
+  document.getElementById('weightReadout').textContent = `Homog ${homog}% · Field ${field}%`;
+  evaluateField();
+}
 
 function onGeomChange() {
-  let R = parseFloat(document.getElementById('baseRadius').value);
-  let outerR = parseFloat(document.getElementById('outerRadius').value);
-  const diam = parseFloat(document.getElementById('magDiam').value);
-  const len = parseFloat(document.getElementById('magLen').value);
-  const gap = parseFloat(document.getElementById('magGap').value);
-
-  // Generate the directional vectors to measure angles
-  magnets = generateMagicSphere48(R);
-
-  // 1. Find the smallest angle between any two adjacent dipoles
-  let maxDot = -1;
-  for (let i = 0; i < magnets.length; i++) {
-    for (let j = i + 1; j < magnets.length; j++) {
-       let dot = magnets[i].dir.x * magnets[j].dir.x + 
-                 magnets[i].dir.y * magnets[j].dir.y + 
-                 magnets[i].dir.z * magnets[j].dir.z;
-       if (dot > maxDot && dot < 0.999) maxDot = dot; 
-    }
-  }
-  const minAngle = Math.acos(maxDot);
-  
-  // 2. Calculate the minimum allowed inner radius
-  const minR = (diam + gap) / (2 * Math.sin(minAngle / 2));
-
-  // 3. Enforce the inner radius limit and update UI
-  if (R < minR) {
-    R = Math.ceil(minR * 10) / 10; 
-    
-    const radiusInput = document.getElementById('baseRadius');
-    radiusInput.value = R;
-    
-    radiusInput.classList.add('flash-error');
-    setTimeout(() => { radiusInput.classList.remove('flash-error'); }, 800);
-
-    showTooltip(`Inner R auto-adjusted to ${R} mm to maintain the minimum gap.`, 4000);
-  }
-
-  // 4. Enforce the outer radius limit
-  const minOuter = R + len;
-  if (outerR < minOuter) {
-    outerR = minOuter;
-    
-    const outerRadiusInput = document.getElementById('outerRadius');
-    outerRadiusInput.value = outerR;
-    
-    outerRadiusInput.classList.add('flash-error');
-    setTimeout(() => { outerRadiusInput.classList.remove('flash-error'); }, 800);
-
-    showTooltip(`Outer R auto-adjusted to ${outerR} mm to fit the dipoles.`, 4000);
-  }
-
+  magnets = buildRadialArray();
+  orbits = buildOrbits(magnets);
+  orbitOf = new Array(magnets.length).fill(-1);
+  orbits.forEach((orb, oi) => orb.forEach(mi => orbitOf[mi] = oi));
+  buildNeighbourList();
+  applyMinOffsetClamp();
+  updateLatticeUI();
   drawScene();
   evaluateField();
 }
 
+// Called when the lattice distribution changes (Lebedev ↔ Fibonacci).
+// Resets offsets so the user sees a clean starting point.
+function onLatticeChange() {
+  onGeomChange();
+}
+
+// Update UI labels/info that depend on the current lattice and magnet count
+function updateLatticeUI() {
+  const mode = currentLattice();
+  const N = magnets.length;
+  const nOrbits = orbits.length;
+  const secTitle = document.getElementById('cylinder-section-title');
+  if (secTitle) secTitle.textContent = `Cylinder Dipoles (${N}×)`;
+
+  const symLabel = document.getElementById('symLockLabel');
+  const symCheck = document.getElementById('symLock');
+  if (symLabel && symCheck) {
+    if (mode === 'fibonacci') {
+      symLabel.textContent = `No symmetry (${nOrbits} DOF — per-magnet)`;
+      symCheck.disabled = true;
+      symLabel.style.opacity = '0.5';
+    } else {
+      // Lebedev-98 and C60-48 both have exact D₂ₕ
+      symLabel.textContent = `Lock D₂ₕ symmetry (${nOrbits} DOF)`;
+      symCheck.disabled = false;
+      symLabel.style.opacity = '1';
+    }
+  }
+
+  const info = document.getElementById('lattice-info');
+  const fibN = document.getElementById('fibN');
+  if (info) {
+    if (mode === 'lebedev') {
+      info.textContent = `Lebedev-110 → pole caps + on-axis cut → ${N} magnets, ${nOrbits} symmetry orbits`;
+      if (fibN) { fibN.disabled = true; fibN.value = N; }
+    } else if (mode === 'c60') {
+      info.textContent = `C60 Mandhala → 2 hexagonal caps removed → ${N} magnets, ${nOrbits} symmetry orbits`;
+      if (fibN) { fibN.disabled = true; fibN.value = N; }
+    } else {
+      // Compute min NN angle for the info line
+      let minCos = -1;
+      for (let i = 0; i < magnets.length; i++) {
+        for (const nb of neighbours[i]) {
+          const cosA = 1 - 2 * nb.sinHalfA * nb.sinHalfA;
+          if (cosA > minCos) minCos = cosA;
+        }
+      }
+      const minAngleDeg = Math.acos(Math.max(-1, Math.min(1, minCos))) * 180 / Math.PI;
+      info.textContent = `Fibonacci N=${fibN.value} → pole cut → ${N} magnets · min NN angle ≈ ${minAngleDeg.toFixed(1)}°`;
+      if (fibN) fibN.disabled = false;
+    }
+  }
+}
+
+// Called when the user changes the Min Gap or anything else that only affects
+// the clearance constraint — reuses the existing magnets and orbit structure.
+function onGapChange() {
+  applyMinOffsetClamp();
+  drawScene();
+  evaluateField();
+}
 
 function resetGeometry() {
   magnets.forEach(m => m.offset = 0);
+  applyMinOffsetClamp();
   drawScene();
   evaluateField();
 }
-// Alias kept for the "Zero Offsets" button label
-const resetOffsets = resetGeometry;
+function resetOffsets() { resetGeometry(); }
 
-//draw
 
-function totalFieldAt(px, py, pz) {
-  const R = parseFloat(document.getElementById('baseRadius').value);
-  const diam = parseFloat(document.getElementById('magDiam').value);
-  const len = parseFloat(document.getElementById('magLen').value);
-  const Br = parseFloat(document.getElementById('magBr').value);
-  let bx=0, by=0, bz=0;
-  
-  magnets.forEach(mag => {
-    const dist = R + mag.offset + len/2;
+//calc field, for score in SA
+function fieldAt(px, py, pz, params) {
+  let bx = 0, by = 0, bz = 0;
+  const R = params.R, len = params.len, diam = params.diam, Br = params.Br;
+  for (const mag of magnets) {
+    const dist = R + mag.offset + len / 2;
     const cx = mag.dir.x * dist, cy = mag.dir.y * dist, cz = mag.dir.z * dist;
-    
-    // Purely radial orientation, flipped by polarity
-    const mux = -mag.dir.x * mag.polarity;
-    const muy = -mag.dir.y * mag.polarity;
-    const muz = -mag.dir.z * mag.polarity;
-    
-    const b = cylinderField(px, py, pz, cx, cy, cz, mux, muy, muz, diam/2, len/2, Br);
+    const b = cylinderField(px, py, pz, cx, cy, cz, mag.mu.x, mag.mu.y, mag.mu.z, diam / 2, len / 2, Br);
     bx += b.Bx; by += b.By; bz += b.Bz;
-  });
-  
-  return {bx, by, bz, b: Math.sqrt(bx*bx + by*by + bz*bz)};
+  }
+  return { bx, by, bz, b: Math.sqrt(bx*bx + by*by + bz*bz) };
 }
 
+function getParams() {
+  return {
+    R: parseFloat(document.getElementById('baseRadius').value),
+    R_outer: parseFloat(document.getElementById('outerRadius').value),
+    tr: parseFloat(document.getElementById('testRadius').value),
+    diam: parseFloat(document.getElementById('magDiam').value),
+    len: parseFloat(document.getElementById('magLen').value),
+    gap: parseFloat(document.getElementById('magGap').value),
+    Br: parseFloat(document.getElementById('magBr').value),
+    // Slider: 0 (left) = pure Homogeneity, 100 (right) = pure Field.
+    // The scoring convention uses weight=1.0 for pure homogeneity, so we invert here.
+    weight: 1 - parseInt(document.getElementById('optWeight').value) / 100
+  };
+}
+
+// Sample on 2 concentric shells (26 + 6 interior = 32 points) for a stable homogeneity estimate.
+// Identical sample set in main thread and SA worker → scores match exactly.
+const SAMPLE_DIRS = (() => {
+  const dirs = [];
+  // Shell 1: 6 axial
+  [[1,0,0],[-1,0,0],[0,1,0],[0,-1,0],[0,0,1],[0,0,-1]].forEach(d => dirs.push({ r: 1.0, d }));
+  // Shell 2: 12 edge
+  const s = 1/Math.sqrt(2);
+  [[s,s,0],[s,-s,0],[-s,s,0],[-s,-s,0],[s,0,s],[s,0,-s],[-s,0,s],[-s,0,-s],[0,s,s],[0,s,-s],[0,-s,s],[0,-s,-s]]
+    .forEach(d => dirs.push({ r: 1.0, d }));
+  // Shell 3: 8 corner
+  const t = 1/Math.sqrt(3);
+  [[t,t,t],[t,t,-t],[t,-t,t],[t,-t,-t],[-t,t,t],[-t,t,-t],[-t,-t,t],[-t,-t,-t]]
+    .forEach(d => dirs.push({ r: 1.0, d }));
+  // Inner shell: half-radius, 6 axial points (catches curvature)
+  [[1,0,0],[-1,0,0],[0,1,0],[0,-1,0],[0,0,1],[0,0,-1]].forEach(d => dirs.push({ r: 0.5, d }));
+  return dirs;
+})();
+
+function computeMetrics(params) {
+  const c = fieldAt(0, 0, 0, params);
+  const absBx = Math.max(Math.abs(c.bx), 1e-9);
+  let minBx = c.bx, maxBx = c.bx;
+  let maxTrans = 0;
+  let sumBx = c.bx, sumBx2 = c.bx * c.bx, n = 1;
+
+  for (const { r, d } of SAMPLE_DIRS) {
+    const x = d[0] * params.tr * r, y = d[1] * params.tr * r, z = d[2] * params.tr * r;
+    const f = fieldAt(x, y, z, params);
+    if (f.bx < minBx) minBx = f.bx;
+    if (f.bx > maxBx) maxBx = f.bx;
+    const tr = Math.sqrt(f.by*f.by + f.bz*f.bz);
+    if (tr > maxTrans) maxTrans = tr;
+    sumBx += f.bx; sumBx2 += f.bx * f.bx; n++;
+  }
+
+  const meanBx = sumBx / n;
+  const varBx = Math.max(0, sumBx2 / n - meanBx * meanBx);
+  const stdBx = Math.sqrt(varBx);
+
+  // Peak-to-peak Bx as fraction of center Bx, in ppm
+  const ppmBx = Math.abs(meanBx) > 1e-9 ? ((maxBx - minBx) / Math.abs(meanBx)) * 1e6 : 1e9;
+  // Transverse leak as fraction of center Bx, in ppm
+  const ppmTrans = (maxTrans / absBx) * 1e6;
+
+  return {
+    bCenter: c,
+    absBx,
+    minBx, maxBx, maxTrans,
+    meanBx, stdBx,
+    ppmBx, ppmTrans
+  };
+}
+
+function computeScore(metrics, params) {
+  const w = params.weight;   // 1.0 = pure homogeneity, 0.0 = pure field
+  // Both terms expressed as PERCENTAGES so score is always positive and monotone
+  // ("smaller is better"). Range of each term is roughly [0, 100].
+  //  - Homogeneity penalty: peak-to-peak Bx + 2×transverse leak, in percent.
+  //  - Field shortfall: how far |Bx| at center falls below the remanence Br, in percent.
+  //    Typical |Bx| is 10-40% of Br, so this is ~60-90% for typical configs.
+  const homogPct = 100 * (metrics.ppmBx + 2 * metrics.ppmTrans) / 1e6;
+  const fieldShortfallPct = Math.max(0, 100 * (1 - metrics.absBx / Math.max(params.Br, 0.1)));
+  return w * homogPct + (1 - w) * fieldShortfallPct;
+}
+
+function evaluateField() {
+  const params = getParams();
+  const metrics = computeMetrics(params);
+  const score = computeScore(metrics, params);
+  const c = metrics.bCenter;
+
+  document.getElementById('sv-Bc').textContent = c.b.toFixed(4);
+  document.getElementById('sv-Bx').textContent = c.bx.toFixed(4);
+  document.getElementById('sv-By').textContent = c.by.toExponential(2);
+  document.getElementById('sv-Bz').textContent = c.bz.toExponential(2);
+  document.getElementById('sv-Var').textContent =
+    `${metrics.ppmBx.toFixed(0)} ppm Bx · ${metrics.ppmTrans.toFixed(0)} ppm YZ`;
+  document.getElementById('sv-Score').textContent = score.toFixed(3) + '%';
+
+  return { metrics, score };
+}
+
+
+//  ANTI-BUMP — per-magnet min offset + pairwise validation
+//
+//  Physical constraint: for any pair of magnets (i, j) with angular
+//  separation α_ij, their axis-to-axis distance must be ≥ (diam + gap).
+//  The tightest point is at the inner faces, so using the SMALLER of
+//  the two inner radii gives a conservative chord:
+//      2 · min(R+off_i, R+off_j) · sin(α_ij/2)  ≥  diam + gap
+//  This is O(1) per pair. Precomputing each magnet's nearest angular
+//  neighbours keeps the full pairwise check cheap (~6 neighbours each).
+// ═══════════════════════════════════════════════════════════════
+
+// Precomputed at build time. neighbours[i] = list of {j, cosA, sinHalfA}.
+// We keep only the k closest neighbours (in angle) for each magnet, with
+// k chosen wide enough to catch any pair that could ever collide.
+let neighbours = [];
+
+function buildNeighbourList() {
+  const N = magnets.length;
+  neighbours = new Array(N);
+  // Keep the 8 closest neighbours — empirically this covers every pair that
+  // can realistically collide on this lattice (typical coordination is 4-6).
+  const K = 8;
+  for (let i = 0; i < N; i++) {
+    const entries = [];
+    for (let j = 0; j < N; j++) {
+      if (j === i) continue;
+      const cosA = magnets[i].dir.x*magnets[j].dir.x
+                 + magnets[i].dir.y*magnets[j].dir.y
+                 + magnets[i].dir.z*magnets[j].dir.z;
+      if (cosA >= 0.9999) continue; // self/duplicate
+      entries.push({ j, cosA });
+    }
+    entries.sort((a, b) => b.cosA - a.cosA); // largest cosA = smallest angle
+    neighbours[i] = entries.slice(0, K).map(e => {
+      const alpha = Math.acos(Math.max(-1, Math.min(1, e.cosA)));
+      return { j: e.j, sinHalfA: Math.sin(alpha / 2) };
+    });
+  }
+}
+
+// Per-magnet minimum offset from each magnet's OWN nearest neighbour (assumes
+// that neighbour is at the same or smaller offset, which is the worst case).
+// Returns an array of minimums to clamp against.
+function computeMinOffsets(params) {
+  const R = params.R, len = params.len, diam = params.diam, gap = params.gap, tr = params.tr;
+  // Test-volume constraint: inner face ≥ tr + gap from origin
+  const minOffTest = Math.max(0, (tr + gap) - R);
+  const maxOff = Math.max(minOffTest, params.R_outer - R - len);
+
+  const minOffs = new Array(magnets.length).fill(minOffTest);
+  const maxOffs = new Array(magnets.length).fill(maxOff);
+
+  for (let i = 0; i < magnets.length; i++) {
+    let tightest = 0;
+    for (const nb of neighbours[i]) {
+      // If neighbour were at the inner radius (offset 0), our inner radius must satisfy:
+      //   2 · min(R, R+off_i) · sin(α/2) ≥ diam + gap
+      // If off_i were 0 too, the chord is 2·R·sin(α/2).
+      // Required inner radius for this pair: (diam + gap) / (2 sin(α/2))
+      const minInnerR = (diam + gap) / (2 * nb.sinHalfA);
+      const minOffThisPair = Math.max(0, minInnerR - R);
+      if (minOffThisPair > tightest) tightest = minOffThisPair;
+    }
+    minOffs[i] = Math.max(minOffs[i], tightest);
+    if (maxOffs[i] < minOffs[i]) maxOffs[i] = minOffs[i];
+  }
+  return { minOffs, maxOffs };
+}
+
+// True pairwise constraint check. Call after any move to reject violations.
+// Returns true iff all pairs satisfy (2·min(R+off_i, R+off_j)·sin(α/2) ≥ diam+gap).
+function validateGap(params) {
+  const R = params.R, diam = params.diam, gap = params.gap;
+  const req = diam + gap;
+  for (let i = 0; i < magnets.length; i++) {
+    for (const nb of neighbours[i]) {
+      if (nb.j < i) continue; // each pair checked once
+      const chord = 2 * Math.min(R + magnets[i].offset, R + magnets[nb.j].offset) * nb.sinHalfA;
+      if (chord < req - 1e-9) return false;
+    }
+  }
+  return true;
+}
+
+// Apply min-offset clamping to every magnet. Used after geometry/gap/diam changes
+// so the displayed configuration respects the constraint when feasible.
+// Also updates the feasibility readout in the UI and enables/disables the SA button.
+//
+// DESIGN NOTE: when the geometry is infeasible (R too small, or cylinders too wide,
+// or outer shell too small), we DO NOT clamp offsets. The user sees the cylinders
+// visually overlapping in the 3D view, which is a clearer diagnostic than a text
+// message alone. SA is disabled anyway, so no optimization runs on the invalid state.
+function applyMinOffsetClamp({ levelUp = true } = {}) {
+  const params = getParams();
+  const { minOffs, maxOffs } = computeMinOffsets(params);
+
+  // Gather feasibility signals BEFORE deciding whether to clamp.
+  const outerTooSmall = params.R_outer < params.R + params.len - 1e-6;
+  let infeasible = 0;
+  let globalMin = 0;
+  for (let i = 0; i < magnets.length; i++) {
+    if (minOffs[i] > maxOffs[i] + 1e-9) infeasible++;
+    if (minOffs[i] > globalMin) globalMin = minOffs[i];
+  }
+
+  // Geometric minimum required R
+  let tightestSinHalf = Infinity;
+  for (let i = 0; i < neighbours.length; i++) {
+    for (const nb of neighbours[i]) {
+      if (nb.sinHalfA < tightestSinHalf) tightestSinHalf = nb.sinHalfA;
+    }
+  }
+  const geomMinR = isFinite(tightestSinHalf) && tightestSinHalf > 1e-9
+    ? (params.diam + params.gap) / (2 * tightestSinHalf)
+    : 0;
+  const requiredMinR = Math.max(geomMinR, params.tr + params.gap);
+
+  const maxAllowedInnerR = params.R_outer - params.len;
+  const currentInnerR = params.R + globalMin;
+  const clearance = maxAllowedInnerR - currentInnerR;
+
+  // Determine if the configuration is valid
+  const rTooSmall = params.R < requiredMinR - 1e-6;
+  const problem = outerTooSmall || infeasible > 0 || clearance < 0 || rTooSmall;
+
+  // Only apply the clamp in the valid regime. When infeasible, leave offsets as-is
+  // so the 3D view shows cylinders overlapping — visual feedback for the error.
+  if (!problem) {
+    const floor = i => levelUp ? Math.min(Math.max(minOffs[i], globalMin), maxOffs[i]) : minOffs[i];
+    for (let i = 0; i < magnets.length; i++) {
+      if (magnets[i].offset < floor(i)) magnets[i].offset = floor(i);
+      if (magnets[i].offset > maxOffs[i]) magnets[i].offset = maxOffs[i];
+    }
+  }
+
+  // Compose the status text
+  let text;
+  if (outerTooSmall) {
+    text = `Outer R too small — increase to ≥ ${(params.R + params.len).toFixed(1)} mm`;
+  } else if (infeasible > 0) {
+    text = `min Inner R = ${requiredMinR.toFixed(1)} mm · clearance = NaN (cylinder too wide — overlap shown in 3D)`;
+  } else if (clearance < 0) {
+    text = `min Inner R = ${requiredMinR.toFixed(1)} mm · clearance = NaN`;
+  } else if (rTooSmall) {
+    text = `Inner R too small — min Inner R = ${requiredMinR.toFixed(1)} mm (overlap shown in 3D)`;
+  } else {
+    text = `min Inner R = ${requiredMinR.toFixed(1)} mm · clearance = ${clearance.toFixed(1)} mm`;
+  }
+
+  const fs = document.getElementById('feasibility-status');
+  const saBtn = document.getElementById('btn-opt');
+  if (fs) {
+    fs.textContent = text;
+    fs.style.color = problem ? 'var(--accent3)' : 'var(--accent)';
+  }
+  if (saBtn && !optRunning) {
+    saBtn.disabled = problem;
+    saBtn.style.opacity = problem ? '0.4' : '1';
+    saBtn.style.cursor = problem ? 'not-allowed' : 'pointer';
+  }
+}
+
+
+//dessins 3D
 function clearGroup(group) {
   while (group.children.length > 0) {
     const child = group.children[0];
@@ -625,28 +959,39 @@ function clearGroup(group) {
       if (Array.isArray(child.material)) child.material.forEach(m => m.dispose());
       else child.material.dispose();
     }
-    if (child.children && child.children.length > 0) clearGroup(child); // clear inner groups
   }
 }
 
+function makeTextSprite(message, bgHex = '#ffffff', fgHex = '#000000') {
+  const c = document.createElement('canvas');
+  c.width = 128; c.height = 128;
+  const ctx = c.getContext('2d');
+  ctx.font = 'Bold 55px JetBrains Mono, monospace';
+  ctx.textAlign = 'center'; ctx.textBaseline = 'middle';
+  ctx.lineWidth = 8; ctx.strokeStyle = bgHex;
+  ctx.strokeText(message, 64, 64);
+  ctx.fillStyle = fgHex; ctx.fillText(message, 64, 64);
+  const tex = new THREE.CanvasTexture(c);
+  const sp = new THREE.Sprite(new THREE.SpriteMaterial({ map: tex, depthTest: false }));
+  sp.scale.set(16, 16, 1);
+  return sp;
+}
+
+// Deterministic HSL color per orbit (for "color by orbit" mode)
+function orbitColor(oi, total) {
+  const h = (oi * 360 / total) % 360;
+  return new THREE.Color(`hsl(${h.toFixed(0)}, 70%, 60%)`);
+}
 
 function updateMagnetPositions() {
   const R = parseFloat(document.getElementById('baseRadius').value);
   const len = parseFloat(document.getElementById('magLen').value);
-  
-  // Safely separate the magnets and labels from the shells/test volumes
-  const dipoleGroups = magnetGroup.children.filter(c => c.type === 'Group');
-  const labelSprites = magnetGroup.children.filter(c => c.type === 'Sprite');
+  const dipoleGroups = magnetGroup.children.filter(c => c.userData.type === 'dipole');
+  const labelSprites = magnetGroup.children.filter(c => c.userData.type === 'label');
 
   magnets.forEach((mag, i) => {
     const dist = R + mag.offset + len / 2;
-    
-    // Update magnet positions
-    if (dipoleGroups[i]) {
-      dipoleGroups[i].position.copy(mag.dir).multiplyScalar(dist);
-    }
-    
-    // Update label positions so they follow the magnets during the animation
+    if (dipoleGroups[i]) dipoleGroups[i].position.copy(mag.dir).multiplyScalar(dist);
     if (labelSprites[i]) {
       const outerDist = R + mag.offset + len + 4;
       labelSprites[i].position.copy(mag.dir).multiplyScalar(outerDist);
@@ -654,211 +999,85 @@ function updateMagnetPositions() {
   });
 }
 
-
 function drawScene() {
   clearGroup(magnetGroup);
   const R = parseFloat(document.getElementById('baseRadius').value);
   const tr = parseFloat(document.getElementById('testRadius').value);
   const diam = parseFloat(document.getElementById('magDiam').value);
   const len = parseFloat(document.getElementById('magLen').value);
-  
-  const bodyGeo = new THREE.CylinderGeometry(diam/2, diam/2, len, 20, 1, true);
-  const capGeo  = new THREE.CircleGeometry(diam/2*1.01, 20);
-
-  const bodyMat = new THREE.MeshStandardMaterial({color: 0xcccccc, roughness: 0.3, metalness: 0.5});
-
-  const nCapMat = new THREE.MeshStandardMaterial({color:0xe53e3e, roughness:0.35, metalness:0.2, side:THREE.DoubleSide});
-  const sCapMat = new THREE.MeshStandardMaterial({color:0x3182ce, roughness:0.35, metalness:0.2, side:THREE.DoubleSide});
-  
-  const shellGeo = new THREE.SphereGeometry(R, 32, 32);
-  const shellMat = new THREE.MeshStandardMaterial({color:0x00d4ff, transparent:true, opacity:0.03, wireframe:false, side:THREE.BackSide});
-  magnetGroup.add(new THREE.Mesh(shellGeo, shellMat));
-
   const rOuter = parseFloat(document.getElementById('outerRadius').value) || (R + len);
+
+  const bodyGeo = new THREE.CylinderGeometry(diam/2, diam/2, len, 20, 1, true);
+  const capGeo = new THREE.CircleGeometry(diam/2 * 1.01, 20);
+
+  const nCapMat = new THREE.MeshStandardMaterial({ color: 0xe53e3e, roughness: 0.35, metalness: 0.2, side: THREE.DoubleSide });
+  const sCapMat = new THREE.MeshStandardMaterial({ color: 0x3182ce, roughness: 0.35, metalness: 0.2, side: THREE.DoubleSide });
+  const bodyMatDefault = new THREE.MeshStandardMaterial({ color: 0xcccccc, roughness: 0.3, metalness: 0.5 });
+
+  // Inner shell (bore boundary)
+  const innerShellGeo = new THREE.SphereGeometry(R, 32, 32);
+  const innerShellMat = new THREE.MeshStandardMaterial({ color: 0x00d4ff, transparent: true, opacity: 0.03, side: THREE.BackSide });
+  magnetGroup.add(new THREE.Mesh(innerShellGeo, innerShellMat));
+
+  // Outer shell (max travel)
   const outerShellGeo = new THREE.SphereGeometry(rOuter, 32, 32);
-  const outerShellMat = new THREE.MeshStandardMaterial({color:0xa8ff3e, transparent:true, opacity:0.1, wireframe:false, side:THREE.BackSide});
+  const outerShellMat = new THREE.MeshStandardMaterial({ color: 0xa8ff3e, transparent: true, opacity: 0.08, side: THREE.BackSide });
   magnetGroup.add(new THREE.Mesh(outerShellGeo, outerShellMat));
 
-  // Dynamically sized yellow test volume (hides during white-background PDF export)
+  // Test volume (yellow wireframe) — hidden during white-bg PDF export
   if (scene.background && scene.background.getHex() !== 0xffffff) {
     const tvGeo = new THREE.EdgesGeometry(new THREE.SphereGeometry(tr, 16, 16));
     const tvMat = new THREE.LineBasicMaterial({ color: 0xffff00, transparent: true, opacity: 0.4 });
     magnetGroup.add(new THREE.LineSegments(tvGeo, tvMat));
   }
 
+  const colorByOrbit = document.getElementById('showOrbitColors')?.checked;
+  const showLabels = document.getElementById('showLabels')?.checked;
+
   magnets.forEach((mag, idx) => {
     const grp = new THREE.Group();
+    grp.userData.type = 'dipole';
+    let bodyMat = bodyMatDefault;
+    if (colorByOrbit) {
+      const col = orbitColor(orbitOf[idx], orbits.length);
+      bodyMat = new THREE.MeshStandardMaterial({ color: col, roughness: 0.3, metalness: 0.5 });
+    }
     grp.add(new THREE.Mesh(bodyGeo, bodyMat));
 
+    // Red cap = +m̂ (N face), Blue cap = −m̂ (S face)
     const tCap = new THREE.Mesh(capGeo, nCapMat);
     tCap.position.y = len/2; tCap.rotation.x = -Math.PI/2;
     grp.add(tCap);
-
     const bCap = new THREE.Mesh(capGeo, sCapMat);
     bCap.position.y = -(len/2); bCap.rotation.x = Math.PI/2;
     grp.add(bCap);
 
+    // Position: center at R + offset + len/2 along mag.dir
     const dist = R + mag.offset + len/2;
     grp.position.copy(mag.dir).multiplyScalar(dist);
 
-    // Point in or out based on polarity
-    const targetDir = mag.polarity === 1 ? mag.dir.clone().negate() : mag.dir.clone();
-    grp.quaternion.setFromUnitVectors(new THREE.Vector3(0,1,0), targetDir);
+    // Orient: cylinder local +Y axis must align with mag.mu (the moment direction)
+    grp.quaternion.setFromUnitVectors(new THREE.Vector3(0, 1, 0), mag.mu.clone());
     magnetGroup.add(grp);
 
-    if (document.getElementById('showLabels')?.checked) {
-      const outerDist = R + mag.offset + len + 4; // Position just outside the outer face
-      const sprite = makeTextSprite((idx + 1).toString());
-      sprite.position.copy(mag.dir).multiplyScalar(outerDist);
-      magnetGroup.add(sprite);
+    if (showLabels) {
+      const outerDist = R + mag.offset + len + 4;
+      const sp = makeTextSprite((idx + 1).toString());
+      sp.position.copy(mag.dir).multiplyScalar(outerDist);
+      sp.userData.type = 'label';
+      magnetGroup.add(sp);
     }
   });
 }
 
 
-function evaluateField() {
-  const tr = parseFloat(document.getElementById('testRadius').value);
-  const c = totalFieldAt(0,0,0);
-
-  document.getElementById('sv-Bc').textContent = c.b.toFixed(4);
-  document.getElementById('sv-Bx').textContent = c.bx.toFixed(4);
-  document.getElementById('sv-By').textContent = c.by.toFixed(4);
-  document.getElementById('sv-Bz').textContent = c.bz.toFixed(4);
-
-  if (c.b < 1e-5) {
-    document.getElementById('sv-Var').textContent = 'N/A';
-    document.getElementById('sv-Score').textContent = 'N/A';
-    return { bCenter: c.b, score: NaN };
-  }
-
-  const pts = [];
-  const N = 3;
-  // Evaluate 3D sphere volume
-  for (let ix=-N; ix<=N; ix++) for (let iy=-N; iy<=N; iy++) for (let iz=-N; iz<=N; iz++) {
-    const r = Math.sqrt(ix*ix+iy*iy+iz*iz);
-    if (r < 0.5 || r > N+0.1) continue;
-    const f = tr / r;
-    pts.push(totalFieldAt(ix*f, iy*f, iz*f));
-  }
-  
-  let minBx = c.bx, maxBx = c.bx;
-  let maxTransverse = 0;
-  
-  pts.forEach(p => {
-    if (p.bx < minBx) minBx = p.bx;
-    if (p.bx > maxBx) maxBx = p.bx;
-    const trans = Math.sqrt(p.by*p.by + p.bz*p.bz);
-    if (trans > maxTransverse) maxTransverse = trans;
-  });
-
-  const absBx = Math.max(Math.abs(c.bx), 1e-6);
-  
-  // 1. Peak-to-Peak variance of just the X component
-  const varBxPercent = ((maxBx - minBx) / absBx) * 100;
-  
-  // 2. Worst-case transverse field (Y/Z) as a percentage of X
-  const transPercent = (maxTransverse / absBx) * 100;
-
-  // Display it cleanly in the UI
-  document.getElementById('sv-Var').textContent = `${varBxPercent.toFixed(1)}% X | ${transPercent.toFixed(1)}% YZ`;
-
-  const weight = getOptWeight();
-  const Br = parseFloat(document.getElementById('magBr').value);
-  const R_inner = parseFloat(document.getElementById('baseRadius').value);
-  const R_outer = parseFloat(document.getElementById('outerRadius').value);
-  const score = scoreFromSamples(c.bx, minBx, maxBx, maxTransverse, weight, Br, R_inner, R_outer);
-
-  document.getElementById('sv-Score').textContent = score.toFixed(4);
-  return { bCenter: c.b, score };
-}
-
-
-
-function quickScore() {
-  const tr = parseFloat(document.getElementById('testRadius').value);
-  const R = parseFloat(document.getElementById('baseRadius').value);
-  const diam = parseFloat(document.getElementById('magDiam').value);
-  const len = parseFloat(document.getElementById('magLen').value);
-  const Br = parseFloat(document.getElementById('magBr').value);
-
-  const getB = (px,py,pz) => {
-    let bx=0, by=0, bz=0;
-    magnets.forEach(mag => {
-      const dist = R + mag.offset + len/2;
-      const cx = mag.dir.x * dist, cy = mag.dir.y * dist, cz = mag.dir.z * dist;
-      const mux = -mag.dir.x * mag.polarity;
-      const muy = -mag.dir.y * mag.polarity;
-      const muz = -mag.dir.z * mag.polarity;
-      const b = cylinderField(px, py, pz, cx, cy, cz, mux, muy, muz, diam/2, len/2, Br);
-      bx += b.Bx; by += b.By; bz += b.Bz;
-    });
-    return {bx, by, bz};
-  };
-
-  const c = getB(0,0,0);
-  const s = tr/Math.SQRT2;
-  const pts = [
-    getB(tr,0,0), getB(-tr,0,0), getB(0,tr,0), getB(0,-tr,0), getB(0,0,tr), getB(0,0,-tr),
-    getB(s,s,0), getB(s,-s,0), getB(-s,s,0), getB(-s,-s,0),
-    getB(s,0,s), getB(s,0,-s), getB(0,s,s), getB(0,s,-s)
-  ];
-
-  let minBx = c.bx, maxBx = c.bx;
-  let maxTransverse = 0;
-  
-  pts.forEach(p => {
-    if (p.bx < minBx) minBx = p.bx;
-    if (p.bx > maxBx) maxBx = p.bx;
-    const trans = Math.sqrt(p.by*p.by + p.bz*p.bz);
-    if (trans > maxTransverse) maxTransverse = trans;
-  });
-  const R_outerVal = parseFloat(document.getElementById('outerRadius').value);
-  const score = scoreFromSamples(c.bx, minBx, maxBx, maxTransverse, getOptWeight(), Br, R, R_outerVal);
-
-  return { score };
-}
-
-// Read the objective-weight slider: 0 = pure homogeneity, 1 = pure field
-function getOptWeight() {
-  const el = document.getElementById('optWeight');
-  return el ? (parseFloat(el.value) / 100) : 0;
-}
-
-// Shared scoring formula used by evaluateField, quickScore and the worker.
-// Kept as a plain function so worker can inject it via toString().
-//
-// weight w in [0,1]: 0 = pure homogeneity, 1 = pure field (maximize |Bx|).
-//
-// Both terms are POSITIVE RESIDUALS (zero = perfect, larger = worse):
-//   - homogPenalty: peak-to-peak Bx % + transverse leakage % (naturally ≥ 0)
-//   - fieldPenalty: shortfall from Halbach ideal, as % of ideal (0 = ideal, 100 = no field)
-//
-// For a spherical Halbach dipole shell, the theoretical ceiling is
-//   B_ideal ≈ Br · ln(R_outer / R_inner)
-// (Mallinson / Abele ideal; infinite-dipole limit).
-// Here (R_inner, R_outer) are passed explicitly since the worker doesn't have DOM access.
-const FIELD_WEIGHT_SCALE = 100;  // exchange rate: % field shortfall ↔ % homogeneity
-function scoreFromSamples(bxCenter, minBx, maxBx, maxTransverse, weight, Br, R_inner, R_outer) {
-  const absBx = Math.max(Math.abs(bxCenter), 1e-6);
-  const homogPenalty = (((maxBx - minBx) / absBx) * 100) + ((maxTransverse / absBx) * 200);
-
-  const B_ideal = Math.max(1e-6, Br * Math.log(R_outer / R_inner));
-  const shortfall = Math.max(0, B_ideal - absBx);
-  const fieldPenalty = (shortfall / B_ideal) * FIELD_WEIGHT_SCALE;
-
-  const w = Math.max(0, Math.min(1, weight));
-  return (1 - w) * homogPenalty + w * fieldPenalty;
-}
-
-
-//SA no polarity, 17 avril
-let activeWorkers = [];
-let lastDrawTime = 0; // Tracks when we last updated the 3D view
-
+//SA, avec Symétrie, pas pour Fibo... on pourray construire un systeme de type Fibo avec mirroir ?
 async function startOptimization() {
   if (optRunning) return;
+  const saBtn = document.getElementById('btn-opt');
+  if (saBtn.disabled) return; // infeasible geometry
   optRunning = true;
-  
+
   activeWorkers.forEach(w => w.terminate());
   activeWorkers = [];
 
@@ -866,76 +1085,69 @@ async function startOptimization() {
   document.getElementById('btn-opt').onclick = stopOptimization;
   document.getElementById('opt-overlay').style.display = 'flex';
 
-  // Restore original polarity locking 
-  magnets.forEach(mag => { mag.polarity = mag.dir.x >= 0 ? 1 : -1; });
-  
-  let globalBestScore = quickScore().score;
-  document.getElementById('os-best').textContent = `Best: ${globalBestScore.toFixed(4)}`;
-  document.getElementById('os-score').textContent = `Score: ${globalBestScore.toFixed(4)}`;
-
   const params = {
+    ...getParams(),
     iters: parseInt(document.getElementById('optIters').value),
     maxNudge: parseFloat(document.getElementById('optNudge').value),
-    R: parseFloat(document.getElementById('baseRadius').value),
-    R_outer: parseFloat(document.getElementById('outerRadius').value),
-    tr: parseFloat(document.getElementById('testRadius').value),
-    diam: parseFloat(document.getElementById('magDiam').value),
-    len: parseFloat(document.getElementById('magLen').value),
-    gap: parseFloat(document.getElementById('magGap').value),
-    Br: parseFloat(document.getElementById('magBr').value),
-    optWeight: getOptWeight()
+    symLock: document.getElementById('symLock').checked
   };
 
-  const numThreads = Math.min(navigator.hardwareConcurrency || 4, 8);
-  console.log(`Starting SA on ${numThreads} parallel threads...`);
-  
+  let globalBestScore = computeScore(computeMetrics(params), params);
+  document.getElementById('os-best').textContent = `Best: ${globalBestScore.toFixed(3)}%`;
+  document.getElementById('os-score').textContent = `Score: ${globalBestScore.toFixed(3)}%`;
+
+  const numThreads = Math.min(navigator.hardwareConcurrency || 4, 6);
+  console.log(`Starting SA on ${numThreads} parallel threads (symLock=${params.symLock})...`);
+
   let completedThreads = 0;
   let totalProgress = new Array(numThreads).fill(0);
   lastDrawTime = performance.now();
+
+  // Snapshot of current magnets (only offset + dir/mu needed)
+  const magnetSnapshot = magnets.map(m => ({
+    dir: { x: m.dir.x, y: m.dir.y, z: m.dir.z },
+    mu:  { x: m.mu.x,  y: m.mu.y,  z: m.mu.z  },
+    offset: m.offset
+  }));
 
   for (let i = 0; i < numThreads; i++) {
     const worker = createOptimizationWorker();
     activeWorkers.push(worker);
 
-    worker.onmessage = function(e) {
+    worker.onmessage = (e) => {
       if (e.data.type === 'newBest') {
         if (e.data.score < globalBestScore) {
           globalBestScore = e.data.score;
-          e.data.magnets.forEach((st, idx) => {
-            magnets[idx].offset = st.off;
-            magnets[idx].polarity = st.pol;
-          });
-          document.getElementById('os-best').textContent = `Best: ${globalBestScore.toFixed(4)}`;
+          e.data.offsets.forEach((off, idx) => { magnets[idx].offset = off; });
+          document.getElementById('os-best').textContent = `Best: ${globalBestScore.toFixed(3)}%`;
         }
-      } 
-      else if (e.data.type === 'progress') {
+      } else if (e.data.type === 'progress') {
         totalProgress[i] = e.data.iter;
         const avgIter = totalProgress.reduce((a,b) => a+b, 0) / numThreads;
         const pct = ((avgIter / params.iters) * 100).toFixed(0);
         document.getElementById('opt-progress').style.width = pct + '%';
         document.getElementById('os-iter').textContent = `Avg Iter: ${Math.round(avgIter)} / ${params.iters}`;
-        document.getElementById('os-temp').textContent = `T: ${e.data.temp.toExponential(3)}`;
-        document.getElementById('os-score').textContent = `Score (T${i}): ${e.data.currentScore.toFixed(4)}`;
-        
+        document.getElementById('os-temp').textContent = `T: ${e.data.temp.toExponential(2)}`;
+        document.getElementById('os-score').textContent = `T${i}: ${e.data.currentScore.toFixed(3)}%`;
+
         const now = performance.now();
-        if (now - lastDrawTime > 250) {
-          updateMagnetPositions();
-          lastDrawTime = now;
-        }
-      }
-      else if (e.data.type === 'done') {
+        if (now - lastDrawTime > 250) { updateMagnetPositions(); lastDrawTime = now; }
+      } else if (e.data.type === 'done') {
         completedThreads++;
         if (completedThreads === numThreads) finalizeOptimization();
       }
     };
 
-    // Stagger threads
-    const multiplier = Math.pow(0.5, i);
-    const workerParams = { ...params, threadMultiplier: multiplier };
-    worker.postMessage({ cmd: 'start', magnets: JSON.parse(JSON.stringify(magnets)), params: workerParams });
+    const tempMultiplier = Math.pow(0.6, i);
+    worker.postMessage({
+      cmd: 'start',
+      magnets: magnetSnapshot,
+      orbits: orbits,
+      neighbours: neighbours,
+      params: { ...params, tempMultiplier }
+    });
   }
 }
-
 
 function stopOptimization() {
   activeWorkers.forEach(w => w.terminate());
@@ -944,224 +1156,254 @@ function stopOptimization() {
 }
 
 function finalizeOptimization() {
-  evaluateField();
-  if (currentMapPlane === 'bore') drawBoreProfile(false);
-  else if (currentMapPlane) _drawMap2DImpl(currentMapPlane, false);
-
+  applyMinOffsetClamp();
+  const { metrics, score } = evaluateField();
+  drawScene();
+  // Always switch to the bore Z-profile when the SA finishes
+  drawBoreProfile(false);
   document.getElementById('btn-opt').textContent = '▶ Run SA';
   document.getElementById('btn-opt').onclick = startOptimization;
   document.getElementById('opt-overlay').style.display = 'none';
-  document.getElementById('opt-progress').style.width = '100%';
+  document.getElementById('opt-progress').style.width = '0%';
   optRunning = false;
-  showTooltip('Optimization finished on all threads.', 4000);
+  // Push the achieved metrics into the bottom-left tooltip as a summary
+  const resultMsg =
+    `<b style="color:var(--accent)">SA FINISHED</b><br>` +
+    `|Bx| center = ${Math.abs(metrics.bCenter.bx).toFixed(4)} T · |B| = ${metrics.bCenter.b.toFixed(4)} T<br>` +
+    `Bx peak-to-peak = ${metrics.ppmBx.toFixed(0)} ppm · transverse leak = ${metrics.ppmTrans.toFixed(0)} ppm<br>` +
+    `Score = ${score.toFixed(3)}%`;
+  showTooltip(resultMsg, 60000); // show for a long time
 }
-
 
 function createOptimizationWorker() {
   const workerScript = `
     const MU0 = 4e-7 * Math.PI;
-    const N_RINGS = 32;
-    const FIELD_WEIGHT_SCALE = ${FIELD_WEIGHT_SCALE};
+    const N_RINGS = 24;
 
     ${ellipticKE.toString()}
     ${ringField.toString()}
     ${cylinderField.toString()}
-    ${scoreFromSamples.toString()}
+
+    // Replicate SAMPLE_DIRS
+    const SAMPLE_DIRS = (() => {
+      const dirs = [];
+      [[1,0,0],[-1,0,0],[0,1,0],[0,-1,0],[0,0,1],[0,0,-1]].forEach(d => dirs.push({ r: 1.0, d }));
+      const s = 1/Math.sqrt(2);
+      [[s,s,0],[s,-s,0],[-s,s,0],[-s,-s,0],[s,0,s],[s,0,-s],[-s,0,s],[-s,0,-s],[0,s,s],[0,s,-s],[0,-s,s],[0,-s,-s]]
+        .forEach(d => dirs.push({ r: 1.0, d }));
+      const t = 1/Math.sqrt(3);
+      [[t,t,t],[t,t,-t],[t,-t,t],[t,-t,-t],[-t,t,t],[-t,t,-t],[-t,-t,t],[-t,-t,-t]]
+        .forEach(d => dirs.push({ r: 1.0, d }));
+      [[1,0,0],[-1,0,0],[0,1,0],[0,-1,0],[0,0,1],[0,0,-1]].forEach(d => dirs.push({ r: 0.5, d }));
+      return dirs;
+    })();
 
     let magnets = [];
+    let orbits = [];
+    let neighbours = [];
     let params = {};
+    let minOffs = [], maxOffs = [];
 
-    function quickScoreLocal() {
-      const getB = (px, py, pz) => {
-        let bx=0, by=0, bz=0;
-        magnets.forEach(mag => {
-          const dist = params.R + mag.offset + params.len/2;
-          const cx = mag.dir.x * dist, cy = mag.dir.y * dist, cz = mag.dir.z * dist;
-          const mux = -mag.dir.x * mag.polarity, muy = -mag.dir.y * mag.polarity, muz = -mag.dir.z * mag.polarity;
-          const b = cylinderField(px, py, pz, cx, cy, cz, mux, muy, muz, params.diam/2, params.len/2, params.Br);
-          bx += b.Bx; by += b.By; bz += b.Bz;
-        });
-        return {bx, by, bz};
-      };
-
-      const c = getB(0,0,0);
-      const s = params.tr / Math.SQRT2;
-      const pts = [
-        getB(params.tr,0,0), getB(-params.tr,0,0), getB(0,params.tr,0), getB(0,-params.tr,0), getB(0,0,params.tr), getB(0,0,-params.tr),
-        getB(s,s,0), getB(s,-s,0), getB(-s,s,0), getB(-s,-s,0), getB(s,0,s), getB(s,0,-s), getB(0,s,s), getB(0,s,-s)
-      ];
-
-      let minBx = c.bx, maxBx = c.bx;
-      let maxTransverse = 0;
-      
-      pts.forEach(p => {
-        if (p.bx < minBx) minBx = p.bx;
-        if (p.bx > maxBx) maxBx = p.bx;
-        const trans = Math.sqrt(p.by*p.by + p.bz*p.bz);
-        if (trans > maxTransverse) maxTransverse = trans;
-      });
-
-      const absBx = Math.max(Math.abs(c.bx), 1e-6);
-      return scoreFromSamples(c.bx, minBx, maxBx, maxTransverse, params.optWeight, params.Br, params.R, params.R_outer);
+    function fieldAt(px, py, pz) {
+      let bx=0, by=0, bz=0;
+      const R = params.R, len = params.len, diam = params.diam, Br = params.Br;
+      for (const mag of magnets) {
+        const dist = R + mag.offset + len/2;
+        const cx = mag.dir.x*dist, cy = mag.dir.y*dist, cz = mag.dir.z*dist;
+        const b = cylinderField(px, py, pz, cx, cy, cz, mag.mu.x, mag.mu.y, mag.mu.z, diam/2, len/2, Br);
+        bx += b.Bx; by += b.By; bz += b.Bz;
+      }
+      return { bx, by, bz };
     }
 
+    function scoreNow() {
+      const c = fieldAt(0,0,0);
+      const absBx = Math.max(Math.abs(c.bx), 1e-9);
+      let minBx = c.bx, maxBx = c.bx, maxTrans = 0;
+      let sumBx = c.bx, n = 1;
+      for (const { r, d } of SAMPLE_DIRS) {
+        const x = d[0]*params.tr*r, y = d[1]*params.tr*r, z = d[2]*params.tr*r;
+        const f = fieldAt(x, y, z);
+        if (f.bx < minBx) minBx = f.bx;
+        if (f.bx > maxBx) maxBx = f.bx;
+        const tr = Math.sqrt(f.by*f.by + f.bz*f.bz);
+        if (tr > maxTrans) maxTrans = tr;
+        sumBx += f.bx; n++;
+      }
+      const meanBx = sumBx / n;
+      const ppmBx = Math.abs(meanBx) > 1e-9 ? ((maxBx - minBx) / Math.abs(meanBx)) * 1e6 : 1e9;
+      const ppmTrans = (maxTrans / absBx) * 1e6;
+      const homogPct = 100 * (ppmBx + 2*ppmTrans) / 1e6;
+      const fieldShortfallPct = Math.max(0, 100 * (1 - absBx / Math.max(params.Br, 0.1)));
+      return params.weight * homogPct + (1 - params.weight) * fieldShortfallPct;
+    }
+
+    function computeBounds() {
+      const R = params.R, len = params.len, diam = params.diam, gap = params.gap, tr = params.tr;
+      const minOffTest = Math.max(0, (tr + gap) - R);
+      const maxOff = Math.max(minOffTest, params.R_outer - R - len);
+      minOffs = new Array(magnets.length).fill(minOffTest);
+      maxOffs = new Array(magnets.length).fill(maxOff);
+      for (let i = 0; i < magnets.length; i++) {
+        let tightest = 0;
+        for (const nb of neighbours[i]) {
+          // Required inner radius for this pair if neighbour stays at offset 0
+          const minInnerR = (diam + gap) / (2 * nb.sinHalfA);
+          const m = Math.max(0, minInnerR - R);
+          if (m > tightest) tightest = m;
+        }
+        minOffs[i] = Math.max(minOffs[i], tightest);
+        if (maxOffs[i] < minOffs[i]) maxOffs[i] = minOffs[i];
+      }
+    }
+
+    // True pairwise gap validation (inner-face chord, using the SMALLER inner radius).
+    // Returns true iff every neighbouring pair satisfies diameter + gap clearance.
+    function validateGap() {
+      const R = params.R, req = params.diam + params.gap;
+      for (let i = 0; i < magnets.length; i++) {
+        for (const nb of neighbours[i]) {
+          if (nb.j < i) continue;
+          const chord = 2 * Math.min(R + magnets[i].offset, R + magnets[nb.j].offset) * nb.sinHalfA;
+          if (chord < req - 1e-9) return false;
+        }
+      }
+      return true;
+    }
+
+    function clampOffset(i, v) { return Math.max(minOffs[i], Math.min(maxOffs[i], v)); }
+
     self.onmessage = function(e) {
-      if (e.data.cmd === 'start') {
-        magnets = e.data.magnets;
-        params = e.data.params;
+      if (e.data.cmd !== 'start') return;
+      magnets = e.data.magnets;
+      orbits = e.data.orbits;
+      neighbours = e.data.neighbours;
+      params = e.data.params;
+      computeBounds();
 
+      // Clamp initial offsets
+      for (let i = 0; i < magnets.length; i++) magnets[i].offset = clampOffset(i, magnets[i].offset);
 
-   // LOCK POLARITIES & FIND SYMMETRY PAIRS
-        magnets.forEach((mag) => {
-          mag.polarity = mag.dir.x >= 0 ? 1 : -1;
-          
-          // Find the mirror dipole across the YZ plane (x -> -x)
-          mag.mirrorIdx = magnets.findIndex(m2 => 
-            Math.abs(m2.dir.x - (-mag.dir.x)) < 1e-4 &&
-            Math.abs(m2.dir.y - mag.dir.y) < 1e-4 &&
-            Math.abs(m2.dir.z - mag.dir.z) < 1e-4
-          );
-        });
+      let currentScore = scoreNow();
 
+      // Auto-tune T0 by sampling nudges
+      let sumDe = 0, valid = 0;
+      for (let s = 0; s < 40; s++) {
+        const orb = orbits[Math.floor(Math.random() * orbits.length)];
+        const orig = orb.map(i => magnets[i].offset);
+        const nudge = (Math.random() - 0.5) * params.maxNudge;
+        for (const i of orb) magnets[i].offset = clampOffset(i, magnets[i].offset + nudge);
+        const ds = scoreNow() - currentScore;
+        if (ds > 0) { sumDe += ds; valid++; }
+        orb.forEach((i, k) => { magnets[i].offset = orig[k]; });
+      }
+      const avgDe = valid > 0 ? sumDe / valid : 0.01;
+      const T0 = (-avgDe / Math.log(0.7)) * (params.tempMultiplier || 1.0);
+      const coolingRate = Math.pow(1e-4, 1 / params.iters);
+      let temp = T0;
 
-// 1. Calculate Test Volume Limit
+      let bestScore = currentScore;
+      let bestOffsets = magnets.map(m => m.offset);
+      let lastBestIter = 0;
+      const progStep = Math.max(50, Math.floor(params.iters / 300));
 
-const minOffTest = (params.tr + params.gap) - params.R;
+      for (let iter = 0; iter < params.iters; iter++) {
+        const currentNudge = params.maxNudge * (0.05 + 0.95 * (temp / T0));
 
-        let maxDot = -1;
-        for(let i=0; i<magnets.length; i++) {
-          for(let j=i+1; j<magnets.length; j++) {
-             let dot = magnets[i].dir.x*magnets[j].dir.x + magnets[i].dir.y*magnets[j].dir.y + magnets[i].dir.z*magnets[j].dir.z;
-             if(dot > maxDot && dot < 0.999) maxDot = dot; 
-          }
-        }
-        const minAngle = Math.acos(maxDot);
-        
-        // 2. Calculate Collision Limit
-        const minRadiusCenter = (params.diam + params.gap) / (2 * Math.sin(minAngle / 2));
-        const minOffCollision = minRadiusCenter - params.R - (params.len / 2);
-
-        // Enforce 0 as the absolute minimum offset to respect the Inner Radius
-        const minOffset = Math.max(0, minOffTest, minOffCollision);
-        const maxOffset = Math.max(minOffset, params.R_outer - params.R - params.len);
-
-
-
-
-        let currentScore = quickScoreLocal();
-        
-        // --- AUTO-TUNE INITIAL TEMPERATURE ---
-        let sumDe = 0;
-        let validSamples = 0;
-        
-        for (let s = 0; s < 50; s++) {
-          let testIdx = Math.floor(Math.random() * magnets.length);
-          let origOff = magnets[testIdx].offset;
-          
-          magnets[testIdx].offset = Math.max(minOffset, Math.min(maxOffset, magnets[testIdx].offset + (Math.random() - 0.5) * params.maxNudge));
-          
-          let testScore = quickScoreLocal();
-          let dE = testScore - currentScore;
-          
-          if (dE > 0) { 
-            sumDe += dE;
-            validSamples++;
-          }
-          
-          magnets[testIdx].offset = origOff;
-        }
-        
-        let avgDe = validSamples > 0 ? (sumDe / validSamples) : 1;
-        const threadMult = params.threadMultiplier || 1.0;
-        params.T0 = (-avgDe / Math.log(0.98)) * threadMult;
-        // --- end tune, change to log(0.98) to bump it more a bit (19 april)
-
-        let bestSaved = magnets.map(m => m.offset);
-        let bestScoreVal = currentScore;
-
-        const coolingRate = Math.pow(1e-5, 1 / params.iters); 
-        let temp = params.T0; 
-        let lastBestIter = 0;
-
-        const progStep = Math.max(100, Math.floor(params.iters / 500));
-
-for (let i = 0; i < params.iters; i++) {
-          // Save the full state before mutating
-          const savedStates = magnets.map(m => m.offset);
-
-          const currentNudge = params.maxNudge * (0.05 + 0.95 * (temp / params.T0));
-
-
-
-  if (Math.random() < 0.1) {
-            // 10% chance: GLOBAL SHIFT. Move ALL magnets uniformly.
+        // Pick move type
+        let savedOffsets;
+        if (params.symLock) {
+          // Orbit-level moves only
+          if (Math.random() < 0.1) {
+            // Global uniform shift (symmetry-preserving trivially)
+            savedOffsets = magnets.map(m => m.offset);
             const shift = (Math.random() - 0.5) * currentNudge;
-            magnets.forEach(mag => {
-              mag.offset = Math.max(minOffset, Math.min(maxOffset, mag.offset + shift));
-            });
+            for (let i = 0; i < magnets.length; i++) magnets[i].offset = clampOffset(i, magnets[i].offset + shift);
           } else {
-            // 90% chance: SYMMETRIC NUDGES. Move 1 to 5 pairs.
-            const numToMove = Math.floor(Math.random() * 5) + 1;
-            for (let k = 0; k < numToMove; k++) {
-              const idx = Math.floor(Math.random() * magnets.length);
+            // Nudge 1–3 random orbits, each by a single shared delta
+            const nOrb = Math.floor(Math.random() * 3) + 1;
+            savedOffsets = magnets.map(m => m.offset);
+            for (let k = 0; k < nOrb; k++) {
+              const orb = orbits[Math.floor(Math.random() * orbits.length)];
+              const delta = (Math.random() - 0.5) * 2 * currentNudge;
+              for (const i of orb) magnets[i].offset = clampOffset(i, magnets[i].offset + delta);
+            }
+          }
+        } else {
+          // Independent per-magnet (legacy mode)
+          savedOffsets = magnets.map(m => m.offset);
+          if (Math.random() < 0.1) {
+            const shift = (Math.random() - 0.5) * currentNudge;
+            for (let i = 0; i < magnets.length; i++) magnets[i].offset = clampOffset(i, magnets[i].offset + shift);
+          } else {
+            const nMove = Math.floor(Math.random() * 5) + 1;
+            for (let k = 0; k < nMove; k++) {
+              const i = Math.floor(Math.random() * magnets.length);
               const nudge = (Math.random() - 0.5) * 2 * currentNudge;
-              const newOffset = Math.max(minOffset, Math.min(maxOffset, magnets[idx].offset + nudge));
-              
-              // Move the chosen dipole
-              magnets[idx].offset = newOffset;
-              
-              // Apply the exact same offset to its N/S mirror pair
-              if (magnets[idx].mirrorIdx !== -1) {
-                magnets[magnets[idx].mirrorIdx].offset = newOffset;
+              magnets[i].offset = clampOffset(i, magnets[i].offset + nudge);
+            }
+          }
+        }
+
+        // Reject moves that violate the pairwise gap constraint
+        if (!validateGap()) {
+          for (let i = 0; i < magnets.length; i++) magnets[i].offset = savedOffsets[i];
+          if (iter % progStep === 0) {
+            self.postMessage({ type: 'progress', iter, temp, currentScore });
+          }
+          continue;
+        }
+
+        const newScore = scoreNow();
+        const dE = newScore - currentScore;
+        if (dE < 0 || Math.random() < Math.exp(-dE / (temp + 1e-10))) {
+          currentScore = newScore;
+          if (newScore < bestScore) {
+            bestScore = newScore;
+            bestOffsets = magnets.map(m => m.offset);
+            lastBestIter = iter;
+            self.postMessage({ type: 'newBest', score: bestScore, offsets: bestOffsets, iter });
+          }
+        } else {
+          for (let i = 0; i < magnets.length; i++) magnets[i].offset = savedOffsets[i];
+        }
+
+        // Reheat if stuck
+        if (iter - lastBestIter > params.iters * 0.2) {
+          // Try a few random restarts until we land on a valid configuration
+          let tries = 0;
+          do {
+            for (let i = 0; i < magnets.length; i++) {
+              magnets[i].offset = minOffs[i] + Math.random() * (maxOffs[i] - minOffs[i]);
+            }
+            if (params.symLock) {
+              for (const orb of orbits) {
+                const v = magnets[orb[0]].offset;
+                for (const i of orb) magnets[i].offset = clampOffset(i, v);
               }
             }
+            tries++;
+          } while (!validateGap() && tries < 20);
+          // Last resort: snap everyone to their lower bound
+          if (!validateGap()) {
+            for (let i = 0; i < magnets.length; i++) magnets[i].offset = minOffs[i];
           }
-
-
-
-
-          const newScore = quickScoreLocal();
-          const dE = newScore - currentScore;
-
-          if (dE < 0 || Math.random() < Math.exp(-dE / (temp + 1e-10))) {
-            currentScore = newScore;
-            if (newScore < bestScoreVal) {
-              bestScoreVal = newScore;
-              bestSaved = magnets.map(m => m.offset);
-              lastBestIter = i;
-              self.postMessage({
-                type: 'newBest',
-                score: bestScoreVal,
-                magnets: magnets.map(m => ({ off: m.offset, pol: m.polarity })),
-                iter: i
-              });
-            }
-          } else {
-            // Restore rejected states
-            magnets.forEach((mag, idx) => { mag.offset = savedStates[idx]; });
-          }
-
-          if (i - lastBestIter > params.iters * 0.20) {
-            // The Parachute: Scramble to a new random location if stuck
-            magnets.forEach(mag => {
-              mag.offset = minOffset + Math.random() * (maxOffset - minOffset);
-            });
-            currentScore = quickScoreLocal();
-            temp = params.T0;
-            lastBestIter = i;
-          } else {
-            temp *= coolingRate;
-          }
-
-          if (i % progStep === 0) {
-            self.postMessage({ type: 'progress', iter: i, temp, currentScore });
-          }
+          currentScore = scoreNow();
+          temp = T0;
+          lastBestIter = iter;
+        } else {
+          temp *= coolingRate;
         }
 
-
-
-        self.postMessage({ type: 'done' });
+        if (iter % progStep === 0) {
+          self.postMessage({ type: 'progress', iter, temp, currentScore });
+        }
       }
+
+      // Restore best before exit
+      for (let i = 0; i < magnets.length; i++) magnets[i].offset = bestOffsets[i];
+      self.postMessage({ type: 'newBest', score: bestScore, offsets: bestOffsets, iter: params.iters });
+      self.postMessage({ type: 'done' });
     };
   `;
   const blob = new Blob([workerScript], { type: 'application/javascript' });
@@ -1169,16 +1411,17 @@ for (let i = 0; i < params.iters; i++) {
 }
 
 
-// bore profile
+//bore profile
 function drawBoreProfile(isPrint = false) {
   const range = parseFloat(document.getElementById('testRadius').value);
   const nPts = 100;
   const step = 2 * range / (nPts - 1);
+  const params = getParams();
 
   const axLine = [], bxLine = [], byLine = [], bzLine = [];
   for (let i = 0; i < nPts; i++) {
     const t = -range + i * step;
-    const f = totalFieldAt(0, 0, t);
+    const f = fieldAt(0, 0, t, params);
     axLine.push(t);
     bxLine.push(f.bx); byLine.push(f.by); bzLine.push(f.bz);
   }
@@ -1187,7 +1430,6 @@ function drawBoreProfile(isPrint = false) {
   mc.style.display = 'flex';
   document.querySelectorAll('.view-btn').forEach(b => b.classList.remove('active'));
   document.getElementById('vbtn-bore').classList.add('active');
-  
   currentMapPlane = 'bore';
 
   const c = document.getElementById('map-canvas');
@@ -1204,212 +1446,178 @@ function drawLineChart(ctx, size, axLine, bxLine, byLine, bzLine, boreAxis, rang
   const text = isPrint ? '#000000' : '#8899bb';
   const zeroLine = isPrint ? '#aaaaaa' : '#2a3a4a';
 
-  ctx.fillStyle = bg; ctx.fillRect(0,0,size,size);
+  ctx.fillStyle = bg; ctx.fillRect(0, 0, size, size);
+  const pad = 50, W = size - 2*pad, H = size - 2*pad;
+  const allVals = [...bxLine, ...byLine, ...bzLine];
+  const mn = Math.min(...allVals), mx = Math.max(...allVals);
+  const m = (mx - mn) * 0.1 || 0.01;
+  const vMin = mn - m, vMax = mx + m;
+  const tX = t => pad + (t + range) / (2 * range) * W;
+  const tY = v => pad + H - (v - vMin) / (vMax - vMin) * H;
 
-  const pad=50, W=size-2*pad, H=size-2*pad;
-  const allVals=[...bxLine,...byLine,...bzLine];
-  const mn=Math.min(...allVals), mx=Math.max(...allVals);
-  const margin=(mx-mn)*0.1;
-  const vMin=mn-margin, vMax=mx+margin;
-  const tX=t=>(pad + (t+range)/(2*range)*W);
-  const tY=v=>(pad + H - (v-vMin)/(vMax-vMin)*H);
-
-  ctx.strokeStyle=grid; ctx.lineWidth=0.5;
-  for (let i=0;i<=8;i++) {
-    const y=pad+i*H/8; ctx.beginPath();ctx.moveTo(pad,y);ctx.lineTo(pad+W,y);ctx.stroke();
-    const x=pad+i*W/8; ctx.beginPath();ctx.moveTo(x,pad);ctx.lineTo(x,pad+H);ctx.stroke();
+  ctx.strokeStyle = grid; ctx.lineWidth = 0.5;
+  for (let i = 0; i <= 8; i++) {
+    const y = pad + i*H/8; ctx.beginPath(); ctx.moveTo(pad, y); ctx.lineTo(pad + W, y); ctx.stroke();
+    const x = pad + i*W/8; ctx.beginPath(); ctx.moveTo(x, pad); ctx.lineTo(x, pad + H); ctx.stroke();
   }
+  ctx.strokeStyle = zeroLine; ctx.lineWidth = 1;
+  ctx.beginPath(); ctx.moveTo(pad, tY(0)); ctx.lineTo(pad + W, tY(0)); ctx.stroke();
 
-  ctx.strokeStyle=zeroLine; ctx.lineWidth=1;
-  ctx.beginPath();ctx.moveTo(pad,tY(0));ctx.lineTo(pad+W,tY(0));ctx.stroke();
-
-  const drawSeries=(vals,color)=>{
-    ctx.beginPath();ctx.strokeStyle=color;ctx.lineWidth=1.8;
-    vals.forEach((v,i)=>{i===0?ctx.moveTo(tX(axLine[i]),tY(v)):ctx.lineTo(tX(axLine[i]),tY(v));});
+  const drawSeries = (vals, color) => {
+    ctx.beginPath(); ctx.strokeStyle = color; ctx.lineWidth = 1.8;
+    vals.forEach((v, i) => { i === 0 ? ctx.moveTo(tX(axLine[i]), tY(v)) : ctx.lineTo(tX(axLine[i]), tY(v)); });
     ctx.stroke();
   };
-  drawSeries(bxLine,'#e53e3e');
-  drawSeries(byLine,'#a8ff3e');
-  drawSeries(bzLine,'#00d4ff');
+  drawSeries(bxLine, '#e53e3e');
+  drawSeries(byLine, '#a8ff3e');
+  drawSeries(bzLine, '#00d4ff');
 
-  ctx.fillStyle=text; ctx.font='10px JetBrains Mono,monospace'; ctx.textAlign='center';
-  ctx.fillText(`Position along ${boreAxis} (mm)`, size/2, size-8);
-  ctx.save(); ctx.translate(12,size/2); ctx.rotate(-Math.PI/2);
+  ctx.fillStyle = text; ctx.font = '10px JetBrains Mono, monospace'; ctx.textAlign = 'center';
+  ctx.fillText(`Position along ${boreAxis} (mm)`, size/2, size - 8);
+  ctx.save(); ctx.translate(12, size/2); ctx.rotate(-Math.PI/2);
   ctx.fillText('B (T)', 0, 0); ctx.restore();
 
-  ctx.font='9px JetBrains Mono,monospace'; ctx.textAlign='center';
-  for (let i=0;i<=4;i++) {
-    const t=-range+i*range/2;
-    ctx.fillStyle=text; ctx.fillText(t.toFixed(0), tX(t), pad+H+14);
+  ctx.font = '9px JetBrains Mono, monospace'; ctx.textAlign = 'center';
+  for (let i = 0; i <= 4; i++) {
+    const t = -range + i*range/2;
+    ctx.fillStyle = text; ctx.fillText(t.toFixed(0), tX(t), pad + H + 14);
   }
-  ctx.textAlign='right';
-  for (let i=0;i<=4;i++) {
-    const v=vMin+i*(vMax-vMin)/4;
-    ctx.fillStyle=text; ctx.fillText(v.toFixed(3), pad-6, tY(v)+4);
+  ctx.textAlign = 'right';
+  for (let i = 0; i <= 4; i++) {
+    const v = vMin + i*(vMax - vMin)/4;
+    ctx.fillStyle = text; ctx.fillText(v.toFixed(4), pad - 6, tY(v) + 4);
   }
 
-  ctx.font='10px JetBrains Mono,monospace'; ctx.textAlign='left';
-  [['Bx','#e53e3e'],['By','#a8ff3e'],['Bz','#00d4ff']].forEach(([l,c],i)=>{
-    ctx.fillStyle=c; ctx.fillRect(pad+10+i*50,pad+8,14,3);
-    ctx.fillStyle=text; ctx.fillText(l,pad+26+i*50,pad+12);
+  ctx.font = '10px JetBrains Mono, monospace'; ctx.textAlign = 'left';
+  [['Bx','#e53e3e'],['By','#a8ff3e'],['Bz','#00d4ff']].forEach(([l, c], i) => {
+    ctx.fillStyle = c; ctx.fillRect(pad + 10 + i*50, pad + 8, 14, 3);
+    ctx.fillStyle = text; ctx.fillText(l, pad + 26 + i*50, pad + 12);
   });
 }
 
-
+//cartes 2D pour B
 function _drawMap2DImpl(plane, isPrint = false) {
   const mc = document.getElementById('map-container');
   const c  = document.getElementById('map-canvas');
   const size = Math.min(mc.clientWidth - 40, mc.clientHeight - 60, 600);
   c.width = size; c.height = size;
   const ctx = c.getContext('2d');
+  const params = getParams();
 
   const bg = isPrint ? '#ffffff' : '#080b0f';
   const textCol = isPrint ? '#000000' : '#e2eaf5';
   const borderCol = isPrint ? '#445566' : '#2a3a4a';
-  
-  ctx.fillStyle = bg;
-  ctx.fillRect(0, 0, size, size);
+  ctx.fillStyle = bg; ctx.fillRect(0, 0, size, size);
 
   const ext = parseFloat(document.getElementById('testRadius').value);
-  const N = 100;
-  const vals = [], step = 2 * ext / (N - 1);
+  const N = 80;
+  const vals = [], step = 2*ext/(N - 1);
   let vMin = Infinity, vMax = -Infinity;
 
   for (let iy = 0; iy < N; iy++) {
     const row = [];
     for (let ix = 0; ix < N; ix++) {
-      const u = -ext + ix * step, v = -ext + iy * step;
+      const u = -ext + ix*step, v = -ext + iy*step;
       let px = 0, py = 0, pz = 0;
       if (plane === 'xy') { px = u; py = v; pz = 0; }
       else if (plane === 'xz') { px = u; pz = v; py = 0; }
       else { py = u; pz = v; px = 0; }
-      const bv = totalFieldAt(px, py, pz).b;
+      const bv = fieldAt(px, py, pz, params).b;
       row.push(bv);
       if (bv < vMin) vMin = bv; if (bv > vMax) vMax = bv;
     }
     vals.push(row);
   }
 
-  // Margin for scales: 40px left/bottom, 70px right for colorbar
   const padL = 45, padB = 45, padR = 90, padT = 20;
   const mapSize = size - padL - padR;
-
-  // Render Heatmap
   const img = ctx.createImageData(mapSize, mapSize);
   const bpp = mapSize / N;
   for (let iy = 0; iy < N; iy++) {
     for (let ix = 0; ix < N; ix++) {
-      const t = (vals[iy][ix] - vMin) / (vMax - vMin);
+      const t = (vMax > vMin) ? (vals[iy][ix] - vMin) / (vMax - vMin) : 0;
       const [r, g, b] = heatmap(t);
       for (let dy = 0; dy < Math.ceil(bpp); dy++) for (let dx = 0; dx < Math.ceil(bpp); dx++) {
-        const px2 = Math.floor(ix * bpp) + dx, py2 = Math.floor(iy * bpp) + dy;
+        const px2 = Math.floor(ix*bpp) + dx, py2 = Math.floor(iy*bpp) + dy;
         if (px2 >= mapSize || py2 >= mapSize) continue;
-        const i = (py2 * mapSize + px2) * 4;
-        img.data[i] = r; img.data[i+1] = g; img.data[i+2] = b; img.data[i+3] = 255;
+        const idx = (py2*mapSize + px2)*4;
+        img.data[idx] = r; img.data[idx+1] = g; img.data[idx+2] = b; img.data[idx+3] = 255;
       }
     }
   }
   ctx.putImageData(img, padL, padT);
 
-  // Draw Axes and Ticks
-  ctx.strokeStyle = borderCol;
-  ctx.fillStyle = textCol;
-  ctx.lineWidth = 1;
+  ctx.strokeStyle = borderCol; ctx.fillStyle = textCol; ctx.lineWidth = 1;
   ctx.font = '9px JetBrains Mono, monospace';
-
-  // Y-Axis (Vertical)
   ctx.textAlign = 'right';
   for (let i = 0; i <= 4; i++) {
-    const val = ext - (i * (2 * ext) / 4);
-    const y = padT + (i * mapSize / 4);
+    const val = ext - (i * 2*ext / 4);
+    const y = padT + (i*mapSize/4);
     ctx.beginPath(); ctx.moveTo(padL, y); ctx.lineTo(padL - 5, y); ctx.stroke();
     ctx.fillText(val.toFixed(1), padL - 8, y + 3);
   }
-
-  // X-Axis (Horizontal)
   ctx.textAlign = 'center';
   for (let i = 0; i <= 4; i++) {
-    const val = -ext + (i * (2 * ext) / 4);
-    const x = padL + (i * mapSize / 4);
+    const val = -ext + (i * 2*ext / 4);
+    const x = padL + (i*mapSize/4);
     const y = padT + mapSize;
     ctx.beginPath(); ctx.moveTo(x, y); ctx.lineTo(x, y + 5); ctx.stroke();
     ctx.fillText(val.toFixed(1), x, y + 15);
   }
-
-  // Axis Labels
   ctx.font = 'bold 10px JetBrains Mono, monospace';
   ctx.fillText("mm", padL + mapSize + 15, padT + mapSize + 15);
 
-  // Colorbar (Adjusted position)
-// Colorbar (Adjusted position)
   const cbX = padL + mapSize + 15, cbY = padT, cbW = 12, cbH = mapSize;
   const cg = ctx.createLinearGradient(cbX, cbY, cbX, cbY + cbH);
-  
-  // same scale as heatmap() function
-  
-  cg.addColorStop(0,   'rgb(200,0,0)');    // Red (Max)
-  cg.addColorStop(0.2, 'rgb(255,50,0)');   // Orange/Red
-  cg.addColorStop(0.4, 'rgb(200,200,0)');  // Yellow
-  cg.addColorStop(0.6, 'rgb(0,200,80)');   // Green
-  cg.addColorStop(0.8, 'rgb(0,128,200)');  // Cyan
-  cg.addColorStop(1,   'rgb(0,0,128)');    // Dark Blue (Min)
-  
+  cg.addColorStop(0,   'rgb(200,0,0)');
+  cg.addColorStop(0.2, 'rgb(255,50,0)');
+  cg.addColorStop(0.4, 'rgb(200,200,0)');
+  cg.addColorStop(0.6, 'rgb(0,200,80)');
+  cg.addColorStop(0.8, 'rgb(0,128,200)');
+  cg.addColorStop(1,   'rgb(0,0,128)');
   ctx.fillStyle = cg; ctx.fillRect(cbX, cbY, cbW, cbH);
   ctx.strokeRect(cbX, cbY, cbW, cbH);
-
   ctx.fillStyle = textCol; ctx.textAlign = 'left';
   ctx.fillText(vMax.toFixed(4) + " T", cbX + 15, cbY + 10);
   ctx.fillText(vMin.toFixed(4) + " T", cbX + 15, cbY + cbH);
 
-  document.getElementById('map-title').textContent = `${plane.toUpperCase()} plane field map (mm)`;
+  document.getElementById('map-title').textContent = `${plane.toUpperCase()} plane · |B| (T)`;
   document.getElementById('map-computing-overlay').style.display = 'none';
 }
 
-
-// ─── 2D plane map (color map of |B|) ───
-let currentMapPlaneActive = null;
 function setMapTab(plane) {
   currentMapPlane = plane;
-  currentMapPlaneActive = plane;
-  document.getElementById('map-container').style.display='flex';
-  document.querySelectorAll('.view-btn').forEach(b=>b.classList.remove('active'));
-  document.getElementById('vbtn-map-'+plane).classList.add('active');
+  document.getElementById('map-container').style.display = 'flex';
+  document.querySelectorAll('.view-btn').forEach(b => b.classList.remove('active'));
+  document.getElementById('vbtn-map-' + plane).classList.add('active');
   drawMap2D(plane);
 }
-
 function drawMap2D(plane) {
   const overlay = document.getElementById('map-computing-overlay');
-  overlay.style.display='flex';
-  setTimeout(()=>_drawMap2DImpl(plane),30);
+  overlay.style.display = 'flex';
+  setTimeout(() => _drawMap2DImpl(plane), 30);
 }
-
-
-
 function heatmap(t) {
-  // Viridis-like: dark blue → cyan → green → yellow → red
   const stops = [[0,0,128],[0,128,200],[0,200,80],[200,200,0],[255,50,0],[200,0,0]];
-  const s = t*(stops.length-1), i=Math.min(Math.floor(s),stops.length-2), f=s-i;
-  return stops[i].map((c,j)=>Math.round(c+(stops[i+1][j]-c)*f));
+  const s = t*(stops.length - 1), i = Math.min(Math.floor(s), stops.length - 2), f = s - i;
+  return stops[i].map((c, j) => Math.round(c + (stops[i+1][j] - c)*f));
 }
 
-// view
 function setView(mode) {
-  document.getElementById('map-container').style.display='none';
+  document.getElementById('map-container').style.display = 'none';
   currentMapPlane = null;
   document.querySelectorAll('.view-btn').forEach(b => b.classList.remove('active'));
   document.getElementById('vbtn-' + mode).classList.add('active');
-  
-  // Dynamically calculate a comfortable zoom distance based on the sphere's radius
   const R = parseFloat(document.getElementById('baseRadius').value) || 80;
-  const fitRadius = R * 5.5; 
-
-  if (mode === '3d')    targetView = {theta: 0.6, phi: 1.15, radius: fitRadius};
-  if (mode === 'top')   targetView = {theta: 0, phi: 0.01, radius: fitRadius};
-  if (mode === 'front') targetView = {theta: 0, phi: Math.PI / 2, radius: fitRadius};
-  if (mode === 'side')  targetView = {theta: Math.PI / 2, phi: Math.PI / 2, radius: fitRadius};
+  const fitRadius = R * 5.5;
+  if (mode === '3d')    targetView = { theta: 0.6, phi: 1.15, radius: fitRadius };
+  if (mode === 'top')   targetView = { theta: 0, phi: 0.01, radius: fitRadius };
+  if (mode === 'front') targetView = { theta: 0, phi: Math.PI/2, radius: fitRadius };
+  if (mode === 'side')  targetView = { theta: Math.PI/2, phi: Math.PI/2, radius: fitRadius };
 }
 
-function drawSchlegelDiagram(ctx, size, isPrint = false) {
+
+function drawSchlegelDiagram(ctx, size, view = 'north', isPrint = false) {
   const bg = isPrint ? '#ffffff' : '#080b0f';
   const textCol = isPrint ? '#000000' : '#e2eaf5';
   const lineCol = isPrint ? '#cccccc' : '#2a3a4a';
@@ -1417,20 +1625,26 @@ function drawSchlegelDiagram(ctx, size, isPrint = false) {
   ctx.fillStyle = bg;
   ctx.fillRect(0, 0, size, size);
 
-  // 1. Stereographic projection from the Z-axis
+  // 1. Stereographic projection from the selected pole
   const projected = magnets.map((mag, i) => {
-    // 1.05 factor ensures the projection doesn't warp to infinity near the top
-    const factor = 1 / (1.05 - mag.dir.z); 
+    // Calculate polarity based on moment and direction
+    const mDotD = mag.mu.x * mag.dir.x + mag.mu.y * mag.dir.y + mag.mu.z * mag.dir.z;
+    const pol = mDotD > 0 ? -1 : 1; // 1 = North inward, -1 = South inward
+
+    // 1.05 factor ensures projection doesn't warp to infinity near the pole
+    const z = view === 'north' ? mag.dir.z : -mag.dir.z;
+    const factor = 1 / (1.05 - z); 
+    
     return {
       idx: i,
       x: mag.dir.x * factor,
-      y: mag.dir.y * factor,
-      pol: mag.polarity,
+      y: (view === 'north' ? mag.dir.y : -mag.dir.y) * factor, // Flip Y for south to maintain visual handedness
+      pol: pol,
       v3: mag.dir
     };
   });
 
-  // 2. Center and scale perfectly around the true origin (0,0) to preserve symmetry
+  // 2. Center and scale perfectly around the true origin
   let maxR = 0;
   projected.forEach(p => {
     const r = Math.hypot(p.x, p.y);
@@ -1439,7 +1653,6 @@ function drawSchlegelDiagram(ctx, size, isPrint = false) {
 
   const pad = 40;
   const cx = size / 2, cy = size / 2;
-  // Scale based on the maximum radial distance from the true center
   const scale = (size / 2 - pad) / maxR;
 
   projected.forEach(p => {
@@ -1452,7 +1665,6 @@ function drawSchlegelDiagram(ctx, size, isPrint = false) {
   ctx.lineWidth = 2;
   for (let i = 0; i < projected.length; i++) {
     for (let j = i + 1; j < projected.length; j++) {
-      // Adjacent nodes on a unit C60 sphere are ~0.40 units apart.
       if (projected[i].v3.distanceTo(projected[j].v3) < 0.45) {
         ctx.beginPath();
         ctx.moveTo(projected[i].px, projected[i].py);
@@ -1470,7 +1682,7 @@ function drawSchlegelDiagram(ctx, size, isPrint = false) {
     // Polarity 1 = North inward -> Outside is South (Blue)
     // Polarity -1 = South inward -> Outside is North (Red)
     ctx.fillStyle = p.pol === 1 ? (isPrint ? '#ddddff' : '#3182ce') : (isPrint ? '#ffdddd' : '#e53e3e');
-   
+    
     ctx.fill();
     ctx.strokeStyle = isPrint ? '#000000' : '#ffffff';
     ctx.lineWidth = 1.5;
@@ -1484,20 +1696,12 @@ function drawSchlegelDiagram(ctx, size, isPrint = false) {
   });
 }
 
-
-//with ui busy and all data, 17 avril
 async function exportPDF() {
-  // 1. Make the UI look busy
   document.body.style.cursor = 'wait';
   const exportBtn = document.querySelector('button[onclick="exportPDF()"]');
   const originalBtnText = exportBtn ? exportBtn.textContent : 'PDF Export';
-  if (exportBtn) { 
-    exportBtn.disabled = true; 
-    exportBtn.textContent = 'Generating...'; 
-  }
-
-  // Yield thread to allow DOM to update the cursor and button before heavy lifting
-  await new Promise(resolve => setTimeout(resolve, 50));
+  if (exportBtn) { exportBtn.disabled = true; exportBtn.textContent = 'Generating...'; }
+  await new Promise(r => setTimeout(r, 50));
 
   try {
     const { jsPDF } = window.jspdf;
@@ -1505,305 +1709,472 @@ async function exportPDF() {
     const margin = 10;
     const pageWidth = doc.internal.pageSize.getWidth();
     const pageHeight = doc.internal.pageSize.getHeight();
-    const imgW = pageWidth - (margin * 2);
+    const imgW = pageWidth - 2*margin;
     let y = 10;
 
-    // Generate Timestamps
+    // Helper to sanitize unsupported Unicode for standard jsPDF fonts
+    const cleanStr = (str) => {
+      return str.replace(/·/g, '-')
+                .replace(/→/g, '->')
+                .replace(/−/g, '-')
+                .replace(/±/g, '+/-')
+                .replace(/D₂ₕ/g, 'D2h')
+                .replace(/m̂/g, 'm_hat');
+    };
+
     const now = new Date();
     const timestampFile = now.toISOString().replace(/[:.]/g, '-').slice(0, 19);
     const timestampText = now.toLocaleString();
 
-    // --- PAGE 1: REPORT STRUCTURE ---
-    
-    // Title & Metadata
+    // === Title ===
     doc.setFontSize(16);
-    doc.text("Magic Sphere · Simulation Report", margin, y);
-    y += 8;
+    doc.setTextColor(0);
+    doc.text(cleanStr("Radial Sphere - Simulation Report"), margin, y); y += 8;
 
-    doc.setFontSize(9);
+    // === Metadata block ===
+    doc.setFontSize(10);
     doc.setTextColor(100);
-    doc.text(`Generated on: ${timestampText}`, margin, y); y += 5;
-    doc.text(`Program URL: ${window.location.href}`, margin, y); y += 10;
+    doc.text(cleanStr(`Program: Radial Sphere Simulator v2.3 (${window.location.href})`), margin, y); y += 5;
+    doc.text(cleanStr(`Generated: ${timestampText}`), margin, y); y += 5;
+    const latticeMode = currentLattice();
+    let structDesc;
+    if (latticeMode === 'fibonacci') {
+      structDesc = `Fibonacci sphere N=${document.getElementById('fibN').value}, Z-pole cut -> ${magnets.length} dipoles`;
+    } else if (latticeMode === 'c60') {
+      structDesc = `C60 Mandhala, 2 hexagonal caps removed -> ${magnets.length} dipoles`;
+    } else {
+      structDesc = `Lebedev-110, 10 pole caps + 2 on-axis cuts -> ${magnets.length} dipoles`;
+    }
+    doc.text(cleanStr(`Structure: ${structDesc}`), margin, y); y += 5;
+    doc.text(cleanStr(`Moment rule: radial, +x hemisphere S-inward, -x hemisphere N-inward - Field: +X - Bore: +/-Z`), margin, y); y += 8;
     doc.setTextColor(0);
 
-    // Geometry & Magnets
-    doc.setFontSize(12);
-    doc.text("1. Simulation Parameters", margin, y); y += 6;
+    doc.setFontSize(12); doc.text(cleanStr("1. Simulation Parameters"), margin, y); y += 6;
     doc.setFontSize(10);
-    const geomParams = [
-      `Sphere Radius (R): ${document.getElementById('baseRadius').value} mm`,
-      `Test Volume (r): ${document.getElementById('testRadius').value} mm`,
-      `Dipole Diameter: ${document.getElementById('magDiam').value} mm`,
-      `Dipole Length: ${document.getElementById('magLen').value} mm`,
-      `Remanence (Br): ${document.getElementById('magBr').value} T`
-    ];
-    geomParams.forEach(p => { doc.text(`• ${p}`, margin + 5, y); y += 5; });
+    const p = getParams();
+    [
+      `Inner radius: ${p.R} mm    Outer radius: ${p.R_outer} mm    Test radius: ${p.tr} mm`,
+      `Cylinder diameter: ${p.diam} mm    Length: ${p.len} mm    Min gap: ${p.gap} mm`,
+      `Remanence Br: ${p.Br} T`,
+      `Objective weight: Homog ${(p.weight*100).toFixed(0)}% - Field ${((1-p.weight)*100).toFixed(0)}%`,
+      `Symmetry orbits: ${orbits.length} (DOF for SA)`
+    ].forEach(t => { doc.text(cleanStr(`* ${t}`), margin + 5, y); y += 5; });
     y += 4;
 
-    // Computed Field
-    doc.setFontSize(12);
-    doc.text("2. Computed Field (Center)", margin, y); y += 6;
+    doc.setFontSize(12); doc.text(cleanStr("2. Computed Field (center & volume)"), margin, y); y += 6;
     doc.setFontSize(10);
-    const fields = [
-      `|B|: ${document.getElementById('sv-Bc').textContent} T`,
-      `Bx: ${document.getElementById('sv-Bx').textContent} T`,
-      `By: ${document.getElementById('sv-By').textContent} T`,
-      `Bz: ${document.getElementById('sv-Bz').textContent} T`,
-      `Error: ${document.getElementById('sv-Var').textContent}`
-    ];
-    doc.text(fields.join('   |   '), margin + 5, y);
-    y += 8;
+    const m = computeMetrics(p);
+    [
+      `|B| at center: ${m.bCenter.b.toFixed(4)} T`,
+      `Bx = ${m.bCenter.bx.toFixed(4)} T    By = ${m.bCenter.by.toExponential(2)} T    Bz = ${m.bCenter.bz.toExponential(2)} T`,
+      `Bx peak-to-peak over test volume: ${m.ppmBx.toFixed(1)} ppm`,
+      `Transverse leak (max): ${m.ppmTrans.toFixed(1)} ppm of |Bx|`,
+      `SA score: ${computeScore(m, p).toFixed(3)}%`
+    ].forEach(t => { doc.text(cleanStr(`* ${t}`), margin + 5, y); y += 5; });
 
-    // Optimizer Parameters
-    doc.setFontSize(12);
-    doc.text("3. Simulated Annealing Parameters", margin, y); y += 6;
-    doc.setFontSize(10);
-    const w = getOptWeight();
-    const homogPct = Math.round((1 - w) * 100);
-    const fieldPct = Math.round(w * 100);
-    let objDescription;
-    if (w === 0)      objDescription = "Pure homogeneity";
-    else if (w === 1) objDescription = "Pure field (shortfall from Halbach ideal)";
-    else              objDescription = `Mixed: ${homogPct}% homogeneity + ${fieldPct}% field-shortfall`;
-
-    const BrVal = parseFloat(document.getElementById('magBr').value);
-    const RinVal = parseFloat(document.getElementById('baseRadius').value);
-    const RoutVal = parseFloat(document.getElementById('outerRadius').value);
-    const B_ideal = BrVal * Math.log(RoutVal / RinVal);
-
-    const optParams = [
-      `Iterations: ${document.getElementById('optIters').value}`,
-      `Max Radial Nudge: ${document.getElementById('optNudge').value} mm`,
-      `Temperature (T0 / Tf): Auto-tuned`,
-      `Objective Weight: ${objDescription}`,
-      `Halbach ideal (Br · ln(R_out/R_in)): ${B_ideal.toFixed(4)} T`,
-      `Field residual scale: ${FIELD_WEIGHT_SCALE} (pts for 100% shortfall)`,
-      `Score: positive residual (0 = perfect, larger = worse)`,
-      `Polarity Locked: Yes (by hemisphere)`
-    ];
-    optParams.forEach(p => { doc.text(`• ${p}`, margin + 5, y); y += 5; });
-
-    // --- PAGE 2+: 3D VIEWS ---
-    
+    // 3D views
     const origBg = scene.background;
     scene.background = new THREE.Color(0xffffff);
-    // Hide HUD axes gizmo during PDF export (rendered in separate axesScene)
-    const prevAxesVisible = axesHelper.visible;
-    axesHelper.visible = false;
-    hideAxesHUD = true;
-
-    const prevLabelsState = document.getElementById('showLabels').checked;
-    document.getElementById('showLabels').checked = true; // Force labels ON
-    drawScene(); 
+    gridHelper.visible = false; axisHelper.visible = false;
+    const prevLabels = document.getElementById('showLabels').checked;
+    document.getElementById('showLabels').checked = true;
+    drawScene();
 
     const origCam = { radius: spherical.radius, theta: spherical.theta, phi: spherical.phi };
-    const R = parseFloat(document.getElementById('baseRadius').value);
-    spherical.radius = R * 6;
-
-    // Resize renderer to a square high-resolution buffer so the sphere fills the PDF page.
-    // (The live canvas is whatever shape the viewport happens to be — usually wide,
-    // which leaves big empty margins on the sides of the printed image.)
-    const origSize = { w: canvas.width, h: canvas.height };
-    const origAspect = camera.aspect;
-    const PDF_RENDER_PX = 1600;
-    renderer.setSize(PDF_RENDER_PX, PDF_RENDER_PX, false);
-    camera.aspect = 1;
-    camera.updateProjectionMatrix();
-
+    spherical.radius = p.R * 5.5;
     const views = [
-      { name: 'Top', theta: 0, phi: 0.01 },
-      { name: 'Front', theta: 0, phi: Math.PI / 2 },
-      { name: 'Side', theta: Math.PI / 2, phi: Math.PI / 2 }
+      { name: 'Top (+Z)',   theta: 0,          phi: 0.01 },
+      { name: 'Front (+Y)', theta: 0,          phi: Math.PI/2 },
+      { name: 'Side (+X)',  theta: Math.PI/2,  phi: Math.PI/2 }
     ];
-
-    // Use full available page height for each view (square image, centered on the page)
-    const headerY = 15;
-    const availH = pageHeight - headerY - margin;
-    const imgSide = Math.min(imgW, availH);
-    const imgX = margin + (imgW - imgSide) / 2;
-
-    for (let i = 0; i < views.length; i++) {
+    for (const v of views) {
       doc.addPage();
-      spherical.theta = views[i].theta; spherical.phi = views[i].phi;
-      camera.position.x = spherical.radius * Math.sin(spherical.phi) * Math.sin(spherical.theta);
-      camera.position.y = spherical.radius * Math.sin(spherical.phi) * Math.cos(spherical.theta);
-      camera.position.z = spherical.radius * Math.cos(spherical.phi);
-      camera.up.set(0, 0, 1);
+      spherical.theta = v.theta; spherical.phi = v.phi;
+      camera.position.x = spherical.radius*Math.sin(spherical.phi)*Math.sin(spherical.theta);
+      camera.position.y = spherical.radius*Math.sin(spherical.phi)*Math.cos(spherical.theta);
+      camera.position.z = spherical.radius*Math.cos(spherical.phi);
       camera.lookAt(0, 0, 0);
-      renderer.setViewport(0, 0, PDF_RENDER_PX, PDF_RENDER_PX);
-      renderer.clear();
       renderer.render(scene, camera);
-
-      const imgData = canvas.toDataURL("image/jpeg", 0.92);
-      doc.setFontSize(14);
-      doc.text(`3D View: ${views[i].name} (Dipole Numbers)`, margin, 10);
-      doc.addImage(imgData, 'JPEG', imgX, headerY, imgSide, imgSide);
+      const imgData = canvas.toDataURL("image/jpeg", 1.0);
+      doc.setFontSize(14); doc.text(cleanStr(`3D View: ${v.name}`), margin, 10);
+      doc.addImage(imgData, 'JPEG', margin, 15, imgW, imgW * (canvas.height / canvas.width));
     }
-
-    // Restore renderer to live viewport size
-    renderer.setSize(origSize.w, origSize.h, false);
-    camera.aspect = origAspect;
-    camera.updateProjectionMatrix();
-
-    // Restore 3D Scene
     scene.background = origBg;
-    axesHelper.visible = prevAxesVisible;
-    hideAxesHUD = false;
+    axisHelper.visible = true; 
     spherical.theta = origCam.theta; spherical.phi = origCam.phi; spherical.radius = origCam.radius;
-    document.getElementById('showLabels').checked = prevLabelsState;
-    resize(); // Re-sync renderer & camera to the current viewport area
+    document.getElementById('showLabels').checked = prevLabels;
     drawScene();
     renderer.render(scene, camera);
 
-
-    // --- 2D MAPS ---
-
+    // Maps and Profiles
     const mapCanvas = document.getElementById('map-canvas');
     const activePlane = currentMapPlane;
     const mapDisplay = document.getElementById('map-container').style.display;
-    
     const plots = [
-      { name: 'Bore Field Profile (Z-axis)', run: () => drawBoreProfile(true) },
-      { name: 'XY Plane Field Map', run: () => _drawMap2DImpl('xy', true) },
-      { name: 'XZ Plane Field Map', run: () => _drawMap2DImpl('xz', true) },
-      { name: 'YZ Plane Field Map', run: () => _drawMap2DImpl('yz', true) },
-      { name: 'Schlegel Projection (color of outside pole)', run: () => drawSchlegelDiagram(mapCanvas.getContext('2d'), mapCanvas.width, true) }
+      { name: 'Bore Profile (Z)', run: () => drawBoreProfile(true) },
+      { name: 'XY Plane |B|',     run: () => _drawMap2DImpl('xy', true) },
+      { name: 'XZ Plane |B|',     run: () => _drawMap2DImpl('xz', true) },
+      { name: 'YZ Plane |B|',     run: () => _drawMap2DImpl('yz', true) }
     ];
-
-    for (let i = 0; i < plots.length; i++) {
+    for (const pl of plots) {
       doc.addPage();
-      doc.setFontSize(14);
-      doc.text(plots[i].name, margin, 10);
-      plots[i].run(); 
+      doc.setFontSize(14); doc.text(cleanStr(pl.name), margin, 10);
+      pl.run();
       const chartData = mapCanvas.toDataURL("image/png", 1.0);
       doc.addImage(chartData, 'PNG', margin, 15, imgW, imgW * (mapCanvas.height / mapCanvas.width));
     }
-
-    // Restore 2D UI State
     if (activePlane === 'bore') drawBoreProfile(false);
     else if (activePlane) _drawMap2DImpl(activePlane, false);
     document.getElementById('map-container').style.display = mapDisplay;
 
+    // Schlegel Diagram (North Only)
+    const schlegelCanvas = document.createElement('canvas');
+    schlegelCanvas.width = 1000;
+    schlegelCanvas.height = 1000;
+    const sCtx = schlegelCanvas.getContext('2d');
 
-    // --- DIPOLE LIST ---
+    doc.addPage();
+    doc.setFontSize(14); doc.text(cleanStr("Schlegel Diagram - North Pole View (+Z)"), margin, 10);
+    drawSchlegelDiagram(sCtx, 1000, 'north', true);
+    doc.addImage(schlegelCanvas.toDataURL("image/png", 1.0), 'PNG', margin, 15, imgW, imgW);
 
-    doc.addPage(); 
-    y = 10;
-    doc.setFontSize(14);
-    doc.text("Dipole Positions (radius)", margin, y);
-    y += 8;
+    // Dipole table
+    doc.addPage(); y = 10;
+    doc.setFontSize(14); doc.text(cleanStr("Dipole Table"), margin, y); y += 8;
+    doc.setFontSize(9);
+    doc.text(cleanStr("ID, N-Pole r (mm), S-Pole r (mm), Moment Dir (x,y,z), Orbit"), margin, y); y += 6;
     
-    doc.setFontSize(10);
-    const len = parseFloat(document.getElementById('magLen').value);
-    
+    const len = p.len;
     magnets.forEach((mag, i) => {
-      const distInner = R + mag.offset;
-      const distOuter = R + mag.offset + len;
-      const posN = mag.polarity === 1 ? distInner : distOuter;
-      const posS = mag.polarity === 1 ? distOuter : distInner;
-      
       if (y > pageHeight - 15) { doc.addPage(); y = 10; }
-      doc.text(`Dipole ${i + 1}: N face at ${posN.toFixed(2)} mm, S face at ${posS.toFixed(2)} mm`, margin, y);
-      y += 6;
+      
+      const rInner = p.R + mag.offset;
+      const rOuter = rInner + len;
+      
+      // Determine N/S position based on moment dot product
+      const mDotD = mag.mu.x * mag.dir.x + mag.mu.y * mag.dir.y + mag.mu.z * mag.dir.z;
+      const rN = mDotD > 0 ? rOuter : rInner;
+      const rS = mDotD > 0 ? rInner : rOuter;
+      
+      const muStr = `(${mag.mu.x.toFixed(3)}, ${mag.mu.y.toFixed(3)}, ${mag.mu.z.toFixed(3)})`;
+      doc.text(cleanStr(`#${i+1}: rN=${rN.toFixed(2)}, rS=${rS.toFixed(2)}  m_hat=${muStr}  orbit=${orbitOf[i]}`), margin, y);
+      y += 5;
     });
 
-    // 2. Add Timestamp to Filename
-    doc.save(`MagicSphere_Report_${timestampFile}.pdf`);
-
-  } catch (error) {
-    console.error("PDF generation failed:", error);
+    doc.save(`Radial_Sphere_${timestampFile}.pdf`);
+  } catch (err) {
+    console.error("PDF generation failed:", err);
   } finally {
-    // 3. Restore the UI 
     document.body.style.cursor = 'default';
-    if (exportBtn) { 
-      exportBtn.disabled = false; 
-      exportBtn.textContent = originalBtnText; 
-    }
+    if (exportBtn) { exportBtn.disabled = false; exportBtn.textContent = originalBtnText; }
   }
 }
 
 
-
-// tooltip
-function showTooltip(msg, dur) {
-  const t=document.getElementById('tooltip');
-  t.innerHTML=msg.replace(/\n/g,'<br>');
-  clearTimeout(t._timer);
-  t._timer=setTimeout(()=>{
-    t.innerHTML='<b style="color:var(--accent)">MANDHALA</b> · 48 dipoles on C60 lattice<br>Bore: top pentagon removed · All dipoles point to center<br>Rotate: drag · Zoom: scroll · Pan: right-drag';
-  },dur||4000);
+// 
+//  CSV EXPORT — for a machine shop / assembly jig
+//
+//  One row per cylinder with everything needed to build it:
+//   - id              1-based index
+//   - orbit           symmetry orbit id (magnets sharing the same offset)
+//   - theta_deg       polar angle from +Z axis, 0..180
+//   - phi_deg         azimuthal angle in XY plane, measured from +X, -180..180
+//   - dir_x/y/z       unit direction from origin to cylinder axis
+//   - r_inner_mm      radius of the inner face (closer to origin)
+//   - r_center_mm     radius of cylinder geometric center
+//   - r_outer_mm      radius of the outer face
+//   - pos_inner_{x,y,z}_mm   cartesian coords of the inner face center
+//   - pos_outer_{x,y,z}_mm   cartesian coords of the outer face center
+//   - inward_pole     'N' or 'S' — which pole of the cylinder faces the origin
+//   - moment_{x,y,z}  unit moment vector (cylinder axis direction, from S-pole to N-pole)
+// ═══════════════════════════════════════════════════════════════
+function downloadBlob(data, mime, filename) {
+  const blob = new Blob([data], { type: mime });
+  const url = URL.createObjectURL(blob);
+  const a = document.createElement('a');
+  a.href = url; a.download = filename;
+  document.body.appendChild(a);
+  a.click();
+  document.body.removeChild(a);
+  URL.revokeObjectURL(url);
 }
 
+function exportCSV() {
+  const p = getParams();
+  const len = p.len;
+  const nowIso = new Date().toISOString().replace(/[:.]/g, '-').slice(0, 19);
+  const modeLabel = currentLattice();
+
+  // Header rows with simulation context (prefixed with # so they're comment-safe;
+  // most spreadsheet apps will just show them in column A)
+  const lines = [];
+  lines.push(`# Radial Sphere magnet placement · generated ${new Date().toISOString()}`);
+  lines.push(`# Lattice: ${modeLabel} · ${magnets.length} dipoles · ${orbits.length} symmetry orbits`);
+  lines.push(`# Geometry: R=${p.R}mm, R_outer=${p.R_outer}mm, test_R=${p.tr}mm`);
+  lines.push(`# Cylinder: diam=${p.diam}mm, length=${p.len}mm, gap=${p.gap}mm, Br=${p.Br}T`);
+  lines.push(`# Units: all positions in millimetres, angles in degrees, directions unitless`);
+  lines.push(`# Coordinate system: right-handed, +X is field direction, +Z is bore axis`);
+
+  // Column header
+  const cols = [
+    'id', 'orbit', 'theta_deg', 'phi_deg',
+    'dir_x', 'dir_y', 'dir_z',
+    'r_inner_mm', 'r_center_mm', 'r_outer_mm',
+    'pos_inner_x_mm', 'pos_inner_y_mm', 'pos_inner_z_mm',
+    'pos_outer_x_mm', 'pos_outer_y_mm', 'pos_outer_z_mm',
+    'inward_pole',
+    'moment_x', 'moment_y', 'moment_z'
+  ];
+  lines.push(cols.join(','));
+
+  const fmt = (v, n=4) => (v.toFixed ? v.toFixed(n) : v.toString());
+
+  magnets.forEach((mag, i) => {
+    const d = mag.dir, m = mag.mu;
+    // Spherical angles (math convention: theta from +Z, phi from +X in XY plane)
+    const theta = Math.acos(Math.max(-1, Math.min(1, d.z))) * 180 / Math.PI;
+    const phi = Math.atan2(d.y, d.x) * 180 / Math.PI;
+    const rInner = p.R + mag.offset;
+    const rCenter = rInner + len / 2;
+    const rOuter = rInner + len;
+    const pi_x = d.x * rInner, pi_y = d.y * rInner, pi_z = d.z * rInner;
+    const po_x = d.x * rOuter, po_y = d.y * rOuter, po_z = d.z * rOuter;
+
+    // Inward pole: moment points from S to N. If moment points radially OUTWARD (m·d > 0),
+    // then the N pole is at the outer face and S faces inward. If inward (m·d < 0), N faces inward.
+    const mDotD = m.x*d.x + m.y*d.y + m.z*d.z;
+    const inwardPole = mDotD > 0 ? 'S' : 'N';
+
+    const row = [
+      i + 1,
+      orbitOf[i] + 1,
+      fmt(theta, 3),
+      fmt(phi, 3),
+      fmt(d.x, 5), fmt(d.y, 5), fmt(d.z, 5),
+      fmt(rInner, 3), fmt(rCenter, 3), fmt(rOuter, 3),
+      fmt(pi_x, 3), fmt(pi_y, 3), fmt(pi_z, 3),
+      fmt(po_x, 3), fmt(po_y, 3), fmt(po_z, 3),
+      inwardPole,
+      fmt(m.x, 5), fmt(m.y, 5), fmt(m.z, 5)
+    ];
+    lines.push(row.join(','));
+  });
+
+  downloadBlob(lines.join('\n') + '\n', 'text/csv;charset=utf-8', `Radial_Sphere_${modeLabel}_${nowIso}.csv`);
+  showTooltip(`CSV exported: ${magnets.length} magnets`, 3000);
+}
+
+// JSON export — saves full config so you can reload later (parameters + offsets)
 // ═══════════════════════════════════════════════════════════════
-//  RENDER LOOP
+//  STEP EXPORT (AP214) — one closed cylindrical solid per magnet
+//  Produces a MANIFOLD_SOLID_BREP per cylinder (3 faces: top disk, bottom disk,
+//  lateral cylindrical surface), stitched into a single ADVANCED_BREP_SHAPE.
+//  Opens directly in Fusion 360, SolidWorks, FreeCAD, Onshape, etc.
 // ═══════════════════════════════════════════════════════════════
-let prevTime=0;
+function buildStepFile(cylinders) {
+  const header = `ISO-10303-21;
+HEADER;
+FILE_DESCRIPTION(('Radial sphere dipoles'),'2;1');
+FILE_NAME('magnets.step','${new Date().toISOString()}',('Radial Sphere Simulator'),('Univ Paris-Saclay'),'','','');
+FILE_SCHEMA(('AUTOMOTIVE_DESIGN { 1 0 10303 214 1 1 1 1 }'));
+ENDSEC;
+DATA;
+#1 = APPLICATION_CONTEXT('automotive_design');
+#2 = APPLICATION_PROTOCOL_DEFINITION('international standard','automotive_design',2001,#1);
+#3 = MECHANICAL_CONTEXT('',#1,'mechanical');
+#4 = PRODUCT_CONTEXT('',#1,'mechanical');
+#5 = PRODUCT_DEFINITION_CONTEXT('part definition',#1,'design');
+#6 = (LENGTH_UNIT()NAMED_UNIT(*)SI_UNIT(.MILLI.,.METRE.));
+#7 = (NAMED_UNIT(*)PLANE_ANGLE_UNIT()SI_UNIT($,.RADIAN.));
+#8 = (NAMED_UNIT(*)SI_UNIT($,.STERADIAN.)SOLID_ANGLE_UNIT());
+#9 = UNCERTAINTY_MEASURE_WITH_UNIT(LENGTH_MEASURE(1.0E-7),#6,'distance_accuracy_value','confusion accuracy');
+#10 = (GEOMETRIC_REPRESENTATION_CONTEXT(3)GLOBAL_UNCERTAINTY_ASSIGNED_CONTEXT((#9))GLOBAL_UNIT_ASSIGNED_CONTEXT((#6,#7,#8))REPRESENTATION_CONTEXT('Context','3D'));
+`;
+
+  let idx = 100;
+  const lines = [];
+  const brepIds = [];
+
+  const num = (x) => {
+    if (Object.is(x, -0)) x = 0;
+    if (x === 0) return '0.';
+    if (Number.isInteger(x)) return x + '.';
+    return x.toPrecision(10).replace(/0+$/, '').replace(/\.$/, '.0');
+  };
+
+  cylinders.forEach((cyl, cIdx) => {
+    const { center, axis, refDir, radius, length } = cyl;
+    const half = length / 2;
+    const bx = center[0] - half*axis[0], by = center[1] - half*axis[1], bz = center[2] - half*axis[2];
+    const tx = center[0] + half*axis[0], ty = center[1] + half*axis[1], tz = center[2] + half*axis[2];
+
+    const pBot = idx++;   lines.push(`#${pBot} = CARTESIAN_POINT('',(${num(bx)},${num(by)},${num(bz)}));`);
+    const pTop = idx++;   lines.push(`#${pTop} = CARTESIAN_POINT('',(${num(tx)},${num(ty)},${num(tz)}));`);
+    const dAxis = idx++;  lines.push(`#${dAxis} = DIRECTION('',(${num(axis[0])},${num(axis[1])},${num(axis[2])}));`);
+    const dAxisNeg = idx++; lines.push(`#${dAxisNeg} = DIRECTION('',(${num(-axis[0])},${num(-axis[1])},${num(-axis[2])}));`);
+    const dRef = idx++;   lines.push(`#${dRef} = DIRECTION('',(${num(refDir[0])},${num(refDir[1])},${num(refDir[2])}));`);
+
+    const apBot = idx++;    lines.push(`#${apBot} = AXIS2_PLACEMENT_3D('',#${pBot},#${dAxis},#${dRef});`);
+    const apTop = idx++;    lines.push(`#${apTop} = AXIS2_PLACEMENT_3D('',#${pTop},#${dAxis},#${dRef});`);
+    const apBotOut = idx++; lines.push(`#${apBotOut} = AXIS2_PLACEMENT_3D('',#${pBot},#${dAxisNeg},#${dRef});`);
+
+    const cylSurf = idx++; lines.push(`#${cylSurf} = CYLINDRICAL_SURFACE('',#${apBot},${num(radius)});`);
+    const planeBot = idx++; lines.push(`#${planeBot} = PLANE('',#${apBotOut});`);
+    const planeTop = idx++; lines.push(`#${planeTop} = PLANE('',#${apTop});`);
+
+    const circBot = idx++; lines.push(`#${circBot} = CIRCLE('',#${apBot},${num(radius)});`);
+    const circTop = idx++; lines.push(`#${circTop} = CIRCLE('',#${apTop},${num(radius)});`);
+
+    const pBotEdge = idx++;
+    lines.push(`#${pBotEdge} = CARTESIAN_POINT('',(${num(bx + radius*refDir[0])},${num(by + radius*refDir[1])},${num(bz + radius*refDir[2])}));`);
+    const pTopEdge = idx++;
+    lines.push(`#${pTopEdge} = CARTESIAN_POINT('',(${num(tx + radius*refDir[0])},${num(ty + radius*refDir[1])},${num(tz + radius*refDir[2])}));`);
+
+    const vBot = idx++; lines.push(`#${vBot} = VERTEX_POINT('',#${pBotEdge});`);
+    const vTop = idx++; lines.push(`#${vTop} = VERTEX_POINT('',#${pTopEdge});`);
+
+    const ecBot = idx++; lines.push(`#${ecBot} = EDGE_CURVE('',#${vBot},#${vBot},#${circBot},.T.);`);
+    const ecTop = idx++; lines.push(`#${ecTop} = EDGE_CURVE('',#${vTop},#${vTop},#${circTop},.T.);`);
+
+    const oeBotF = idx++; lines.push(`#${oeBotF} = ORIENTED_EDGE('',*,*,#${ecBot},.T.);`);
+    const oeTopF = idx++; lines.push(`#${oeTopF} = ORIENTED_EDGE('',*,*,#${ecTop},.F.);`);
+    const oeBotT = idx++; lines.push(`#${oeBotT} = ORIENTED_EDGE('',*,*,#${ecBot},.F.);`);
+    const oeTopT = idx++; lines.push(`#${oeTopT} = ORIENTED_EDGE('',*,*,#${ecTop},.T.);`);
+
+    const elBot = idx++; lines.push(`#${elBot} = EDGE_LOOP('',(#${oeBotT}));`);
+    const elTop = idx++; lines.push(`#${elTop} = EDGE_LOOP('',(#${oeTopT}));`);
+    const elLat = idx++; lines.push(`#${elLat} = EDGE_LOOP('',(#${oeBotF},#${oeTopF}));`);
+
+    const fobBot = idx++; lines.push(`#${fobBot} = FACE_OUTER_BOUND('',#${elBot},.T.);`);
+    const fobTop = idx++; lines.push(`#${fobTop} = FACE_OUTER_BOUND('',#${elTop},.T.);`);
+    const fobLat = idx++; lines.push(`#${fobLat} = FACE_OUTER_BOUND('',#${elLat},.T.);`);
+
+    const afBot = idx++; lines.push(`#${afBot} = ADVANCED_FACE('',(#${fobBot}),#${planeBot},.T.);`);
+    const afTop = idx++; lines.push(`#${afTop} = ADVANCED_FACE('',(#${fobTop}),#${planeTop},.T.);`);
+    const afLat = idx++; lines.push(`#${afLat} = ADVANCED_FACE('',(#${fobLat}),#${cylSurf},.T.);`);
+
+    const shell = idx++; lines.push(`#${shell} = CLOSED_SHELL('',(#${afBot},#${afTop},#${afLat}));`);
+    const brep = idx++;  lines.push(`#${brep} = MANIFOLD_SOLID_BREP('mag_${cIdx+1}',#${shell});`);
+
+    brepIds.push(brep);
+  });
+
+  // Global world frame and assembly
+  const pOrig = idx++;   lines.push(`#${pOrig} = CARTESIAN_POINT('',(0.,0.,0.));`);
+  const dZ = idx++;      lines.push(`#${dZ} = DIRECTION('',(0.,0.,1.));`);
+  const dX = idx++;      lines.push(`#${dX} = DIRECTION('',(1.,0.,0.));`);
+  const apWorld = idx++; lines.push(`#${apWorld} = AXIS2_PLACEMENT_3D('world',#${pOrig},#${dZ},#${dX});`);
+
+  const prod = idx++;    lines.push(`#${prod} = PRODUCT('MAGNETS','Radial sphere magnet set','',(#3));`);
+  const pdf = idx++;     lines.push(`#${pdf} = PRODUCT_DEFINITION_FORMATION('','',#${prod});`);
+  const pdef = idx++;    lines.push(`#${pdef} = PRODUCT_DEFINITION('','',#${pdf},#5);`);
+  const pds = idx++;     lines.push(`#${pds} = PRODUCT_DEFINITION_SHAPE('','',#${pdef});`);
+  const sr = idx++;
+  const allItems = [apWorld, ...brepIds].map(i => `#${i}`).join(',');
+  lines.push(`#${sr} = ADVANCED_BREP_SHAPE_REPRESENTATION('',(${allItems}),#10);`);
+  const sdsr = idx++;    lines.push(`#${sdsr} = SHAPE_DEFINITION_REPRESENTATION(#${pds},#${sr});`);
+
+  return header + lines.join('\n') + `\nENDSEC;\nEND-ISO-10303-21;\n`;
+}
+
+function exportSTEP() {
+  const p = getParams();
+  const cylinders = magnets.map((mag) => {
+    const rInner = p.R + mag.offset;
+    const cx = mag.dir.x * (rInner + p.len/2);
+    const cy = mag.dir.y * (rInner + p.len/2);
+    const cz = mag.dir.z * (rInner + p.len/2);
+    // Orthonormal frame around axis = mag.mu
+    let rx = 1, ry = 0, rz = 0;
+    if (Math.abs(mag.mu.x) > 0.9) { rx = 0; ry = 1; }
+    const d2 = mag.mu.x*rx + mag.mu.y*ry + mag.mu.z*rz;
+    let e1x = rx - d2*mag.mu.x, e1y = ry - d2*mag.mu.y, e1z = rz - d2*mag.mu.z;
+    const n = Math.sqrt(e1x*e1x + e1y*e1y + e1z*e1z);
+    return {
+      center: [cx, cy, cz],
+      axis:   [mag.mu.x, mag.mu.y, mag.mu.z],
+      refDir: [e1x/n, e1y/n, e1z/n],
+      radius: p.diam / 2,
+      length: p.len
+    };
+  });
+  const step = buildStepFile(cylinders);
+  const nowIso = new Date().toISOString().replace(/[:.]/g, '-').slice(0, 19);
+  downloadBlob(step, 'application/step', `Radial_Sphere_${currentLattice()}_${nowIso}.step`);
+  showTooltip(`STEP exported: ${magnets.length} cylinders`, 3000);
+}
+
+
+//tooltip, animate, resize, init...
+function showTooltip(msg, dur) {
+  const t = document.getElementById('tooltip');
+  t.innerHTML = msg.replace(/\n/g, '<br>');
+  clearTimeout(t._timer);
+  t._timer = setTimeout(() => {
+    t.innerHTML = buildDefaultTooltip();
+  }, dur || 4000);
+}
+
+function buildDefaultTooltip() {
+  const mode = currentLattice();
+  const N = magnets.length;
+  let label, symNote;
+  if (mode === 'fibonacci') {
+    label = `${N} dipoles on Fibonacci sphere (Z-poles cut, bore ‖ Z)`;
+    symNote = 'No exact symmetry · SA drives By, Bz toward 0';
+  } else if (mode === 'c60') {
+    label = `${N} dipoles on C60 Mandhala (2 hexagonal caps removed, bore ‖ Z)`;
+    symNote = 'D₂ₕ symmetry · By = Bz = 0 by construction';
+  } else {
+    label = `${N} dipoles on Lebedev-110 (poles removed, bore ‖ Z)`;
+    symNote = 'D₂ₕ symmetry · By = Bz = 0 by construction';
+  }
+  return `<b style="color:var(--accent)">RADIAL SPHERE</b> · ${label}<br>Each dipole points radially · +x hemisphere S-in, −x hemisphere N-in · ${symNote}<br>Rotate: drag · Zoom: scroll · Pan: right-drag`;
+}
+
+let prevTime = 0;
 function animate(time) {
   requestAnimationFrame(animate);
-  const dt=(time-prevTime)*0.001; prevTime=time;
+  const dt = (time - prevTime) * 0.001; prevTime = time;
 
   if (targetView) {
-    spherical.theta += (targetView.theta-spherical.theta)*0.09;
-    spherical.phi   += (targetView.phi-spherical.phi)*0.09;
-    spherical.radius+= (targetView.radius-spherical.radius)*0.09;
-    if (Math.abs(spherical.theta-targetView.theta)<0.0001 &&
-        Math.abs(spherical.phi-targetView.phi)<0.0001) targetView=null;
+    spherical.theta  += (targetView.theta  - spherical.theta)  * 0.09;
+    spherical.phi    += (targetView.phi    - spherical.phi)    * 0.09;
+    spherical.radius += (targetView.radius - spherical.radius) * 0.09;
+    if (Math.abs(spherical.theta - targetView.theta) < 1e-4 &&
+        Math.abs(spherical.phi   - targetView.phi)   < 1e-4) targetView = null;
   }
 
-  camera.position.x = spherical.radius*Math.sin(spherical.phi)*Math.sin(spherical.theta)+panOffset.x;
-  camera.position.y = spherical.radius*Math.sin(spherical.phi)*Math.cos(spherical.theta)+panOffset.y;
+  camera.position.x = spherical.radius*Math.sin(spherical.phi)*Math.sin(spherical.theta) + panOffset.x;
+  camera.position.y = spherical.radius*Math.sin(spherical.phi)*Math.cos(spherical.theta) + panOffset.y;
   camera.position.z = spherical.radius*Math.cos(spherical.phi);
-  camera.up.set(0,0,1);
-  camera.lookAt(panOffset.x,panOffset.y,0);
+  camera.up.set(0, 0, 1);
+  camera.lookAt(panOffset.x, panOffset.y, 0);
 
   if (!isMouseDown && !targetView && !optRunning) spherical.theta += 0.0003;
-  
-// 1. Render main scene full-screen
-  renderer.setViewport(0, 0, canvas.width, canvas.height);
-  renderer.clear();
   renderer.render(scene, camera);
-
-  // 2. Sync Axes Camera position using the same spherical angles (Z is up)
-  const axesRadius = 35; // Fixed distance from the origin
-  axesCamera.position.x = axesRadius * Math.sin(spherical.phi) * Math.sin(spherical.theta);
-  axesCamera.position.y = axesRadius * Math.sin(spherical.phi) * Math.cos(spherical.theta);
-  axesCamera.position.z = axesRadius * Math.cos(spherical.phi);
-  axesCamera.up.set(0, 0, 1); // Match your main camera's Z-up orientation
-  axesCamera.lookAt(0, 0, 0); // Always look at the center
-
-  // 3. Render the HUD in a small square in the bottom right corner
-  if (!hideAxesHUD) {
-    const axesSize = 120 * window.devicePixelRatio;
-    renderer.setViewport(canvas.width - axesSize, 0, axesSize, axesSize);
-    renderer.render(axesScene, axesCamera);
-  }
-
-
 }
 
 function resize() {
-  const W=canvas.parentElement.clientWidth, H=canvas.parentElement.clientHeight;
-  renderer.setSize(W,H);
-  camera.aspect=W/H;
+  const W = canvas.parentElement.clientWidth, H = canvas.parentElement.clientHeight;
+  renderer.setSize(W, H);
+  camera.aspect = W / H;
   camera.updateProjectionMatrix();
 }
-window.addEventListener('resize',()=>{
+window.addEventListener('resize', () => {
   resize();
-  if (currentMapPlane) drawMap2D(currentMapPlane);
+  if (currentMapPlane === 'bore') drawBoreProfile();
+  else if (currentMapPlane) drawMap2D(currentMapPlane);
 });
 
-
-// Input debounce for live stats, maps, and profile
-let mapTimer=null;
-let evalTimer=null;
-document.querySelectorAll('input, select').forEach(el=>{
-  el.addEventListener('input',()=>{
-    // Debounce Computed Field update (expensive: 48 dipoles x 32 rings x ~120 points)
-    clearTimeout(evalTimer);
-    evalTimer=setTimeout(evaluateField, 150);
+let mapTimer = null;
+document.querySelectorAll('input, select').forEach(el => {
+  el.addEventListener('input', () => {
+    if (el.id === 'optWeight') return; // handled by its own oninput
+    evaluateField();
     if (currentMapPlane) {
       clearTimeout(mapTimer);
-      mapTimer=setTimeout(()=>{
+      mapTimer = setTimeout(() => {
         if (currentMapPlane === 'bore') drawBoreProfile();
         else drawMap2D(currentMapPlane);
       }, 300);
@@ -1811,28 +2182,12 @@ document.querySelectorAll('input, select').forEach(el=>{
   });
 });
 
-
-
-//  INIT
-// 
-(() => {
-  const d = new Date();
-  const months = ['January','February','March','April','May','June','July','August','September','October','November','December'];
-  document.getElementById('footer-text').textContent =
-    `NitaD · Univ Paris-Saclay · ${d.getDate()} ${months[d.getMonth()]} ${d.getFullYear()}`;
-
-  // Live readout for the objective weight slider
-  const wSlider = document.getElementById('optWeight');
-  const wReadout = document.getElementById('weight-readout');
-  const updateReadout = () => {
-    const v = parseInt(wSlider.value, 10);
-    wReadout.textContent = `Homog ${100 - v}% · Field ${v}%`;
-  };
-  wSlider.addEventListener('input', updateReadout);
-  updateReadout();
-})();
+// INIT
 resize();
 onGeomChange();
+updateWeightReadout();
+// Initial camera distance scales with inner radius
+spherical.radius = parseFloat(document.getElementById('baseRadius').value) * 5.5;
 animate(0);
 </script>
 </body>
