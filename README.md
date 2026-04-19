@@ -1,5 +1,5 @@
 # Halbach type simulations
-In this repository there are two web based simulators for calculating and visualizing the magnetic fields in multiple dipole systems. The first one is a derivation of the known Halbach array in which multiple segments, with defined orientation, lead to a direction controlled magnetic field. The second one is an extention of the Halbach model by using a fullerene-like arrangement of dipoles, distributed along the radii of the truncated icosaedron (I have no ideea if this second setup was described before, but it's not such a big discovery as it is an extention of multiple dipoles idea... we can think of other geometries, maybe Lebedev, or even quasi-crystal like sytems to avoid harmonic perturbations... )
+In this repository there are two web based simulators for calculating and visualizing the magnetic fields in multiple dipole systems. The first one is a derivation of the known Halbach array in which multiple segments, with defined orientation, lead to a direction controlled magnetic field. The second one is an extention of the Halbach model by using a fullerene-like arrangement of dipoles, distributed along the radii of the truncated icosaedron (I have no ideea if this second setup was described before, but it's not such a big discovery as it is an extention of multiple dipoles idea... we can think of other geometries, maybe Lebedev, or even quasi-crystal like sytems to avoid harmonic perturbations. See Notes at the end.)
 
 # 1. Halbach Ring Simulator
 
@@ -67,7 +67,7 @@ The global field vector is the linear superposition of the rotated field vectors
 
 The 48 dipoles are what remains of the 60 C60 vertices after removing the two hexagonal caps closest to the ±Z poles (the "6–6 fulvalene analogue" atoms). This carves out a clear bore along the Z axis for inserting a sample, while preserving the C2 symmetry of the lattice. Half of the 48 dipoles are "North-in" and half are "South-in" — the polarity pattern is assigned by hemisphere (x ≥ 0 or x < 0) so that the net field at the center points along +X. The design intent is a strong, homogeneous field in the X direction for Hall measurements.
 
-Compared to a commercial Halbach cylinder (typically €1k–10k, with a hard compromise between field strength and bore size), this configuration is cheap to prototype: the holder prints in PLA/PETG on a desktop 3D printer for well under €100, and the physics tool below lets you iterate on the geometry before cutting material. Beyond the lab use case, the simulator is also useful for teaching — the effect of each design choice on field homogeneity and strength is immediate and visual.
+Compared to a commercial Halbach cylinder (typically €1k–10k, with a hard compromise between field strength and bore size), this configuration is cheap to prototype: the holder prints in PLA/PETG on a desktop 3D printer and this tool lets us iterate on the geometry before cutting material. Beyond the lab use case, the simulator is also useful for teaching — the effect of each design choice on field homogeneity and strength is immediate and visual.
 
 ---
 
@@ -139,6 +139,36 @@ Multi-page PDF report via jsPDF, generated from the current state:
 2. **3D views** — Top, Front, Side renders with dipole numbering, each on its own page, rendered at 1600×1600 off-screen so the sphere fills the page cleanly regardless of browser window shape.
 3. **Field maps** — bore profile, XY/XZ/YZ heatmaps, and the Schlegel diagram with per-dipole polarity color-coding.
 4. **Dipole table** — for each of the 48 dipoles, the absolute radial positions of its N and S pole faces in millimeters from the center. This is the build sheet for machining or 3D-printing the holder.
+
+---
+
+# Notes
+## Beyond $C_{60}$: Quasicrystals and Aperiodic Magnetic Geometries
+
+Exploring geometries beyond the $C_{60}$ (truncated icosahedron) lattice makes physical sense for improving field homogeneity. While the $C_{60}$ structure is nice, its high degree of **discrete rotational symmetry** is exactly what dictates the amplitudes of the harmonic distortions in the bore. I was exploring other fullerenes, like C84 but it's quite similar, and even more difficult to analyze. So, maybe we need to avoid a too symetrical ource distribution, the field appear as specific high-order multipole moments rather than a smooth, diminishing decay.
+
+
+### 1. The Harmonic Problem with $C_{60}$
+In the current Mandhala setup, 48 dipoles are placed on an Ih lattice. Because the magnets are discrete and follow a regular tiling, the magnetic potential $\Phi$ inside the bore is a solution to Laplace's equation $\nabla^2 \Phi = 0$, in spherical harmonics:
+
+$$\Phi(r, \theta, \phi) = \sum_{\ell=0}^{\infty} \sum_{m=-\ell}^{\ell} A_{\ell m} r^\ell Y_{\ell m}(\theta, \phi)$$
+
+The coefficients $A_{\ell m}$ represent the "purity" of the field. High-symmetry lattices like the icosahedral group ($I_h$) eliminate many low-order terms, but they "stack" the remaining error into specific, high-amplitude harmonic spikes.
+
+### 2. The Case for Fibonacci Spheres
+A **Fibonacci Lattice** (or Golden Spiral) on a sphere is one of the most efficient ways to distribute $N$ points nearly equidistantly. Unlike the $C_{60}$ lattice, it is aperiodic (C60 has symmetry but it is not that bad, because we can move the magnets radially though).
+
+* **Spectral Whitening:** By breaking the discrete rotational symmetry, the harmonic distortion is effectively "spread" across the entire spectrum. Instead of having a massive 6th-order distortion, the result should be in many tiny, negligible errors across all orders.
+* **Variable Density:** I am exploring to "cluster" more dipoles near the "equator" (relative to the $X$-axis field direction) to compensate for the $1/r^3$ fall-off of individual dipoles more effectively than a rigid lattice (theoretically is possible but building one is another story). 
+
+### 3. Lebedev Quadrature Grids
+Lebedev grids are designed to integrate polynomials on the surface of a sphere with high precision. 
+* If we place magnets at Lebedev points and weight their "strengths" (by varying the distance), we can decrease the multipole moments. This would turn the Mandhala simulator into a **Spherical Harmonic Whitening**. I am working currently on a Lebedev 110 solid.
+
+### 4. Practical Implementation: The "Aperiodic" Trade-off
+Fibonnacci and Quasicrystal are probably very difficult to optimize (need a lot of bumpings and large temperature ranges in SA; probably should work with a genetic algo or a swrm). Assembly for the "aperiodic" stuff is difficult (machining is a mess), 3D printing might be a solution but not sure if the PLA is strong enough. Besides, if I want high temperature, only PEEK is adequate.
+Finaly, we may might find that the "best" geometry for a 1% homogeneity volume isn't a known crystal structure at all, but a "magnetic glass" configuration.
+   
 
 ---
 
