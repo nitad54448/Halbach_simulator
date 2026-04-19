@@ -57,7 +57,8 @@ body{font-family:'JetBrains Mono',monospace;background:var(--bg);color:var(--tex
 .toolbar{height:40px;background:var(--panel);border-bottom:1px solid var(--border);display:flex;align-items:center;padding:0 14px;gap:8px;flex-shrink:0;overflow-x:auto;}
 .toolbar-label{font-size:8px;color:var(--muted);letter-spacing:.15em;text-transform:uppercase;white-space:nowrap;}
 .view-btn{padding:4px 10px;border-radius:2px;font-size:9px;font-family:'JetBrains Mono',monospace;cursor:pointer;border:1px solid var(--border);background:transparent;color:var(--label);transition:all .2s;letter-spacing:.05em;white-space:nowrap;}
-.view-btn.active,.view-btn:hover{background:rgba(0,212,255,.1);border-color:var(--accent2);color:var(--accent2);}
+.view-btn:hover{border-color:var(--accent2);color:var(--accent2);}
+.view-btn.active{background:rgba(0,212,255,.1);border-color:var(--accent2);color:var(--accent2);}
 .sep{width:1px;height:18px;background:var(--border);flex-shrink:0;}
 .spacer{flex:1;}
 
@@ -81,6 +82,18 @@ body{font-family:'JetBrains Mono',monospace;background:var(--bg);color:var(--tex
 
 /* OPT STATUS */
 #opt-overlay{display:none;position:absolute;top:16px;right:16px;background:rgba(8,11,15,.9);border:1px solid var(--border);border-radius:4px;padding:12px 16px;font-size:10px;color:var(--accent);flex-direction:column;gap:4px;z-index:50;}
+
+/* WEIGHT SLIDER */
+.weight-labels{display:flex;justify-content:space-between;align-items:center;margin-bottom:5px;}
+.weight-end{font-size:8px;letter-spacing:.08em;text-transform:uppercase;white-space:nowrap;font-weight:700;}
+.weight-end-left{color:var(--accent);}
+.weight-end-right{color:var(--accent3);}
+.weight-slider{-webkit-appearance:none;appearance:none;width:100%;height:4px;background:linear-gradient(to right,var(--accent),var(--accent3));border-radius:2px;outline:none;cursor:pointer;padding:0;border:none;}
+.weight-slider::-webkit-slider-thumb{-webkit-appearance:none;appearance:none;width:14px;height:14px;border-radius:50%;background:var(--text);border:2px solid var(--panel);box-shadow:0 0 0 1px var(--border);cursor:grab;transition:transform .15s;}
+.weight-slider::-webkit-slider-thumb:hover{transform:scale(1.15);}
+.weight-slider::-webkit-slider-thumb:active{cursor:grabbing;transform:scale(1.25);}
+.weight-slider::-moz-range-thumb{width:14px;height:14px;border-radius:50%;background:var(--text);border:2px solid var(--panel);box-shadow:0 0 0 1px var(--border);cursor:grab;}
+.weight-readout{font-size:9px;color:var(--accent2);text-align:center;margin-top:6px;letter-spacing:.06em;font-weight:700;}
 </style>
 </head>
 <body>
@@ -89,15 +102,15 @@ body{font-family:'JetBrains Mono',monospace;background:var(--bg);color:var(--tex
 <div class="left">
   <div class="brand">
     <h1>Mandhala</h1>
-    <p>48-DIPOLE C60 MAGIC SPHERE SIMULATOR · v2.4</p>
+    <p>48-DIPOLE C60 MAGIC SPHERE SIMULATOR · v2.5</p>
   </div>
 
   <!-- GEOMETRY -->
 <div class="section">
     <div class="section-title">Sphere Geometry</div>
     <div class="three-col">
-      <div class="field-row"><label>Inner R (mm)</label><input type="number" id="baseRadius" value="40" step="5" onchange="onGeomChange()"></div>
-      <div class="field-row"><label>Outer R (mm)</label><input type="number" id="outerRadius" value="90" step="5" onchange="onGeomChange()"></div>
+      <div class="field-row"><label>Inner R (mm)</label><input type="number" id="baseRadius" value="36" step="5" onchange="onGeomChange()"></div>
+      <div class="field-row"><label>Outer R (mm)</label><input type="number" id="outerRadius" value="72" step="5" onchange="onGeomChange()"></div>
       <div class="field-row"><label>Test R (mm)</label><input type="number" id="testRadius" value="10" step="1" oninput="onGeomChange()"></div>
     </div>
   </div>
@@ -133,15 +146,17 @@ body{font-family:'JetBrains Mono',monospace;background:var(--bg);color:var(--tex
     <div class="section-title">Simulated Annealing Optimizer</div>
     <div class="two-col">
       <div class="field-row"><label>Iterations</label><input type="number" id="optIters" value="200000" step="500"></div>
-      <div class="field-row"><label>Max Radial Nudge (mm)</label><input type="number" id="optNudge" value="4" step="1"></div>
+      <div class="field-row"><label>Max Radial Nudge (mm)</label><input type="number" id="optNudge" value="8" step="1"></div>
     </div>
 
-    <div class="field-row"><label>Objective</label>
-      <select id="optObj">
-        <option value="homogeneity">Maximize homogeneity</option>
-        <option value="field">Maximize |B| at center</option>
-        <option value="combined">Combined (field × homogeneity)</option>
-      </select>
+    <div class="field-row">
+      <label>Objective Weight</label>
+      <div class="weight-labels">
+        <span class="weight-end weight-end-left">Homogeneity</span>
+        <span class="weight-end weight-end-right">Field</span>
+      </div>
+      <input type="range" id="optWeight" min="0" max="100" value="50" step="1" class="weight-slider">
+      <div class="weight-readout" id="weight-readout">Homog 50% · Field 50%</div>
     </div>
     <div class="progress-bar"><div class="progress-fill" id="opt-progress"></div></div>
     <div class="btn-row">
@@ -165,7 +180,7 @@ body{font-family:'JetBrains Mono',monospace;background:var(--bg);color:var(--tex
     </div>
   </div>
 
-  <div class="footer">NitaD · Univ Paris-Saclay · 18 april 2026</div>
+  <div class="footer" id="footer-text">NitaD · Univ Paris-Saclay</div>
 </div>
 
 <!-- MAIN -->
@@ -269,8 +284,13 @@ function cylinderField(px, py, pz, cx, cy, cz, mux, muy, muz, a_mm, halfL_mm, Br
   const sc = 1e-3;
   const a = a_mm * sc, halfL = halfL_mm * sc, K = Br / MU0;
   const dx = (px - cx) * sc, dy = (py - cy) * sc, dz = (pz - cz) * sc;
-  let rx = 1, ry = 0, rz = 0;
-  if (Math.abs(mux) > 0.9) { rx = 0; ry = 1; }
+  // Pick a reference vector that is NOT parallel to mu.
+  // Choose the axis where mu has its smallest component -> guaranteed non-parallel.
+  const amx = Math.abs(mux), amy = Math.abs(muy), amz = Math.abs(muz);
+  let rx, ry, rz;
+  if (amx <= amy && amx <= amz)      { rx = 1; ry = 0; rz = 0; }
+  else if (amy <= amx && amy <= amz) { rx = 0; ry = 1; rz = 0; }
+  else                                { rx = 0; ry = 0; rz = 1; }
   const d2 = mux*rx + muy*ry + muz*rz;
   let e1x = rx - d2*mux, e1y = ry - d2*muy, e1z = rz - d2*muz;
   const e1n = Math.sqrt(e1x*e1x + e1y*e1y + e1z*e1z);
@@ -347,21 +367,15 @@ function generateC60Vertices() {
     push(sz*(2*phi+1), sx*phi, sy*2);
   }
 
-  // Deduplicate properly
-  const unique = [];
-  const EPS = 1e-6;
+  // Deduplicate via rounded coordinate key (O(n) instead of O(n²))
+  const keyOf = ([x,y,z]) => `${x.toFixed(5)},${y.toFixed(5)},${z.toFixed(5)}`;
+  const unique = [...new Map(raw.map(v => [keyOf(v), v])).values()];
 
-  raw.forEach(([x,y,z]) => {
-    if (!unique.some(([ux,uy,uz]) =>
-      Math.abs(x-ux)<EPS &&
-      Math.abs(y-uy)<EPS &&
-      Math.abs(z-uz)<EPS
-    )) {
-      unique.push([x,y,z]);
-    }
-  });
+  if (unique.length !== 60) {
+    console.warn(`generateC60Vertices: expected 60, got ${unique.length}`);
+  }
 
-  return unique; // ✅ EXACTLY 60
+  return unique;
 }
 
 
@@ -395,6 +409,10 @@ function generateMagicSphere48(R) {
   // The 6 poles closest to +Z have z > 0.8. The 6 closest to -Z have z < -0.8.
   // Filtering them out removes the two polar caps, leaving exactly 48 poles with perfect C2 symmetry.
   const finalVerts = verts.filter(v => Math.abs(v.z) < 0.8);
+
+  if (finalVerts.length !== 48) {
+    console.warn(`generateMagicSphere48: expected 48 vertices, got ${finalVerts.length}. Check polar-cap threshold.`);
+  }
 
   // Map to magnet objects, initializing the Transverse X field polarities:
   // +X hemisphere -> Polarity 1 (N in / S out)
@@ -431,12 +449,15 @@ const fillLight = new THREE.PointLight(0x00d4ff, 0.3, 400);
 fillLight.position.set(0, -100, 50);
 scene.add(fillLight);
 
-const gridHelper = new THREE.GridHelper(400, 40, 0x1a2535, 0x111820);
-gridHelper.rotation.x = Math.PI / 2;
-scene.add(gridHelper);
-const axisHelper = new THREE.AxesHelper(25);
-axisHelper.position.set(-90,-90,0.5);
-scene.add(axisHelper);
+const axesScene = new THREE.Scene();
+const axesCamera = new THREE.PerspectiveCamera(50, 1, 0.1, 100);
+axesCamera.position.set(0, 0, 40); // Pull camera back to see the axes
+const axesHelper = new THREE.AxesHelper(15);
+axesScene.add(axesHelper);
+
+// do not to erase the main scene when drawing the HUD
+renderer.autoClear = false;
+let hideAxesHUD = false; // Set true during PDF export to skip HUD gizmo
 
 const magnetGroup = new THREE.Group();
 scene.add(magnetGroup);
@@ -567,7 +588,8 @@ function resetGeometry() {
   drawScene();
   evaluateField();
 }
-function resetOffsets() { resetGeometry(); }
+// Alias kept for the "Zero Offsets" button label
+const resetOffsets = resetGeometry;
 
 //draw
 
@@ -739,13 +761,12 @@ function evaluateField() {
 
   // Display it cleanly in the UI
   document.getElementById('sv-Var').textContent = `${varBxPercent.toFixed(1)}% X | ${transPercent.toFixed(1)}% YZ`;
-  
-  const totalError = varBxPercent + (transPercent * 2.0);
-  let score = 0;
-  const obj = document.getElementById('optObj').value;
-  if (obj === 'homogeneity') score = totalError;
-  else if (obj === 'field') score = -absBx;
-  else score = totalError / absBx; 
+
+  const weight = getOptWeight();
+  const Br = parseFloat(document.getElementById('magBr').value);
+  const R_inner = parseFloat(document.getElementById('baseRadius').value);
+  const R_outer = parseFloat(document.getElementById('outerRadius').value);
+  const score = scoreFromSamples(c.bx, minBx, maxBx, maxTransverse, weight, Br, R_inner, R_outer);
 
   document.getElementById('sv-Score').textContent = score.toFixed(4);
   return { bCenter: c.b, score };
@@ -791,26 +812,42 @@ function quickScore() {
     const trans = Math.sqrt(p.by*p.by + p.bz*p.bz);
     if (trans > maxTransverse) maxTransverse = trans;
   });
-
-  const absBx = Math.max(Math.abs(c.bx), 1e-6);
-  // Same custom error function as above for the optimizer loop
-  const totalError = (((maxBx - minBx) / absBx) * 100) + ((maxTransverse / absBx) * 200);
-
-  let score = 0;
-  const obj = document.getElementById('optObj').value;
-  if (obj === 'homogeneity') score = totalError;
-  else if (obj === 'field') score = -absBx;
-  else score = totalError / absBx; 
+  const R_outerVal = parseFloat(document.getElementById('outerRadius').value);
+  const score = scoreFromSamples(c.bx, minBx, maxBx, maxTransverse, getOptWeight(), Br, R, R_outerVal);
 
   return { score };
 }
-//----- score
-function computeScore(bCenter, varPercent) {
-  const obj = document.getElementById('optObj').value;
-  if (obj==='homogeneity') return varPercent;
-  if (obj==='field') return -bCenter;
-  // combined: minimize ratio  (variance/field)
-  return varPercent / Math.max(bCenter, 1e-6);
+
+// Read the objective-weight slider: 0 = pure homogeneity, 1 = pure field
+function getOptWeight() {
+  const el = document.getElementById('optWeight');
+  return el ? (parseFloat(el.value) / 100) : 0;
+}
+
+// Shared scoring formula used by evaluateField, quickScore and the worker.
+// Kept as a plain function so worker can inject it via toString().
+//
+// weight w in [0,1]: 0 = pure homogeneity, 1 = pure field (maximize |Bx|).
+//
+// Both terms are POSITIVE RESIDUALS (zero = perfect, larger = worse):
+//   - homogPenalty: peak-to-peak Bx % + transverse leakage % (naturally ≥ 0)
+//   - fieldPenalty: shortfall from Halbach ideal, as % of ideal (0 = ideal, 100 = no field)
+//
+// For a spherical Halbach dipole shell, the theoretical ceiling is
+//   B_ideal ≈ Br · ln(R_outer / R_inner)
+// (Mallinson / Abele ideal; infinite-dipole limit).
+// Here (R_inner, R_outer) are passed explicitly since the worker doesn't have DOM access.
+const FIELD_WEIGHT_SCALE = 100;  // exchange rate: % field shortfall ↔ % homogeneity
+function scoreFromSamples(bxCenter, minBx, maxBx, maxTransverse, weight, Br, R_inner, R_outer) {
+  const absBx = Math.max(Math.abs(bxCenter), 1e-6);
+  const homogPenalty = (((maxBx - minBx) / absBx) * 100) + ((maxTransverse / absBx) * 200);
+
+  const B_ideal = Math.max(1e-6, Br * Math.log(R_outer / R_inner));
+  const shortfall = Math.max(0, B_ideal - absBx);
+  const fieldPenalty = (shortfall / B_ideal) * FIELD_WEIGHT_SCALE;
+
+  const w = Math.max(0, Math.min(1, weight));
+  return (1 - w) * homogPenalty + w * fieldPenalty;
 }
 
 
@@ -846,7 +883,7 @@ async function startOptimization() {
     len: parseFloat(document.getElementById('magLen').value),
     gap: parseFloat(document.getElementById('magGap').value),
     Br: parseFloat(document.getElementById('magBr').value),
-    optObj: document.getElementById('optObj').value
+    optWeight: getOptWeight()
   };
 
   const numThreads = Math.min(navigator.hardwareConcurrency || 4, 8);
@@ -924,10 +961,12 @@ function createOptimizationWorker() {
   const workerScript = `
     const MU0 = 4e-7 * Math.PI;
     const N_RINGS = 32;
+    const FIELD_WEIGHT_SCALE = ${FIELD_WEIGHT_SCALE};
 
     ${ellipticKE.toString()}
     ${ringField.toString()}
     ${cylinderField.toString()}
+    ${scoreFromSamples.toString()}
 
     let magnets = [];
     let params = {};
@@ -963,14 +1002,7 @@ function createOptimizationWorker() {
       });
 
       const absBx = Math.max(Math.abs(c.bx), 1e-6);
-      const totalError = (((maxBx - minBx) / absBx) * 100) + ((maxTransverse / absBx) * 200);
-
-      let score = 0;
-      if (params.optObj === 'homogeneity') score = totalError;
-      else if (params.optObj === 'field') score = -absBx;
-      else score = totalError / absBx; 
-      
-      return score;
+      return scoreFromSamples(c.bx, minBx, maxBx, maxTransverse, params.optWeight, params.Br, params.R, params.R_outer);
     }
 
     self.onmessage = function(e) {
@@ -978,12 +1010,18 @@ function createOptimizationWorker() {
         magnets = e.data.magnets;
         params = e.data.params;
 
-        // LOCK POLARITIES
-        magnets.forEach(mag => {
+
+   // LOCK POLARITIES & FIND SYMMETRY PAIRS
+        magnets.forEach((mag) => {
           mag.polarity = mag.dir.x >= 0 ? 1 : -1;
+          
+          // Find the mirror dipole across the YZ plane (x -> -x)
+          mag.mirrorIdx = magnets.findIndex(m2 => 
+            Math.abs(m2.dir.x - (-mag.dir.x)) < 1e-4 &&
+            Math.abs(m2.dir.y - mag.dir.y) < 1e-4 &&
+            Math.abs(m2.dir.z - mag.dir.z) < 1e-4
+          );
         });
-
-
 
 
 // 1. Calculate Test Volume Limit
@@ -1035,8 +1073,8 @@ const minOffTest = (params.tr + params.gap) - params.R;
         
         let avgDe = validSamples > 0 ? (sumDe / validSamples) : 1;
         const threadMult = params.threadMultiplier || 1.0;
-        params.T0 = (-avgDe / Math.log(0.8)) * threadMult;
-        // --- END AUTO-TUNE ---
+        params.T0 = (-avgDe / Math.log(0.98)) * threadMult;
+        // --- end tune, change to log(0.98) to bump it more a bit (19 april)
 
         let bestSaved = magnets.map(m => m.offset);
         let bestScoreVal = currentScore;
@@ -1055,24 +1093,32 @@ for (let i = 0; i < params.iters; i++) {
 
 
 
-          // 
-
-          if (Math.random() < 0.1) {
+  if (Math.random() < 0.1) {
             // 10% chance: GLOBAL SHIFT. Move ALL magnets uniformly.
-            // This allows it to easily plunge to the center for "Max Field"
             const shift = (Math.random() - 0.5) * currentNudge;
             magnets.forEach(mag => {
               mag.offset = Math.max(minOffset, Math.min(maxOffset, mag.offset + shift));
             });
           } else {
-            // 90% chance: INDEPENDENT NUDGES. Move 1 to 5 magnets.
+            // 90% chance: SYMMETRIC NUDGES. Move 1 to 5 pairs.
             const numToMove = Math.floor(Math.random() * 5) + 1;
             for (let k = 0; k < numToMove; k++) {
               const idx = Math.floor(Math.random() * magnets.length);
               const nudge = (Math.random() - 0.5) * 2 * currentNudge;
-              magnets[idx].offset = Math.max(minOffset, Math.min(maxOffset, magnets[idx].offset + nudge));
+              const newOffset = Math.max(minOffset, Math.min(maxOffset, magnets[idx].offset + nudge));
+              
+              // Move the chosen dipole
+              magnets[idx].offset = newOffset;
+              
+              // Apply the exact same offset to its N/S mirror pair
+              if (magnets[idx].mirrorIdx !== -1) {
+                magnets[magnets[idx].mirrorIdx].offset = newOffset;
+              }
             }
           }
+
+
+
 
           const newScore = quickScoreLocal();
           const dE = newScore - currentScore;
@@ -1355,7 +1401,7 @@ function setView(mode) {
   
   // Dynamically calculate a comfortable zoom distance based on the sphere's radius
   const R = parseFloat(document.getElementById('baseRadius').value) || 80;
-  const fitRadius = R * 4.0; 
+  const fitRadius = R * 5.5; 
 
   if (mode === '3d')    targetView = {theta: 0.6, phi: 1.15, radius: fitRadius};
   if (mode === 'top')   targetView = {theta: 0, phi: 0.01, radius: fitRadius};
@@ -1510,21 +1556,30 @@ async function exportPDF() {
 
     // Optimizer Parameters
     doc.setFontSize(12);
-
-    // Optimizer Parameters
-    doc.setFontSize(12);
     doc.text("3. Simulated Annealing Parameters", margin, y); y += 6;
     doc.setFontSize(10);
-    const optObjSelect = document.getElementById('optObj');
-    const optObjText = optObjSelect.options[optObjSelect.selectedIndex].text;
-    const flipText = document.getElementById('optFlipField')?.checked ? "Yes" : "No";
+    const w = getOptWeight();
+    const homogPct = Math.round((1 - w) * 100);
+    const fieldPct = Math.round(w * 100);
+    let objDescription;
+    if (w === 0)      objDescription = "Pure homogeneity";
+    else if (w === 1) objDescription = "Pure field (shortfall from Halbach ideal)";
+    else              objDescription = `Mixed: ${homogPct}% homogeneity + ${fieldPct}% field-shortfall`;
+
+    const BrVal = parseFloat(document.getElementById('magBr').value);
+    const RinVal = parseFloat(document.getElementById('baseRadius').value);
+    const RoutVal = parseFloat(document.getElementById('outerRadius').value);
+    const B_ideal = BrVal * Math.log(RoutVal / RinVal);
 
     const optParams = [
       `Iterations: ${document.getElementById('optIters').value}`,
       `Max Radial Nudge: ${document.getElementById('optNudge').value} mm`,
       `Temperature (T0 / Tf): Auto-tuned`,
-      `Objective: ${optObjText}`,
-      `Field Flipping Allowed: ${flipText}`
+      `Objective Weight: ${objDescription}`,
+      `Halbach ideal (Br · ln(R_out/R_in)): ${B_ideal.toFixed(4)} T`,
+      `Field residual scale: ${FIELD_WEIGHT_SCALE} (pts for 100% shortfall)`,
+      `Score: positive residual (0 = perfect, larger = worse)`,
+      `Polarity Locked: Yes (by hemisphere)`
     ];
     optParams.forEach(p => { doc.text(`• ${p}`, margin + 5, y); y += 5; });
 
@@ -1532,8 +1587,10 @@ async function exportPDF() {
     
     const origBg = scene.background;
     scene.background = new THREE.Color(0xffffff);
-    gridHelper.visible = false;
-    axisHelper.visible = false;
+    // Hide HUD axes gizmo during PDF export (rendered in separate axesScene)
+    const prevAxesVisible = axesHelper.visible;
+    axesHelper.visible = false;
+    hideAxesHUD = true;
 
     const prevLabelsState = document.getElementById('showLabels').checked;
     document.getElementById('showLabels').checked = true; // Force labels ON
@@ -1541,7 +1598,17 @@ async function exportPDF() {
 
     const origCam = { radius: spherical.radius, theta: spherical.theta, phi: spherical.phi };
     const R = parseFloat(document.getElementById('baseRadius').value);
-    spherical.radius = R * 4.5; 
+    spherical.radius = R * 6;
+
+    // Resize renderer to a square high-resolution buffer so the sphere fills the PDF page.
+    // (The live canvas is whatever shape the viewport happens to be — usually wide,
+    // which leaves big empty margins on the sides of the printed image.)
+    const origSize = { w: canvas.width, h: canvas.height };
+    const origAspect = camera.aspect;
+    const PDF_RENDER_PX = 1600;
+    renderer.setSize(PDF_RENDER_PX, PDF_RENDER_PX, false);
+    camera.aspect = 1;
+    camera.updateProjectionMatrix();
 
     const views = [
       { name: 'Top', theta: 0, phi: 0.01 },
@@ -1549,26 +1616,42 @@ async function exportPDF() {
       { name: 'Side', theta: Math.PI / 2, phi: Math.PI / 2 }
     ];
 
+    // Use full available page height for each view (square image, centered on the page)
+    const headerY = 15;
+    const availH = pageHeight - headerY - margin;
+    const imgSide = Math.min(imgW, availH);
+    const imgX = margin + (imgW - imgSide) / 2;
+
     for (let i = 0; i < views.length; i++) {
       doc.addPage();
       spherical.theta = views[i].theta; spherical.phi = views[i].phi;
       camera.position.x = spherical.radius * Math.sin(spherical.phi) * Math.sin(spherical.theta);
       camera.position.y = spherical.radius * Math.sin(spherical.phi) * Math.cos(spherical.theta);
       camera.position.z = spherical.radius * Math.cos(spherical.phi);
+      camera.up.set(0, 0, 1);
       camera.lookAt(0, 0, 0);
+      renderer.setViewport(0, 0, PDF_RENDER_PX, PDF_RENDER_PX);
+      renderer.clear();
       renderer.render(scene, camera);
-      
-      const imgData = canvas.toDataURL("image/jpeg", 1.0);
+
+      const imgData = canvas.toDataURL("image/jpeg", 0.92);
       doc.setFontSize(14);
       doc.text(`3D View: ${views[i].name} (Dipole Numbers)`, margin, 10);
-      doc.addImage(imgData, 'JPEG', margin, 15, imgW, imgW * (canvas.height / canvas.width));
+      doc.addImage(imgData, 'JPEG', imgX, headerY, imgSide, imgSide);
     }
+
+    // Restore renderer to live viewport size
+    renderer.setSize(origSize.w, origSize.h, false);
+    camera.aspect = origAspect;
+    camera.updateProjectionMatrix();
 
     // Restore 3D Scene
     scene.background = origBg;
-    gridHelper.visible = true; axisHelper.visible = true;
+    axesHelper.visible = prevAxesVisible;
+    hideAxesHUD = false;
     spherical.theta = origCam.theta; spherical.phi = origCam.phi; spherical.radius = origCam.radius;
     document.getElementById('showLabels').checked = prevLabelsState;
+    resize(); // Re-sync renderer & camera to the current viewport area
     drawScene();
     renderer.render(scene, camera);
 
@@ -1674,7 +1757,28 @@ function animate(time) {
   camera.lookAt(panOffset.x,panOffset.y,0);
 
   if (!isMouseDown && !targetView && !optRunning) spherical.theta += 0.0003;
-  renderer.render(scene,camera);
+  
+// 1. Render main scene full-screen
+  renderer.setViewport(0, 0, canvas.width, canvas.height);
+  renderer.clear();
+  renderer.render(scene, camera);
+
+  // 2. Sync Axes Camera position using the same spherical angles (Z is up)
+  const axesRadius = 35; // Fixed distance from the origin
+  axesCamera.position.x = axesRadius * Math.sin(spherical.phi) * Math.sin(spherical.theta);
+  axesCamera.position.y = axesRadius * Math.sin(spherical.phi) * Math.cos(spherical.theta);
+  axesCamera.position.z = axesRadius * Math.cos(spherical.phi);
+  axesCamera.up.set(0, 0, 1); // Match your main camera's Z-up orientation
+  axesCamera.lookAt(0, 0, 0); // Always look at the center
+
+  // 3. Render the HUD in a small square in the bottom right corner
+  if (!hideAxesHUD) {
+    const axesSize = 120 * window.devicePixelRatio;
+    renderer.setViewport(canvas.width - axesSize, 0, axesSize, axesSize);
+    renderer.render(axesScene, axesCamera);
+  }
+
+
 }
 
 function resize() {
@@ -1691,9 +1795,12 @@ window.addEventListener('resize',()=>{
 
 // Input debounce for live stats, maps, and profile
 let mapTimer=null;
+let evalTimer=null;
 document.querySelectorAll('input, select').forEach(el=>{
   el.addEventListener('input',()=>{
-    evaluateField(); // <-- Updates Computed Field instantly on any UI change
+    // Debounce Computed Field update (expensive: 48 dipoles x 32 rings x ~120 points)
+    clearTimeout(evalTimer);
+    evalTimer=setTimeout(evaluateField, 150);
     if (currentMapPlane) {
       clearTimeout(mapTimer);
       mapTimer=setTimeout(()=>{
@@ -1708,6 +1815,22 @@ document.querySelectorAll('input, select').forEach(el=>{
 
 //  INIT
 // 
+(() => {
+  const d = new Date();
+  const months = ['January','February','March','April','May','June','July','August','September','October','November','December'];
+  document.getElementById('footer-text').textContent =
+    `NitaD · Univ Paris-Saclay · ${d.getDate()} ${months[d.getMonth()]} ${d.getFullYear()}`;
+
+  // Live readout for the objective weight slider
+  const wSlider = document.getElementById('optWeight');
+  const wReadout = document.getElementById('weight-readout');
+  const updateReadout = () => {
+    const v = parseInt(wSlider.value, 10);
+    wReadout.textContent = `Homog ${100 - v}% · Field ${v}%`;
+  };
+  wSlider.addEventListener('input', updateReadout);
+  updateReadout();
+})();
 resize();
 onGeomChange();
 animate(0);
