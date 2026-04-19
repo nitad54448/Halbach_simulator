@@ -1,5 +1,5 @@
 # Halbach type simulations
-In this repository there are two web based simulators for calculating and visualizing the magnetic fields in multiple dipole systems. The first one is a derivation of the known Halbach array in which multiple segments, with defined orientation, lead to a direction controlled magnetic field. The second one is an extention of the Halbach model by using a fullerene-like arrangement of dipoles, distributed along the radii of the truncated icosaedron (I have no ideea if this second setup was described before, but it's not such a big discovery as it is an extention of multiple dipoles idea... we can think of other geometries, maybe Lebedev, or even quasi-crystal like sytems to avoid harmonic perturbations... ) 
+In this repository there are two web based simulators for calculating and visualizing the magnetic fields in multiple dipole systems. The first one is a derivation of the known Halbach array in which multiple segments, with defined orientation, lead to a direction controlled magnetic field. The second one is an extention of the Halbach model by using a fullerene-like arrangement of dipoles, distributed along the radii of the truncated icosaedron (I have no ideea if this second setup was described before, but it's not such a big discovery as it is an extention of multiple dipoles idea... we can think of other geometries, maybe Lebedev, or even quasi-crystal like sytems to avoid harmonic perturbations... )
 
 # 1. Halbach Ring Simulator
 
@@ -22,8 +22,8 @@ $$B_{axial} = \frac{\mu_0 I}{2\pi \sqrt{Q}} \left[ K(m) + E(m) \frac{a^2 - \rho^
 
 $$B_{radial} = \frac{\mu_0 I}{2\pi \rho \sqrt{Q}} \left[ -K(m) + E(m) \frac{a^2 + \rho^2 + \zeta^2}{D} \right]$$
 
-$$Q = (a+\rho)^2 + \zeta^2$, $D = (a-\rho)^2 + \zeta^2$$ 
-and 
+$$Q = (a+\rho)^2 + \zeta^2$, $D = (a-\rho)^2 + \zeta^2$$
+and
 $$m = \frac{4a\rho}{Q}$$
 
 ### 3. Finite Cylinder Integration
@@ -61,51 +61,85 @@ The global field vector is the linear superposition of the rotated field vectors
   Renders the 2D cross-sectional heatmaps (XY, XZ, YZ). It generates an off-screen bitmap, computes the field scalar at each pixel, maps it to a color gradient, and calculates continuous isolines. It also overlays projected 2D vectors or out-of-plane flux indicators ($\odot$, $\otimes$).
 
 
-# 2. Magic Sphere - 48-Dipole Simulator
+# 2. Magic Sphere — 48-Dipole Simulator (*Mandhala*)
 
-Mandhala, or in previous versions Magic Sphere, is an interactive 3D simulator for designing and optimizing a spherical arrangement of permanent magnets based on a truncated C60 (fullerene) lattice. It models 48 cylindrical dipoles arranged on a spherical shell and computes the resulting magnetic field using a physically accurate Biot-Savart formulation. The tool is intended for exploring high-homogeneity magnetic field configurations. The 48 poles considered are the ones that remains after removing two 6–6 fulvalene analogue atoms, located along the C2 symmetry axis. This gives some space to the core, for setting a sample inside, while preserving the C2 symmetry. Half of the 48 are North inside and the other half are South-inside configuration. We can calculate and simulate the best configuration (in terms of distances from the center) so as to obtain homogeneous field or high field, or a cocmbination of both. The main idea and purpose is to get a high field, homogeneous, in the direction fof the X axis in order to perform Hall measurement. There is a repository and a Labview program that uses this configuration, in a classical Halbach magnet. This works but there are several problems: a commercial Halbach would be from 1K to 10K -or more- and if you have to compromise between the field and the size of the space. This is also the problem here, the compromise, the difference being that you can print in 3D your setup for 100 bucks and test it...
-More than the experimental part, this tool can be used for teaching and exploring ideas. 
+`Mandhala.html` is an interactive 3D simulator for designing and optimizing a spherical arrangement of permanent magnets placed on a truncated C60 (fullerene) lattice. It models 48 cylindrical dipoles on a spherical shell and computes the resulting magnetic field using the same Biot–Savart formulation as the Halbach ring simulator. 
+
+The 48 dipoles are what remains of the 60 C60 vertices after removing the two hexagonal caps closest to the ±Z poles (the "6–6 fulvalene analogue" atoms). This carves out a clear bore along the Z axis for inserting a sample, while preserving the C2 symmetry of the lattice. Half of the 48 dipoles are "North-in" and half are "South-in" — the polarity pattern is assigned by hemisphere (x ≥ 0 or x < 0) so that the net field at the center points along +X. The design intent is a strong, homogeneous field in the X direction for Hall measurements.
+
+Compared to a commercial Halbach cylinder (typically €1k–10k, with a hard compromise between field strength and bore size), this configuration is cheap to prototype: the holder prints in PLA/PETG on a desktop 3D printer for well under €100, and the physics tool below lets you iterate on the geometry before cutting material. Beyond the lab use case, the simulator is also useful for teaching — the effect of each design choice on field homogeneity and strength is immediate and visual.
 
 ---
 
 ## A. Features
 
 ### Physics-Based Simulation
-This sytem uses the same full 3D magnetic field computation as the previous code: finite cylinder magnet model, ring integration with elliptic integrals (Furlani). It will compute total field magnitude |B| and the field components (Bx, By, Bz) and gives an homogenity metric in a given selected volume.
+Same full 3D magnetic field engine as the Halbach simulator: finite cylinder magnets modeled as stacked surface-current rings, each ring solved analytically via the complete elliptic integrals $K(m)$ and $E(m)$ (AGM algorithm). The ring integration uses `N_RINGS = 32` loops per magnet along the cylinder axis. The total field at any point is the linear superposition over all 48 dipoles.
+
+The UI reports |B|, Bx, By, Bz at the center, and two dimensionless homogeneity metrics over the test volume:
+- **Bx spread** — peak-to-peak variation of Bx as a percentage of center |Bx|
+- **YZ leakage** — worst-case transverse component √(By²+Bz²) as a percentage of center |Bx|
+
+Because each Cartesian component of **B** is harmonic in the source-free interior (∇²Bᵢ = 0), by the maximum principle its extrema lie on the boundary. Sampling the field on the surface of the test sphere therefore captures the worst-case inhomogeneity inside the whole volume — no volumetric integration needed.
 
 ### Geometry and Configuration
-48 dipoles of specified diameter and length are placed on a C60-derived spherical lattice, oriented toward the center. 
-Some parameters are adjustable, and restricted: Inner radius (the space for the sample), Outer radius (the total volume of the assembly), the Test volume radius. The Magnet diameter and length are used to calculate a minumum diameter of te inner sphere.
-For contruction purposes we can define a Minimum gap, so the magnets should not overlap. For the magnetic calculations the user is prompted to input the Remanence (Br), it is typically 1.2 to 1.4 for NdBF or N40 to N45 type.
+48 dipoles of specified diameter and length are placed on a C60-derived spherical lattice, each oriented radially toward the center. User-adjustable parameters:
 
-Initially the 48 dipoles are radial orientated with symmetric polarity assignment so as to obtain a field along the X axis.
+- **Inner R (mm)** — radius of the bore (sample space). Auto-clamped upward if too small: given the dipole diameter and the desired minimum gap, the tool computes the geometric minimum inner radius from the smallest angle between adjacent lattice directions, and bumps the value if the user enters something smaller.
+- **Outer R (mm)** — outer shell radius (bounds the full assembly). Auto-clamped to at least `Inner R + magnet length`.
+- **Test R (mm)** — radius of the spherical volume over which homogeneity is evaluated.
+- **Dipole diameter / length (mm)** — cylindrical magnet dimensions.
+- **Min gap (mm)** — construction clearance between adjacent magnets.
+- **Remanence Br (T)** — typically 1.2–1.4 for NdFeB N40–N45.
+
+All dipoles initially sit flush against the inner sphere (offset = 0) with radial orientation. The optimizer moves each magnet radially outward (offset ∈ [0, R_outer − R_inner − L]) without changing orientation or polarity, and in a symmetrical manner: mirror pairs across the YZ plane receive the same offset, preserving the X-axis symmetry of the field
 
 ### Visualization
-There is an interactive 3D view (Three.js) with camera presets: 3D, top, front, side and Optional dipole numbering. 
-- Visual elements:
-  - Inner and outer spheres
-  - Test volume
-  - Magnet polarity (color-coded)
+- Interactive 3D scene (Three.js) with orbit/pan/zoom, camera presets (3D, Top +Z, Front +Y, Side +X), and an optional dipole-numbering overlay.
+- An axes HUD gizmo in the bottom-right corner shows orientation at all times.
+- Visual elements rendered: inner sphere, outer shell, yellow test-volume wireframe, and the 48 dipoles with color-coded N (red) / S (blue) face caps.
 
 ### Field Mapping
-- 2D field maps in XY, XZ, YZ planes
-- Bore profile along Z axis
-- Real-time computation
+- 2D |B| heatmaps in the XY, XZ, YZ planes, with colorbar and axis ticks in millimeters.
+- Bore profile: Bx, By, Bz along the Z axis over the test range.
+- Schlegel diagram (stereographic projection from the Z axis) showing the C60 lattice topology and current polarity of each dipole, included in the PDF report.
+- All maps recompute live as parameters change, with input debouncing so the heavy field evaluation isn't triggered on every keystroke.
 
 ### Optimization (Simulated Annealing)
-Multi-threaded using Web Workers (from 4 to 12 cores, adaptable dpeending on the user CPU). Some parameters are adjustable:
-  Iterations, Maximum displacement in a cycle (confined to the sphere). Objective functions are Maximize homogeneity, Maximize field strength or Combined objective of the previous two.
-  
-  There is a hardcoded restriction: the dipoles are moved symmetrically.
+Parallel simulated annealing in Web Workers. The tool auto-detects `navigator.hardwareConcurrency` and spawns up to 8 independent SA threads, each seeded with a different initial temperature multiplier so they explore different regions of the search space.
 
-- Features:
-  - Automatic temperature tuning
-  - Local and global moves
-  - Escape mechanism to avoid local minima
-  - Live progress display
+- User-adjustable: **iterations** (per thread) and **max radial nudge** (mm).
+- **Objective weight slider** — a single slider from pure homogeneity (left) to pure field (right). The score is a *positive residual*:
+
+$$\text{score} = (1-w) \cdot P_{homog} + w \cdot P_{field}$$
+
+where both penalties are positive and on a comparable percentage scale:
+
+$$P_{homog} = \frac{\Delta B_x}{|B_x|} \cdot 100 + \frac{B_{\perp,\max}}{|B_x|} \cdot 200$$
+
+$$P_{field} = \max\!\left(0,\; \frac{B_{ideal} - |B_x|}{B_{ideal}}\right) \cdot K$$
+
+The field penalty is expressed as a **shortfall from the Halbach theoretical ceiling**,
+$B_{ideal} = B_r \cdot \ln(R_{outer} / R_{inner})$ (Mallinson / Abele infinite-dipole limit). This is dimensionless and tops out at 100 when |Bx| = 0, making the slider's in-between values physically meaningful rather than unit-mismatched. The constant `FIELD_WEIGHT_SCALE = K = 100` sets the exchange rate between the two terms; it is exposed in the PDF report for reproducibility. A score of 0 would mean "perfect homogeneity and hit the Halbach ceiling simultaneously".
+
+At the slider endpoints the objective reduces to the classical cases: w=0 is pure homogeneity minimization, w=1 is maximizing |Bx| (monotonically equivalent to minimizing the shortfall, since B_ideal is constant during optimization). The default position is 50/50.
+
+- **Features of the SA engine:**
+    - *Automatic T₀ tuning* — each worker samples 50 random moves at startup to estimate a typical energy gap, then sets T₀ so that these moves are accepted ~90% of the time initially. If you want "hotter", change the parameter 0.98 in __params.T0 = (-avgDe / Math.log(0.98)) * threadMult;__
+    - *Symmetric-pair mutation* — because the target field is along +X, the lattice has a natural mirror symmetry across the YZ plane. Each worker identifies these mirror pairs at startup and, when nudging a dipole, applies the same radial offset to its mirror partner. This halves the effective search-space dimensionality and enforces X-axis symmetry of the solution.
+    - *Mixed local/global moves* — each iteration performs a symmetric nudge on 1–5 random pairs (90% of iterations), or a uniform global radial shift of all 48 magnets (10%). The nudge amplitude shrinks as temperature cools.
+    - *Parachute escape* — if no improvement is found over 20% of the total iterations, all magnet offsets are scrambled to random positions within their allowed range and temperature is reset to T₀. Prevents the search from stalling in a poor local minimum.
+    - *Geometric constraints enforced per iteration* — each offset is clamped to respect both the minimum gap (magnets may not collide with one another as they move outward) and the outer-shell envelope.
+    - *Live progress display* — an overlay shows current average iteration, current temperature, the running best score, and the score of one representative thread.
+    - The 3D scene is updated during optimization at ~4 Hz so the user can watch the dipoles migrate.
 
 ### Export
-- PDF export of current configuration
+Multi-page PDF report via jsPDF, generated from the current state:
+1. **Parameters page** — geometry, computed field at center, SA settings including the objective weight decomposition (e.g. "Mixed: 70% homogeneity + 30% field-shortfall") and the computed Halbach ideal in Tesla.
+2. **3D views** — Top, Front, Side renders with dipole numbering, each on its own page, rendered at 1600×1600 off-screen so the sphere fills the page cleanly regardless of browser window shape.
+3. **Field maps** — bore profile, XY/XZ/YZ heatmaps, and the Schlegel diagram with per-dipole polarity color-coding.
+4. **Dipole table** — for each of the 48 dipoles, the absolute radial positions of its N and S pole faces in millimeters from the center. This is the build sheet for machining or 3D-printing the holder.
 
 ---
-last update 18 april 2026
+
+last updated 19 April 2026
