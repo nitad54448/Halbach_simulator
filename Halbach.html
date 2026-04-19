@@ -247,7 +247,7 @@ body {
 <div class="left">
   <div class="brand">
     <h1>Halbach Ring</h1>
-    <p>MAGNETIC ARRAY SIMULATOR · v2.4</p>
+    <p>MAGNETIC ARRAY SIMULATOR · v2.4b</p>
   </div>
 
 
@@ -494,7 +494,7 @@ body {
   </div>
 </div>
 
-  <div class="footer">NitaD · Univ. Paris-Saclay · 18 april 2026</div>
+  <div class="footer">NitaD · Univ. Paris-Saclay · 19 april 2026</div>
 </div>
 
 <!-- MAIN -->
@@ -981,9 +981,8 @@ function cuboidField(px, py, pz,          // eval point (mm)
   Bv *= Br_o4pi;
   Bw *= Br_o4pi;
 
-if (Math.abs(u) <= hL + 1e-6 && Math.abs(v) <= hW + 1e-6 && Math.abs(w) <= hH + 1e-6) {
-  Bu += Br;
-}
+  // NOTE: The Furlani scalar-potential formula above already returns the total
+  // B-field both inside and outside the magnet — no interior correction needed.
 
   // Rotate local field back to global frame
   const Bx = Bu * ax  + Bv * e1x + Bw * e2x;
@@ -1582,7 +1581,7 @@ async function estimateOptimalOffset() {
   }
 
   // 4. Apply the optimal angle to the UI and redraw
-  phaseInput.value = bestAngle;
+  phaseInput.value = bestAngle.toFixed(2);
   update();
 
   // Clean up UI
@@ -2530,8 +2529,7 @@ function _updateMagnetMeshPositions() {
       const pz = ring.zOffset;
       const mx = Math.cos(magAngle);
       const my = Math.sin(magAngle);
-      const halfL = (document.getElementById('magnetShape').value === 'cylinder'
-        ? ring.magLen : ring.magLen) / 2;
+      const halfL = ring.magLen / 2;
       const capOffset = 0.15;
 
       const base = startIdx + flatIdx * CHILDREN_PER_MAGNET;
