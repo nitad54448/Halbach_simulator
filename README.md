@@ -3,64 +3,70 @@ In this repository there are two web based simulators for calculating and visual
 
 # 1. Halbach Ring Simulator
 
-The Halbach.html is an interactive, web-based 3D simulator for calculating and visualizing the magnetic fields of finite-length Halbach cylinders. This program was initially created in Labview during several years, 2014-2018 for a Hall measuring system (see my repos) and upgraded recently with a local Qwen-Coder 70b and further improved with Gemini 3.1 and Claude Sonnet 4.6.
-With the version 2, the ability to use two concentric rings makes it a powerful tool to build your own magnets.
+The `Halbach.html` is an interactive, web-based 3D simulator for calculating and visualizing the magnetic fields of finite-length Halbach rings. This program was initially created in LabVIEW during 2014–2018 for a Hall measuring system (see my repos) and upgraded recently with a local Qwen-Coder 70b, then further improved with Gemini 3.1 and Claude Sonnet 4.6 / Opus 4.7.
+
+Version 2 adds two concentric rings with independent geometry and an optional inter-ring phase optimizer, making it a practical tool for designing shimmed or compound Halbach magnets. Version 2.5 extends the model to **per-ring magnet shape and pole count** — so Ring 1 can be eight cylindrical magnets while Ring 2 is twelve parallelepiped tiles — along with a **STEP (AP214) exporter** for direct import into CAD, and a proper shape-aware **collision check** with a user-defined minimum gap.
 
 ## A. Mathematical Model
 
-This simulator does not rely on infinite-length approximations. It computes the exact 3D magnetic field for discrete, finite-length cylindrical magnets using the **Equivalent Surface Current Method** and **Biot-Savart integration**.
+This simulator does not rely on infinite-length approximations. It computes the exact 3D magnetic field for discrete, finite-size magnets using the **Equivalent Surface Current Method** with **Biot–Savart integration** for cylinders, and the **Furlani closed-form scalar-potential model** for parallelepipeds.
 
-### 1. Equivalent Current Solenoid
-A uniformly magnetized cylinder with remanence $B_r$ can be modeled as a solenoid carrying an azimuthal surface current density:
+### 1. Cylindrical magnets — equivalent current solenoid
+A uniformly magnetized cylinder with remanence $B_r$ is modeled as a solenoid carrying an azimuthal surface current density:
 
 $$K = \frac{B_r}{\mu_0} \text{ [A/m]}$$
 
-### 2. Single Ring Field (Elliptic Integrals)
-The field of a single infinitesimally thin current ring of radius $a$ is calculated using the exact closed-form expressions derived from the Biot-Savart law. For a point at radial distance $\rho$ and axial distance $\zeta$ from the ring, the field requires complete elliptic integrals of the first ($K$) and second ($E$) kind:
+The field of a single infinitesimally thin current ring of radius $a$ is given by the exact closed-form Biot–Savart expressions. For a point at radial distance $\rho$ and axial distance $\zeta$ from the ring, the field uses the complete elliptic integrals of the first ($K$) and second ($E$) kind:
 
 $$B_{axial} = \frac{\mu_0 I}{2\pi \sqrt{Q}} \left[ K(m) + E(m) \frac{a^2 - \rho^2 - \zeta^2}{D} \right]$$
 
 $$B_{radial} = \frac{\mu_0 I}{2\pi \rho \sqrt{Q}} \left[ -K(m) + E(m) \frac{a^2 + \rho^2 + \zeta^2}{D} \right]$$
 
-$$Q = (a+\rho)^2 + \zeta^2$$
-$$D = (a-\rho)^2 + \zeta^2$$
-and
-$$m = \frac{4a\rho}{Q}$$
+$$Q = (a+\rho)^2 + \zeta^2 \qquad D = (a-\rho)^2 + \zeta^2 \qquad m = \frac{4a\rho}{Q}$$
 
-### 3. Finite Cylinder Integration
-To find the field of a solid cylindrical magnet, the simulator numerically integrates `N_RINGS` (now set at 64) discrete current loops along the cylinder's axis from $-L/2$ to $+L/2$. This captures the severe 3D end-leakage (fringe fields) that occurs in short arrays.
+To find the field of a solid cylindrical magnet, the simulator numerically integrates `N_RINGS = 32` discrete current loops along the cylinder's axis from $-L/2$ to $+L/2$. This captures the severe 3D end-leakage (fringe fields) that occurs in short arrays.
 
-### 4. Halbach Superposition
-For an array of $N$ magnets, the angular position of the $i$-th magnet is $\theta = i \frac{2\pi}{N}$. Its magnetization angle $\phi$ is determined by the Halbach order $k$:
-$$\phi = k \theta$$
+### 2. Parallelepiped magnets — Furlani analytical model
+For cuboid magnets, the simulator uses the closed-form expressions by E. P. Furlani (*Permanent Magnet and Electromechanical Devices*, 2001). The scalar magnetic potential of a uniformly magnetized rectangular block is integrated over its six charge faces, yielding an exact, singularity-free expression for all three components of $\vec{B}$ at any external point. No numerical integration is used — this path is strictly analytical.
+
+### 3. Halbach superposition
+For a single ring of $N$ magnets of order $k$, the angular position of the $i$-th magnet is $\theta_i = i \cdot (2\pi/N)$ and its magnetization direction lies in the XY plane at angle:
+
+$$\varphi_i = k \cdot \theta_i$$
+
 * $k=1$: Confined internal field (no field in bore, strong outside).
 * $k=2$: Uniform dipole field across the bore.
 * $k=3$: Quadrupole field (linear gradient).
+* $k=4$: Sextupole.
 
-The global field vector is the linear superposition of the rotated field vectors from all $N$ cylinders.
+For two rings, each ring has its own pole count $N_r$ and an optional **phase offset** $\Delta_r$ that rigidly rotates the entire pattern — positions *and* moment directions — around the Z axis:
+
+$$\theta_{r,i} = i \cdot \frac{2\pi}{N_r} + \Delta_r \qquad \varphi_{r,i} = k \cdot \theta_{r,i}$$
+
+The global field at any evaluation point is the linear superposition of the contributions from every magnet in every ring, computed through the appropriate kernel (cylinder or cuboid) for that ring's shape.
 
 ## B. Core Functions
 
-### Physics Kernel
-* **`ellipticKE(m)`**
-  Computes the complete elliptic integrals $K(m)$ and $E(m)$ simultaneously using the fast-converging Arithmetic-Geometric Mean (AGM) algorithm.
-* **`ringField(a, I, rho, zeta)`**
-  Returns the $\{B_{axial}, B_{radial}\}$ components for a single current loop in its local cylindrical frame.
-* **`cylinderField(px, py, pz, cx, cy, cz, mux, muy, muz, a_mm, halfL_mm, Br)`**
-  Handles the coordinate transformation. It translates the evaluation point `(px, py, pz)` into the local frame of a cylinder located at `(cx, cy, cz)` with magnetization vector `(mux, muy, muz)`. It integrates `ringField` along the length and transforms the resulting local vector back into global $\{B_x, B_y, B_z\}$.
+### Physics kernels
+* **`ellipticKE(m)`** — computes the complete elliptic integrals $K(m)$ and $E(m)$ simultaneously using the fast-converging Arithmetic–Geometric Mean (AGM) algorithm.
+* **`ringField(a, I, rho, zeta)`** — returns the $\{B_{axial}, B_{radial}\}$ components for a single current loop in its local cylindrical frame.
+* **`cylinderField(px, py, pz, cx, cy, cz, mux, muy, muz, a_mm, halfL_mm, Br)`** — handles the coordinate transformation for a cylindrical magnet. It translates the evaluation point into the local frame of a cylinder centered at `(cx, cy, cz)` with radial magnetization vector `(mux, muy, muz)`, integrates `ringField` along the cylinder length, and transforms the local result back into global $\{B_x, B_y, B_z\}$.
+* **`cuboidField(px, py, pz, cx, cy, cz, mux, muy, muz, hW, hH, hL, Br)`** — Furlani analytical formula for a parallelepiped of half-widths $(h_W, h_H, h_L)$. Returns $\{B_x, B_y, B_z\}$ directly in global coordinates.
 
-### Global Summation
-* **`fieldVectorAt(x, y, z)`**
-  Iterates through all $N$ poles. Calculates each magnet's physical position in the array and its Halbach magnetization vector. Sums the contributions from `cylinderField` and returns the net 3D magnetic field vector $\{B_x, B_y, B_z\}$.
-* **`fieldAt(x, y, z)`**
-  A utility wrapper that returns the scalar magnitude ($||B||$) of `fieldVectorAt`.
+### Global summation and geometry
+* **`_sumField(x, y, z, params)`** — loops over both rings (and every magnet within each ring), reading the ring-specific shape, pole count, placement radius, phase offset and dimensions, then calls the appropriate kernel and accumulates the vector field.
+* **`fieldVectorAt(x, y, z)`** / **`fieldAt(x, y, z)`** — convenience wrappers returning the vector or scalar magnitude of $\vec{B}$.
+* **`checkCollisions(params, minGap)`** — shape-aware clearance test based on the Separating Axis Theorem applied to each magnet's oriented bounding box (radial × tangential × axial half-extents), evaluated pairwise. Correctly handles mixed shapes and unequal pole counts between rings, honours the user's **Min Gap** setting, and reports the worst offending pair in the legend and tooltip.
 
 ### User Interface & Projections
-* **`computeStats(...)`**
-  Evaluates the field at specific geometrical points to populate the UI (e.g., center bore field at `(0,0,0)`, and circular sampling around the holder perimeter to find peak leakage).
-* **`drawSingleMap(plane)`**
-  Renders the 2D cross-sectional heatmaps (XY, XZ, YZ). It generates an off-screen bitmap, computes the field scalar at each pixel, maps it to a color gradient, and calculates continuous isolines. It also overlays projected 2D vectors or out-of-plane flux indicators ($\odot$, $\otimes$).
+* **`computeStats(...)`** — evaluates the field at specific geometrical points to populate the UI (center bore field at $(0,0,0)$, peak leakage around the holder perimeter, variance across a user-defined test sphere).
+* **`drawSingleMap(plane)`** — renders the 2D cross-sectional heatmaps (XY, XZ, YZ). Generates an off-screen bitmap, computes the field scalar at each pixel, maps it to a color gradient, and calculates continuous isolines. Overlays projected 2D vectors or out-of-plane flux indicators ($\odot$, $\otimes$).
 
+## C. Exports
+* **PDF report** — parameters, computed stats, 3D render, 2D heatmaps and collision status in a single document.
+* **STEP (AP214)** — pure-JavaScript STEP writer emitting `MANIFOLD_SOLID_BREP` entities for every visible magnet and the holder. Cylinders are built from two circular `ADVANCED_FACE` caps and a lateral `CYLINDRICAL_SURFACE`; cuboids are six planar faces; the holder is a tube with annular top and bottom faces. The file opens directly in FreeCAD, SolidWorks, and Fusion 360.
+
+---
 
 # 2. Mandhala — Radial Sphere Simulator
 
