@@ -92,7 +92,7 @@ body{font-family:'IBM Plex Mono',monospace;background:var(--bg);color:var(--text
     <div class="section-title">Lattice</div>
     <div class="field-row"><label>Distribution</label>
       <select id="lattice" oninput="onLatticeChange()">
-        <option value="lebedev">Lebedev-98 (symmetric)</option>
+        <option value="lebedev">Lebedev-110 (symmetric)</option>
         <option value="c60" selected>C60 Mandhala-48 (very symmetric)</option>
         <option value="fibonacci">Fibonacci (N-tunable)</option>
       </select>
@@ -405,7 +405,7 @@ function generateC60Points() {
 // Fibonacci sphere: very uniform angular distribution, no exact symmetries.
 // Golden-angle spiral: better packing than Lebedev, tunable N, but By/Bz won't
 // be exactly zero at center — the SA will drive them down, hopefully.
-function generateFibonaccipoints(N) {
+function generateFibonacciPoints(N) {
   const points = [];
   const phi = Math.PI * (3 - Math.sqrt(5)); // golden angle
   for (let i = 0; i < N; i++) {
@@ -428,7 +428,7 @@ function buildRadialArray() {
   const mode = currentLattice();
   if (mode === 'fibonacci') {
     const N = Math.max(20, Math.min(400, parseInt(document.getElementById('fibN').value) || 100));
-    verts = generateFibonaccipoints(N);
+    verts = generateFibonacciPoints(N);
     verts = verts.filter(v => Math.abs(v.z) < 0.9);
     verts = verts.filter(v => Math.abs(v.x) > 1e-3);
   } else if (mode === 'c60') {
@@ -437,7 +437,7 @@ function buildRadialArray() {
     verts = verts.filter(v => Math.abs(v.z) < 0.8);
     verts = verts.filter(v => Math.abs(v.x) > 1e-3);
   } else {
-    // Default: Lebedev-98
+    // Default: Lebedev-110
     verts = generateLebedev110Points();
     verts = verts.filter(v => Math.abs(v.z) < 0.9);
     verts = verts.filter(v => Math.abs(v.x) > 1e-3);
@@ -461,25 +461,25 @@ function buildOrbits(mags) {
   for (let i = 0; i < mags.length; i++) {
     if (assigned[i] !== -1) continue;
     const d = mags[i].dir;
-    // All 8 D₂ₕ images of this magnet
     const images = [];
     for (const sx of [1, -1]) for (const sy of [1, -1]) for (const sz of [1, -1]) {
       images.push([sx*d.x, sy*d.y, sz*d.z]);
     }
-    const partners = new Set([i]);
-    for (const [ix, iy, iz] of images) {
-      for (let j = 0; j < mags.length; j++) {
-        if (partners.has(j) || assigned[j] !== -1) continue;
-        const q = mags[j].dir;
+    const partners = [i];
+    for (let j = i + 1; j < mags.length; j++) {
+      if (assigned[j] !== -1) continue;
+      const q = mags[j].dir;
+      let matched = false;
+      for (const [ix, iy, iz] of images) {
         if (Math.abs(q.x-ix)<EPS && Math.abs(q.y-iy)<EPS && Math.abs(q.z-iz)<EPS) {
-          partners.add(j);
+          matched = true;
           break;
         }
       }
+      if (matched) partners.push(j);
     }
-    const orb = [...partners];
-    orbits.push(orb);
-    orb.forEach(k => assigned[k] = orbits.length - 1);
+    orbits.push(partners);
+    partners.forEach(k => assigned[k] = orbits.length - 1);
   }
   return orbits;
 }
@@ -625,7 +625,7 @@ function updateLatticeUI() {
       symCheck.disabled = true;
       symLabel.style.opacity = '0.5';
     } else {
-      // Lebedev-98 and C60-48 both have exact D₂ₕ
+      // Lebedev-110 and C60-48 both have exact D₂ₕ
       symLabel.textContent = `Lock D₂ₕ symmetry (${nOrbits} DOF)`;
       symCheck.disabled = false;
       symLabel.style.opacity = '1';
@@ -855,20 +855,9 @@ function computeMinOffsets(params) {
   return { minOffs, maxOffs };
 }
 
-// True pairwise constraint check. Call after any move to reject violations.
-// Returns true iff all pairs satisfy (2·min(R+off_i, R+off_j)·sin(α/2) ≥ diam+gap).
-function validateGap(params) {
-  const R = params.R, diam = params.diam, gap = params.gap;
-  const req = diam + gap;
-  for (let i = 0; i < magnets.length; i++) {
-    for (const nb of neighbours[i]) {
-      if (nb.j < i) continue; // each pair checked once
-      const chord = 2 * Math.min(R + magnets[i].offset, R + magnets[nb.j].offset) * nb.sinHalfA;
-      if (chord < req - 1e-9) return false;
-    }
-  }
-  return true;
-}
+// True pairwise constraint check (used in the SA worker — see workerScript).
+// Kept here for reference; the worker has its own copy that operates on its
+// local `magnets`/`neighbours`/`params` state.
 
 // Apply min-offset clamping to every magnet. Used after geometry/gap/diam changes
 // so the displayed configuration respects the constraint when feasible.
@@ -926,9 +915,9 @@ function applyMinOffsetClamp({ levelUp = true } = {}) {
   if (outerTooSmall) {
     text = `Outer R too small — increase to ≥ ${(params.R + params.len).toFixed(1)} mm`;
   } else if (infeasible > 0) {
-    text = `min Inner R = ${requiredMinR.toFixed(1)} mm · clearance = NaN (cylinder too wide — overlap shown in 3D)`;
+    text = `min Inner R = ${requiredMinR.toFixed(1)} mm · cylinder too wide for lattice spacing (overlap shown in 3D)`;
   } else if (clearance < 0) {
-    text = `min Inner R = ${requiredMinR.toFixed(1)} mm · clearance = NaN`;
+    text = `min Inner R = ${requiredMinR.toFixed(1)} mm · clearance = ${clearance.toFixed(1)} mm (negative — increase Outer R)`;
   } else if (rTooSmall) {
     text = `Inner R too small — min Inner R = ${requiredMinR.toFixed(1)} mm (overlap shown in 3D)`;
   } else {
@@ -1745,7 +1734,7 @@ async function exportPDF() {
     // === Metadata block ===
     doc.setFontSize(10);
     doc.setTextColor(100);
-    doc.text(cleanStr(`Program: Radial Sphere Simulator v2.3 (${window.location.href})`), margin, y); y += 5;
+    doc.text(cleanStr(`Program: Radial Sphere Simulator v2.4 (${window.location.href})`), margin, y); y += 5;
     doc.text(cleanStr(`Generated: ${timestampText}`), margin, y); y += 5;
     const latticeMode = currentLattice();
     let structDesc;
