@@ -78,6 +78,12 @@ body{font-family:'IBM Plex Mono',monospace;background:var(--bg);color:var(--text
 .tooltip{position:absolute;bottom:14px;left:14px;background:rgba(8,11,15,.92);border:1px solid var(--border);border-radius:3px;padding:8px 12px;font-size:9px;color:var(--label);pointer-events:none;z-index:100;line-height:1.8;}
 
 #opt-overlay{display:none;position:absolute;top:16px;right:16px;background:rgba(8,11,15,.9);border:1px solid var(--border);border-radius:4px;padding:12px 16px;font-size:10px;color:var(--accent);flex-direction:column;gap:4px;z-index:50;}
+
+/* Active/inactive target styling */
+.target-active label{color:var(--accent)!important;}
+.target-active input{border-color:var(--accent)!important;}
+.target-inactive label{color:var(--label);}
+.target-inactive input{opacity:0.55;}
 </style>
 </head>
 <body>
@@ -131,7 +137,7 @@ body{font-family:'IBM Plex Mono',monospace;background:var(--bg);color:var(--text
       <div class="stat-card"><div class="sv" id="sv-By">—</div><div class="sl">By center (T)</div></div>
       <div class="stat-card"><div class="sv" id="sv-Bz">—</div><div class="sl">Bz center (T)</div></div>
       <div class="stat-card"><div class="sv" id="sv-Var">—</div><div class="sl">Homog. ppm</div></div>
-      <div class="stat-card"><div class="sv" id="sv-Score">—</div><div class="sl">SA Score</div></div>
+      <div class="stat-card"><div class="sv" id="sv-Score" style="font-size:10px;">—</div><div class="sl">Target Status</div></div>
     </div>
   </div>
 
@@ -143,13 +149,19 @@ body{font-family:'IBM Plex Mono',monospace;background:var(--bg);color:var(--text
     </div>
 
     <div class="field-row">
-      <label>Objective Weight</label>
-      <div class="weight-labels">
-        <span class="weight-end">Homogeneity</span>
-        <span class="weight-end">Field</span>
+      <label>Optimization Targets <span style="color:var(--muted);font-weight:400;text-transform:none;letter-spacing:0;">(last edited = active constraint)</span></label>
+      <div class="two-col" style="margin-top:4px;">
+        <div class="field-row target-active" id="targetHomogBox" style="margin-bottom:0;">
+          <label id="targetHomogLabel">Min Homog. (ppm) ●</label>
+          <input type="number" id="targetHomog" value="10000" step="10" min="1" oninput="onTargetEdit('homog')">
+        </div>
+        <div class="field-row target-inactive" id="targetFieldBox" style="margin-bottom:0;">
+          <label id="targetFieldLabel">Min Field |Bx| (T)</label>
+          <input type="number" id="targetField" value="0.10" step="0.01" min="0" oninput="onTargetEdit('field')">
+        </div>
       </div>
-      <input type="range" id="optWeight" min="0" max="100" value="50" step="1" class="weight-slider" oninput="updateWeightReadout()">
-      <div class="weight-readout" id="weightReadout">Homog 50% · Field 50%</div>
+      <div class="weight-readout" id="weightReadout" style="margin-top:8px;">Active: Homogeneity ≤ 100 ppm · maximize |Bx|</div>
+      <div id="reachableHint" style="font-size:8px;color:var(--muted);text-align:center;margin-top:3px;letter-spacing:.04em;">—</div>
     </div>
 
     <div class="field-row" style="flex-direction:row;align-items:center;gap:8px;margin-bottom:4px;">
@@ -583,12 +595,66 @@ let currentMapPlane = null;
 let activeWorkers = [];
 let lastDrawTime = 0;
 
-function updateWeightReadout() {
-  const w = parseInt(document.getElementById('optWeight').value);
-  // Slider: 0 (left) = pure Homogeneity, 100 (right) = pure Field
-  const field = w, homog = 100 - w;
-  document.getElementById('weightReadout').textContent = `Homog ${homog}% · Field ${field}%`;
+// Which target is the active constraint. The OTHER becomes the objective.
+//   'homog' → ppm ≤ targetHomog is the constraint; maximize |Bx|.
+//   'field' → |Bx| ≥ targetField is the constraint; minimize ppm.
+let activeTarget = 'homog';
+
+function onTargetEdit(which) {
+  activeTarget = which;
+  updateTargetReadout();
   evaluateField();
+}
+
+function updateTargetReadout() {
+  const homogBox = document.getElementById('targetHomogBox');
+  const fieldBox = document.getElementById('targetFieldBox');
+  const homogLabel = document.getElementById('targetHomogLabel');
+  const fieldLabel = document.getElementById('targetFieldLabel');
+  const readout = document.getElementById('weightReadout');
+  const tH = parseFloat(document.getElementById('targetHomog').value);
+  const tF = parseFloat(document.getElementById('targetField').value);
+
+  if (activeTarget === 'homog') {
+    homogBox.classList.add('target-active');     homogBox.classList.remove('target-inactive');
+    fieldBox.classList.add('target-inactive');   fieldBox.classList.remove('target-active');
+    homogLabel.textContent = 'Min Homog. (ppm) ●';
+    fieldLabel.textContent = 'Min Field |Bx| (T)';
+    readout.textContent = `Active: homogeneity ≤ ${tH.toFixed(0)} ppm · maximize |Bx|`;
+  } else {
+    fieldBox.classList.add('target-active');     fieldBox.classList.remove('target-inactive');
+    homogBox.classList.add('target-inactive');   homogBox.classList.remove('target-active');
+    homogLabel.textContent = 'Min Homog. (ppm)';
+    fieldLabel.textContent = 'Min Field |Bx| (T) ●';
+    readout.textContent = `Active: |Bx| ≥ ${tF.toFixed(3)} T · minimize ppm`;
+  }
+}
+
+// Recompute reasonable input ranges based on current geometry & remanence.
+// - targetField upper bound: estimated reachable |Bx| ceiling (not Br — Br is an
+//   absolute ceiling, but the geometry rarely reaches more than ~30-40% of Br).
+//   Lower bound 0. Step scaled.
+// - targetHomog: lower bound 1 ppm, no upper hard cap. Step adapts to current ppm.
+function updateTargetRanges(metrics) {
+  const fieldInput = document.getElementById('targetField');
+  let ceiling;
+  try {
+    const r = estimateFieldRange();
+    ceiling = r.bxStrong;
+  } catch (e) {
+    ceiling = parseFloat(document.getElementById('magBr').value);
+  }
+  fieldInput.min = '0';
+  fieldInput.max = (ceiling * 1.05).toFixed(3);  // tiny headroom for rounding
+  fieldInput.step = Math.max(0.001, ceiling / 200).toFixed(3);
+  let fv = parseFloat(fieldInput.value);
+  if (fv < 0)  { fieldInput.value = '0'; }
+
+  const homogInput = document.getElementById('targetHomog');
+  homogInput.min = '1';
+  const cur = metrics ? (metrics.ppmBx + 2 * metrics.ppmTrans) : 100;
+  const step = cur < 50 ? 1 : cur < 500 ? 10 : cur < 5000 ? 100 : 1000;
+  homogInput.step = step.toString();
 }
 
 function onGeomChange() {
@@ -673,6 +739,31 @@ function resetGeometry() {
 }
 function resetOffsets() { resetGeometry(); }
 
+// Quick estimate of the reachable |Bx| range without running SA.
+// Snaps all magnets to their min/max offset and measures center |Bx|.
+// Returns { bxAtMin, bxAtMax } in Tesla.
+//
+// Caveats: this samples only the two extreme uniform configurations; the actual
+// reachable maximum (with non-uniform offsets) can be slightly higher. We use it
+// as a sanity check, not a hard bound.
+function estimateFieldRange() {
+  const params = getParams();
+  const { minOffs, maxOffs } = computeMinOffsets(params);
+  const saved = magnets.map(m => m.offset);
+  // Min-offset config (closest packing → typically strongest |Bx|)
+  for (let i = 0; i < magnets.length; i++) magnets[i].offset = minOffs[i];
+  const bxMin = Math.abs(fieldAt(0, 0, 0, params).bx);
+  // Max-offset config (loosest → typically weakest |Bx|)
+  for (let i = 0; i < magnets.length; i++) magnets[i].offset = maxOffs[i];
+  const bxMax = Math.abs(fieldAt(0, 0, 0, params).bx);
+  // Restore
+  for (let i = 0; i < magnets.length; i++) magnets[i].offset = saved[i];
+  return {
+    bxStrong: Math.max(bxMin, bxMax),
+    bxWeak:   Math.min(bxMin, bxMax)
+  };
+}
+
 
 //calc field, for score in SA
 function fieldAt(px, py, pz, params) {
@@ -696,9 +787,12 @@ function getParams() {
     len: parseFloat(document.getElementById('magLen').value),
     gap: parseFloat(document.getElementById('magGap').value),
     Br: parseFloat(document.getElementById('magBr').value),
-    // Slider: 0 (left) = pure Homogeneity, 100 (right) = pure Field.
-    // The scoring convention uses weight=1.0 for pure homogeneity, so we invert here.
-    weight: 1 - parseInt(document.getElementById('optWeight').value) / 100
+    // Active constraint mode + targets. The OTHER quantity becomes the objective.
+    //   activeTarget='homog' → enforce ppm ≤ targetHomog, maximize |Bx|
+    //   activeTarget='field' → enforce |Bx| ≥ targetField, minimize ppm
+    activeTarget: activeTarget,
+    targetHomog: parseFloat(document.getElementById('targetHomog').value),
+    targetField: parseFloat(document.getElementById('targetField').value)
   };
 }
 
@@ -757,15 +851,42 @@ function computeMetrics(params) {
 }
 
 function computeScore(metrics, params) {
-  const w = params.weight;   // 1.0 = pure homogeneity, 0.0 = pure field
-  // Both terms expressed as PERCENTAGES so score is always positive and monotone
-  // ("smaller is better"). Range of each term is roughly [0, 100].
-  //  - Homogeneity penalty: peak-to-peak Bx + 2×transverse leak, in percent.
-  //  - Field shortfall: how far |Bx| at center falls below the remanence Br, in percent.
-  //    Typical |Bx| is 10-40% of Br, so this is ~60-90% for typical configs.
-  const homogPct = 100 * (metrics.ppmBx + 2 * metrics.ppmTrans) / 1e6;
-  const fieldShortfallPct = Math.max(0, 100 * (1 - metrics.absBx / Math.max(params.Br, 0.1)));
-  return w * homogPct + (1 - w) * fieldShortfallPct;
+  // Constraint-based scoring with bounded objective and linear penalty.
+  //
+  // Both terms are scaled to roughly [0, 1] so the score has a meaningful and
+  // stable range regardless of how far the current state is from satisfying
+  // the constraint. Linear (not quadratic) penalty gives a uniform downhill
+  // gradient — quadratic was too flat near the boundary and too steep far
+  // from it, causing SA to either freeze or thrash depending on the starting
+  // state.
+  //
+  // Score ≈ objective in [0, 1] (or [-1, 0]) when feasible.
+  // Score grows by LAMBDA per "unit" of violation when infeasible, so a 100%
+  // violation produces a penalty ≈ LAMBDA, dominating the objective.
+  const ppmTotal = metrics.ppmBx + 2 * metrics.ppmTrans;
+  const absBx = metrics.absBx;
+  const BrSafe = Math.max(params.Br, 0.1);
+
+  // LAMBDA = 10: a 10% violation gives penalty 1.0 (same scale as objective),
+  // 100% violation gives penalty 10 (clearly dominant). Linear penalty.
+  const LAMBDA = 10;
+
+  if (params.activeTarget === 'homog') {
+    // Constraint: ppmTotal ≤ targetHomog.  Objective: maximize absBx.
+    // Objective in [-1, 0]: -1 = at Br (impossible), 0 = no field.
+    const viol = Math.max(0, (ppmTotal - params.targetHomog) / Math.max(params.targetHomog, 1));
+    const objective = -absBx / BrSafe;
+    return objective + LAMBDA * viol;
+  } else {
+    // Constraint: absBx ≥ targetField.  Objective: minimize ppmTotal.
+    // Normalize ppm by 1e6 (worst case = 100% inhomogeneity) so objective ∈ [0, 1].
+    // This is the FIX: previously we normalized by targetHomog, which has nothing
+    // to do with the active "minimize ppm" objective and made the score blow up
+    // when targetHomog was small and current ppm was large.
+    const viol = Math.max(0, (params.targetField - absBx) / Math.max(params.targetField, 1e-3));
+    const objective = ppmTotal / 1e6;
+    return objective + LAMBDA * viol;
+  }
 }
 
 function evaluateField() {
@@ -780,7 +901,36 @@ function evaluateField() {
   document.getElementById('sv-Bz').textContent = c.bz.toExponential(2);
   document.getElementById('sv-Var').textContent =
     `${metrics.ppmBx.toFixed(0)} ppm Bx · ${metrics.ppmTrans.toFixed(0)} ppm YZ`;
-  document.getElementById('sv-Score').textContent = score.toFixed(3) + '%';
+
+  // Status indicator: ✓ if constraint satisfied, otherwise show shortfall
+  const ppmTotal = metrics.ppmBx + 2 * metrics.ppmTrans;
+  let status;
+  if (params.activeTarget === 'homog') {
+    const ok = ppmTotal <= params.targetHomog;
+    status = ok
+      ? `✓ ${ppmTotal.toFixed(0)}/${params.targetHomog.toFixed(0)} ppm · |Bx|=${metrics.absBx.toFixed(3)}T`
+      : `✗ ${ppmTotal.toFixed(0)}/${params.targetHomog.toFixed(0)} ppm`;
+  } else {
+    const ok = metrics.absBx >= params.targetField;
+    status = ok
+      ? `✓ |Bx|=${metrics.absBx.toFixed(3)}/${params.targetField.toFixed(3)}T · ${ppmTotal.toFixed(0)} ppm`
+      : `✗ |Bx|=${metrics.absBx.toFixed(3)}/${params.targetField.toFixed(3)}T`;
+  }
+  document.getElementById('sv-Score').textContent = status;
+
+  updateTargetRanges(metrics);
+
+  // Live "reachable" hint based on the current geometry. Only the field side has
+  // a cheap deterministic ceiling; the ppm floor requires SA, so we just note that.
+  const hint = document.getElementById('reachableHint');
+  if (hint) {
+    try {
+      const { bxStrong, bxWeak } = estimateFieldRange();
+      hint.textContent = `geometry can reach |Bx| ≈ ${bxWeak.toFixed(3)}—${bxStrong.toFixed(3)} T`;
+    } catch (e) {
+      hint.textContent = '—';
+    }
+  }
 
   return { metrics, score };
 }
@@ -1065,6 +1215,23 @@ async function startOptimization() {
   if (optRunning) return;
   const saBtn = document.getElementById('btn-opt');
   if (saBtn.disabled) return; // infeasible geometry
+
+  // Feasibility precheck on the active target
+  const pCheck = getParams();
+  if (pCheck.activeTarget === 'field') {
+    const { bxStrong } = estimateFieldRange();
+    if (pCheck.targetField > bxStrong * 1.02) {
+      const ok = confirm(
+        `Target |Bx| = ${pCheck.targetField.toFixed(3)} T appears UNREACHABLE.\n` +
+        `Estimated maximum for this geometry: |Bx| ≈ ${bxStrong.toFixed(3)} T ` +
+        `(achieved by snapping all magnets to inner positions).\n\n` +
+        `The optimizer will return the closest feasible configuration but the ` +
+        `constraint will not be satisfied. Run anyway?`
+      );
+      if (!ok) return;
+    }
+  }
+
   optRunning = true;
 
   activeWorkers.forEach(w => w.terminate());
@@ -1082,8 +1249,8 @@ async function startOptimization() {
   };
 
   let globalBestScore = computeScore(computeMetrics(params), params);
-  document.getElementById('os-best').textContent = `Best: ${globalBestScore.toFixed(3)}%`;
-  document.getElementById('os-score').textContent = `Score: ${globalBestScore.toFixed(3)}%`;
+  document.getElementById('os-best').textContent = `Best: ${globalBestScore.toFixed(4)}`;
+  document.getElementById('os-score').textContent = `Score: ${globalBestScore.toFixed(4)}`;
 
   const numThreads = Math.min(navigator.hardwareConcurrency || 4, 6);
   console.log(`Starting SA on ${numThreads} parallel threads (symLock=${params.symLock})...`);
@@ -1108,7 +1275,7 @@ async function startOptimization() {
         if (e.data.score < globalBestScore) {
           globalBestScore = e.data.score;
           e.data.offsets.forEach((off, idx) => { magnets[idx].offset = off; });
-          document.getElementById('os-best').textContent = `Best: ${globalBestScore.toFixed(3)}%`;
+          document.getElementById('os-best').textContent = `Best: ${globalBestScore.toFixed(4)}`;
         }
       } else if (e.data.type === 'progress') {
         totalProgress[i] = e.data.iter;
@@ -1117,7 +1284,7 @@ async function startOptimization() {
         document.getElementById('opt-progress').style.width = pct + '%';
         document.getElementById('os-iter').textContent = `Avg Iter: ${Math.round(avgIter)} / ${params.iters}`;
         document.getElementById('os-temp').textContent = `T: ${e.data.temp.toExponential(2)}`;
-        document.getElementById('os-score').textContent = `T${i}: ${e.data.currentScore.toFixed(3)}%`;
+        document.getElementById('os-score').textContent = `T${i}: ${e.data.currentScore.toFixed(4)}`;
 
         const now = performance.now();
         if (now - lastDrawTime > 250) { updateMagnetPositions(); lastDrawTime = now; }
@@ -1156,11 +1323,21 @@ function finalizeOptimization() {
   document.getElementById('opt-progress').style.width = '0%';
   optRunning = false;
   // Push the achieved metrics into the bottom-left tooltip as a summary
+  const params2 = getParams();
+  const ppmTotal = metrics.ppmBx + 2 * metrics.ppmTrans;
+  let cstr;
+  if (params2.activeTarget === 'homog') {
+    const ok = ppmTotal <= params2.targetHomog;
+    cstr = `${ok ? '<span style="color:var(--accent)">✓</span>' : '<span style="color:var(--accent3)">✗</span>'} constraint: ${ppmTotal.toFixed(0)} ppm ≤ ${params2.targetHomog.toFixed(0)} ppm · maximized |Bx|`;
+  } else {
+    const ok = Math.abs(metrics.bCenter.bx) >= params2.targetField;
+    cstr = `${ok ? '<span style="color:var(--accent)">✓</span>' : '<span style="color:var(--accent3)">✗</span>'} constraint: |Bx| ${Math.abs(metrics.bCenter.bx).toFixed(3)} T ≥ ${params2.targetField.toFixed(3)} T · minimized ppm`;
+  }
   const resultMsg =
     `<b style="color:var(--accent)">SA FINISHED</b><br>` +
     `|Bx| center = ${Math.abs(metrics.bCenter.bx).toFixed(4)} T · |B| = ${metrics.bCenter.b.toFixed(4)} T<br>` +
     `Bx peak-to-peak = ${metrics.ppmBx.toFixed(0)} ppm · transverse leak = ${metrics.ppmTrans.toFixed(0)} ppm<br>` +
-    `Score = ${score.toFixed(3)}%`;
+    cstr;
   showTooltip(resultMsg, 60000); // show for a long time
 }
 
@@ -1222,9 +1399,16 @@ function createOptimizationWorker() {
       const meanBx = sumBx / n;
       const ppmBx = Math.abs(meanBx) > 1e-9 ? ((maxBx - minBx) / Math.abs(meanBx)) * 1e6 : 1e9;
       const ppmTrans = (maxTrans / absBx) * 1e6;
-      const homogPct = 100 * (ppmBx + 2*ppmTrans) / 1e6;
-      const fieldShortfallPct = Math.max(0, 100 * (1 - absBx / Math.max(params.Br, 0.1)));
-      return params.weight * homogPct + (1 - params.weight) * fieldShortfallPct;
+      const ppmTotal = ppmBx + 2*ppmTrans;
+      const BrSafe = Math.max(params.Br, 0.1);
+      const LAMBDA = 10;
+      if (params.activeTarget === 'homog') {
+        const viol = Math.max(0, (ppmTotal - params.targetHomog) / Math.max(params.targetHomog, 1));
+        return -absBx / BrSafe + LAMBDA * viol;
+      } else {
+        const viol = Math.max(0, (params.targetField - absBx) / Math.max(params.targetField, 1e-3));
+        return ppmTotal / 1e6 + LAMBDA * viol;
+      }
     }
 
     function computeBounds() {
@@ -1275,7 +1459,12 @@ function createOptimizationWorker() {
 
       let currentScore = scoreNow();
 
-      // Auto-tune T0 by sampling nudges
+      // Auto-tune T0 by sampling nudges.
+      //
+      // The score has two regimes: (a) constraint-violated, where it's dominated
+      // by LAMBDA*viol² (can be 10–100), and (b) feasible, where it's the
+      // objective in ~[-1, +1]. Tuning T0 off the violated regime gives a huge
+      // T0 that never cools enough to commit, so we CAP T0 to the objective scale.
       let sumDe = 0, valid = 0;
       for (let s = 0; s < 40; s++) {
         const orb = orbits[Math.floor(Math.random() * orbits.length)];
@@ -1287,13 +1476,19 @@ function createOptimizationWorker() {
         orb.forEach((i, k) => { magnets[i].offset = orig[k]; });
       }
       const avgDe = valid > 0 ? sumDe / valid : 0.01;
-      const T0 = (-avgDe / Math.log(0.7)) * (params.tempMultiplier || 1.0);
-      const coolingRate = Math.pow(1e-4, 1 / params.iters);
+      // Target initial-accept ≈ 0.7 → T0 = -avgDe / ln(0.7) ≈ 2.8 * avgDe.
+      // Cap at 1.0 (a generous fraction of the objective range, which is now
+      // ~[-1, +10] under the new bounded scoring) so SA can explore freely far
+      // from the feasible region but still anneal to commit on a solution.
+      const T0_raw = (-avgDe / Math.log(0.7)) * (params.tempMultiplier || 1.0);
+      const T0 = Math.min(T0_raw, 1.0 * (params.tempMultiplier || 1.0));
+      const coolingRate = Math.pow(1e-5, 1 / params.iters);
       let temp = T0;
 
       let bestScore = currentScore;
       let bestOffsets = magnets.map(m => m.offset);
       let lastBestIter = 0;
+      let reheatCount = 0;
       const progStep = Math.max(50, Math.floor(params.iters / 300));
 
       for (let iter = 0; iter < params.iters; iter++) {
@@ -1357,8 +1552,10 @@ function createOptimizationWorker() {
           for (let i = 0; i < magnets.length; i++) magnets[i].offset = savedOffsets[i];
         }
 
-        // Reheat if stuck
+        // Reheat if stuck. Each successive reheat uses a smaller T0 so the SA
+        // doesn't keep blowing up the configuration on infeasible targets.
         if (iter - lastBestIter > params.iters * 0.2) {
+          reheatCount++;
           // Try a few random restarts until we land on a valid configuration
           let tries = 0;
           do {
@@ -1378,7 +1575,8 @@ function createOptimizationWorker() {
             for (let i = 0; i < magnets.length; i++) magnets[i].offset = minOffs[i];
           }
           currentScore = scoreNow();
-          temp = T0;
+          // Successive reheats use exponentially smaller T to avoid thrashing
+          temp = T0 * Math.pow(0.5, reheatCount - 1);
           lastBestIter = iter;
         } else {
           temp *= coolingRate;
@@ -1756,7 +1954,7 @@ async function exportPDF() {
       `Inner radius: ${p.R} mm    Outer radius: ${p.R_outer} mm    Test radius: ${p.tr} mm`,
       `Cylinder diameter: ${p.diam} mm    Length: ${p.len} mm    Min gap: ${p.gap} mm`,
       `Remanence Br: ${p.Br} T`,
-      `Objective weight: Homog ${(p.weight*100).toFixed(0)}% - Field ${((1-p.weight)*100).toFixed(0)}%`,
+      `Optimization mode: ${p.activeTarget === 'homog' ? `homogeneity <= ${p.targetHomog.toFixed(0)} ppm (max |Bx|)` : `|Bx| >= ${p.targetField.toFixed(3)} T (min ppm)`}`,
       `Symmetry orbits: ${orbits.length} (DOF for SA)`
     ].forEach(t => { doc.text(cleanStr(`* ${t}`), margin + 5, y); y += 5; });
     y += 4;
@@ -1764,12 +1962,23 @@ async function exportPDF() {
     doc.setFontSize(12); doc.text(cleanStr("2. Computed Field (center & volume)"), margin, y); y += 6;
     doc.setFontSize(10);
     const m = computeMetrics(p);
+    const ppmTotal = m.ppmBx + 2 * m.ppmTrans;
+    let constraintLine;
+    if (p.activeTarget === 'homog') {
+      const ok = ppmTotal <= p.targetHomog;
+      constraintLine = `Constraint (homogeneity <= ${p.targetHomog.toFixed(0)} ppm): ${ok ? 'SATISFIED' : 'NOT MET'} - achieved ${ppmTotal.toFixed(0)} ppm total`;
+    } else {
+      const absBx = Math.abs(m.bCenter.bx);
+      const ok = absBx >= p.targetField;
+      constraintLine = `Constraint (|Bx| >= ${p.targetField.toFixed(3)} T): ${ok ? 'SATISFIED' : 'NOT MET'} - achieved ${absBx.toFixed(4)} T`;
+    }
     [
       `|B| at center: ${m.bCenter.b.toFixed(4)} T`,
       `Bx = ${m.bCenter.bx.toFixed(4)} T    By = ${m.bCenter.by.toExponential(2)} T    Bz = ${m.bCenter.bz.toExponential(2)} T`,
       `Bx peak-to-peak over test volume: ${m.ppmBx.toFixed(1)} ppm`,
       `Transverse leak (max): ${m.ppmTrans.toFixed(1)} ppm of |Bx|`,
-      `SA score: ${computeScore(m, p).toFixed(3)}%`
+      `Combined homogeneity metric (ppmBx + 2*ppmTrans): ${ppmTotal.toFixed(1)} ppm`,
+      constraintLine
     ].forEach(t => { doc.text(cleanStr(`* ${t}`), margin + 5, y); y += 5; });
 
     // 3D views
@@ -2170,7 +2379,8 @@ window.addEventListener('resize', () => {
 let mapTimer = null;
 document.querySelectorAll('input, select').forEach(el => {
   el.addEventListener('input', () => {
-    if (el.id === 'optWeight') return; // handled by its own oninput
+    // Target inputs route through onTargetEdit which calls evaluateField itself.
+    if (el.id === 'targetHomog' || el.id === 'targetField') return;
     evaluateField();
     if (currentMapPlane) {
       clearTimeout(mapTimer);
@@ -2185,7 +2395,7 @@ document.querySelectorAll('input, select').forEach(el => {
 // INIT
 resize();
 onGeomChange();
-updateWeightReadout();
+updateTargetReadout();
 // Initial camera distance scales with inner radius
 spherical.radius = parseFloat(document.getElementById('baseRadius').value) * 5.5;
 animate(0);
