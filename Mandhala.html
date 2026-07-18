@@ -8,7 +8,7 @@
 :root {
   --bg:#080b0f; --panel:#0d1218; --panel2:#121820; --border:#2a3a4a;
   --accent:#a8ff3e; --accent2:#00d4ff; --accent3:#ff6b35;
-  --text:#e2eaf5; --muted:#8899bb; --label:#607080; --button:#152030;
+  --text:#e2eaf5; --muted:#8899bb; --label:#7d8fa5; --button:#152030;
   --north:#e53e3e; --south:#3182ce;
 }
 *{box-sizing:border-box;margin:0;padding:0;}
@@ -18,21 +18,21 @@ body{font-family:'IBM Plex Mono',monospace;background:var(--bg);color:var(--text
 ::-webkit-scrollbar-track{background:var(--panel);}
 ::-webkit-scrollbar-thumb{background:var(--border);border-radius:2px;}
 
-.left{width:340px;min-width:340px;background:var(--panel);border-right:1px solid var(--border);display:flex;flex-direction:column;overflow-y:auto;overflow-x:hidden;}
+.left{width:380px;min-width:380px;background:var(--panel);border-right:1px solid var(--border);display:flex;flex-direction:column;overflow-y:auto;overflow-x:hidden;}
 .brand{padding:18px 20px 14px;border-bottom:1px solid var(--border);text-align:center;}
-.brand h1{font-family:'Syne',sans-serif;font-size:16px;font-weight:800;color:var(--accent);letter-spacing:.08em;text-transform:uppercase;}
-.brand p{font-size:9px;color:var(--muted);margin-top:4px;letter-spacing:.1em;}
+.brand h1{font-family:'Syne',sans-serif;font-size:18px;font-weight:800;color:var(--accent);letter-spacing:.08em;text-transform:uppercase;}
+.brand p{font-size:11px;color:var(--muted);margin-top:4px;letter-spacing:.1em;}
 .section{padding:14px 20px;border-bottom:1px solid var(--border);}
-.section-title{font-size:8px;font-weight:700;letter-spacing:.22em;color:var(--muted);text-transform:uppercase;margin-bottom:12px;}
+.section-title{font-size:10px;font-weight:700;letter-spacing:.14em;color:var(--muted);text-transform:uppercase;margin-bottom:12px;}
 .field-row{display:flex;flex-direction:column;margin-bottom:10px;}
-.field-row label{font-size:9px;color:var(--label);margin-bottom:4px;letter-spacing:.04em;}
-.field-row input,.field-row select{background:var(--panel2);border:1px solid var(--border);color:var(--text);font-family:'IBM Plex Mono',monospace;font-size:11px;padding:7px 9px;border-radius:3px;outline:none;transition:border-color .2s;width:100%;}
+.field-row label{font-size:11px;color:var(--label);margin-bottom:4px;letter-spacing:.04em;}
+.field-row input,.field-row select{background:var(--panel2);border:1px solid var(--border);color:var(--text);font-family:'IBM Plex Mono',monospace;font-size:13px;padding:7px 9px;border-radius:3px;outline:none;transition:border-color .2s;width:100%;}
 .field-row input:focus{border-color:var(--accent);}
 .field-row input[readonly]{color:var(--accent2);text-align:center;font-weight:700;background:var(--bg);border-color:var(--border);}
 .two-col{display:grid;grid-template-columns:1fr 1fr;gap:8px;}
 .three-col{display:grid;grid-template-columns:1fr 1fr 1fr;gap:6px;}
 
-.btn{width:100%;padding:9px;background:var(--button);color:var(--text);border:1px solid var(--border);border-radius:2px;font-family:'IBM Plex Mono',monospace;font-size:10px;font-weight:700;cursor:pointer;text-transform:uppercase;letter-spacing:.08em;transition:all .2s;}
+.btn{width:100%;padding:9px;background:var(--button);color:var(--text);border:1px solid var(--border);border-radius:2px;font-family:'IBM Plex Mono',monospace;font-size:12px;font-weight:700;cursor:pointer;text-transform:uppercase;letter-spacing:.08em;transition:all .2s;}
 .btn:hover{border-color:var(--accent);color:var(--accent);}
 .btn.primary{background:rgba(168,255,62,.08);border-color:var(--accent);color:var(--accent);}
 .btn.primary:hover{background:rgba(168,255,62,.16);}
@@ -42,28 +42,28 @@ body{font-family:'IBM Plex Mono',monospace;background:var(--bg);color:var(--text
 
 .stat-grid{display:grid;grid-template-columns:1fr 1fr;gap:6px;}
 .stat-card{background:#0a0e14;border:1px solid var(--border);border-radius:3px;padding:8px 10px;}
-.stat-card .sv{font-size:13px;font-weight:700;color:var(--accent2);line-height:1.2;letter-spacing:-.02em;}
-.stat-card .sl{font-size:7px;color:var(--label);margin-top:4px;letter-spacing:.1em;text-transform:uppercase;}
+.stat-card .sv{font-size:15px;font-weight:700;color:var(--accent2);line-height:1.2;letter-spacing:-.02em;}
+.stat-card .sl{font-size:9px;color:var(--label);margin-top:4px;letter-spacing:.1em;text-transform:uppercase;}
 
 .progress-bar{height:3px;background:var(--border);border-radius:1px;margin:8px 0;overflow:hidden;}
 .progress-fill{height:100%;background:var(--accent);width:0%;transition:width .1s;border-radius:1px;}
 
 /* Objective slider (Mandhala-style; labels uncolored) */
 .weight-labels{display:flex;justify-content:space-between;align-items:center;margin-bottom:5px;}
-.weight-end{font-size:8px;letter-spacing:.08em;text-transform:uppercase;white-space:nowrap;font-weight:700;color:var(--muted);}
+.weight-end{font-size:10px;letter-spacing:.08em;text-transform:uppercase;white-space:nowrap;font-weight:700;color:var(--muted);}
 .weight-slider{-webkit-appearance:none;appearance:none;width:100%;height:4px;background:linear-gradient(to right,var(--accent),var(--accent3));border-radius:2px;outline:none;cursor:pointer;padding:0;border:none;}
 .weight-slider::-webkit-slider-thumb{-webkit-appearance:none;appearance:none;width:14px;height:14px;border-radius:50%;background:var(--text);border:2px solid var(--panel);box-shadow:0 0 0 1px var(--border);cursor:grab;transition:transform .15s;}
 .weight-slider::-webkit-slider-thumb:hover{transform:scale(1.15);}
 .weight-slider::-webkit-slider-thumb:active{cursor:grabbing;transform:scale(1.25);}
 .weight-slider::-moz-range-thumb{width:14px;height:14px;border-radius:50%;background:var(--text);border:2px solid var(--panel);box-shadow:0 0 0 1px var(--border);cursor:grab;}
-.weight-readout{font-size:9px;color:var(--accent2);text-align:center;margin-top:6px;letter-spacing:.06em;font-weight:700;}
+.weight-readout{font-size:11px;color:var(--accent2);text-align:center;margin-top:6px;letter-spacing:.06em;font-weight:700;}
 
-.footer{padding:10px 20px;font-size:8px;color:var(--label);letter-spacing:.05em;margin-top:auto;border-top:1px solid var(--border);text-align:center;}
+.footer{padding:10px 20px;font-size:10px;color:var(--label);letter-spacing:.05em;margin-top:auto;border-top:1px solid var(--border);text-align:center;}
 
 .main{flex:1;display:flex;flex-direction:column;overflow:hidden;}
 .toolbar{height:40px;background:var(--panel);border-bottom:1px solid var(--border);display:flex;align-items:center;padding:0 14px;gap:8px;flex-shrink:0;overflow-x:auto;}
-.toolbar-label{font-size:8px;color:var(--muted);letter-spacing:.15em;text-transform:uppercase;white-space:nowrap;}
-.view-btn{padding:4px 10px;border-radius:2px;font-size:9px;font-family:'IBM Plex Mono',monospace;cursor:pointer;border:1px solid var(--border);background:transparent;color:var(--label);transition:all .2s;letter-spacing:.05em;white-space:nowrap;}
+.toolbar-label{font-size:10px;color:var(--muted);letter-spacing:.15em;text-transform:uppercase;white-space:nowrap;}
+.view-btn{padding:4px 10px;border-radius:2px;font-size:11px;font-family:'IBM Plex Mono',monospace;cursor:pointer;border:1px solid var(--border);background:transparent;color:var(--label);transition:all .2s;letter-spacing:.05em;white-space:nowrap;}
 .view-btn.active,.view-btn:hover{background:rgba(0,212,255,.1);border-color:var(--accent2);color:var(--accent2);}
 .sep{width:1px;height:18px;background:var(--border);flex-shrink:0;}
 .spacer{flex:1;}
@@ -75,9 +75,9 @@ body{font-family:'IBM Plex Mono',monospace;background:var(--bg);color:var(--text
 #map-computing-overlay{display:none;position:absolute;inset:0;background:rgba(8,11,15,.8);z-index:20;justify-content:center;align-items:center;flex-direction:column;gap:12px;}
 @keyframes spin{to{transform:rotate(360deg);}}
 
-.tooltip{position:absolute;bottom:14px;left:14px;background:rgba(8,11,15,.92);border:1px solid var(--border);border-radius:3px;padding:8px 12px;font-size:9px;color:var(--label);pointer-events:none;z-index:100;line-height:1.8;}
+.tooltip{position:absolute;bottom:14px;left:14px;background:rgba(8,11,15,.92);border:1px solid var(--border);border-radius:3px;padding:8px 12px;font-size:11px;color:var(--label);pointer-events:none;z-index:100;line-height:1.8;}
 
-#opt-overlay{display:none;position:absolute;top:16px;right:16px;background:rgba(8,11,15,.9);border:1px solid var(--border);border-radius:4px;padding:12px 16px;font-size:10px;color:var(--accent);flex-direction:column;gap:4px;z-index:50;}
+#opt-overlay{display:none;position:absolute;top:16px;right:16px;background:rgba(8,11,15,.9);border:1px solid var(--border);border-radius:4px;padding:12px 16px;font-size:12px;color:var(--accent);flex-direction:column;gap:4px;z-index:50;}
 
 /* Active/inactive target styling */
 .target-active label{color:var(--accent)!important;}
@@ -91,7 +91,7 @@ body{font-family:'IBM Plex Mono',monospace;background:var(--bg);color:var(--text
 <div class="left">
   <div class="brand">
     <h1>Mandhala</h1>
-    <p>RADIAL DIPOLES · LEBEDEV / C60 / FIBONACCI · v2.4</p>
+    <p>RADIAL DIPOLES · LEBEDEV / C60 / FIBONACCI · v2.5</p>
   </div>
 
   <div class="section">
@@ -104,7 +104,7 @@ body{font-family:'IBM Plex Mono',monospace;background:var(--bg);color:var(--text
       </select>
     </div>
     <div class="field-row"><label>Poles</label><input type="number" id="fibN" value="48" step="1" min="20" max="400" onchange="onGeomChange()" disabled></div>
-    <div id="lattice-info" style="font-size:9px;margin-top:4px;text-align:center;color:var(--muted);letter-spacing:.05em;">—</div>
+    <div id="lattice-info" style="font-size:11px;margin-top:4px;text-align:center;color:var(--muted);letter-spacing:.05em;">—</div>
   </div>
 
   <div class="section">
@@ -126,7 +126,7 @@ body{font-family:'IBM Plex Mono',monospace;background:var(--bg);color:var(--text
       <div class="field-row"><label>Min Gap (mm)</label><input type="number" id="magGap" value="2" step="0.5" onchange="onGapChange()"></div>
       <div class="field-row"><label>Remanence Br (T)</label><input type="number" id="magBr" value="1.32" step="0.05" oninput="evaluateField()"></div>
     </div>
-    <div id="feasibility-status" style="font-size:9px;margin-top:6px;text-align:center;letter-spacing:.05em;color:var(--accent);">—</div>
+    <div id="feasibility-status" style="font-size:11px;margin-top:6px;text-align:center;letter-spacing:.05em;color:var(--accent);">—</div>
   </div>
 
   <div class="section">
@@ -137,7 +137,7 @@ body{font-family:'IBM Plex Mono',monospace;background:var(--bg);color:var(--text
       <div class="stat-card"><div class="sv" id="sv-By">—</div><div class="sl">By center (T)</div></div>
       <div class="stat-card"><div class="sv" id="sv-Bz">—</div><div class="sl">Bz center (T)</div></div>
       <div class="stat-card"><div class="sv" id="sv-Var">—</div><div class="sl">Homog. ppm</div></div>
-      <div class="stat-card"><div class="sv" id="sv-Score" style="font-size:10px;">—</div><div class="sl">Target Status</div></div>
+      <div class="stat-card"><div class="sv" id="sv-Score" style="font-size:12px;">—</div><div class="sl">Target Status</div></div>
     </div>
   </div>
 
@@ -161,7 +161,7 @@ body{font-family:'IBM Plex Mono',monospace;background:var(--bg);color:var(--text
         </div>
       </div>
       <div class="weight-readout" id="weightReadout" style="margin-top:8px;">Active: Homogeneity ≤ 100 ppm · maximize |Bx|</div>
-      <div id="reachableHint" style="font-size:8px;color:var(--muted);text-align:center;margin-top:3px;letter-spacing:.04em;">—</div>
+      <div id="reachableHint" style="font-size:10px;color:var(--muted);text-align:center;margin-top:3px;letter-spacing:.04em;">—</div>
     </div>
 
     <div class="field-row" style="flex-direction:row;align-items:center;gap:8px;margin-bottom:4px;">
@@ -196,7 +196,7 @@ body{font-family:'IBM Plex Mono',monospace;background:var(--bg);color:var(--text
     </div>
   </div>
 
-  <div class="footer">NitaD · Univ Paris-Saclay · rev. 19 April 2026</div>
+  <div class="footer">NitaD · Univ Paris-Saclay · 18 July 2026</div>
 </div>
 
 <div class="main">
@@ -215,7 +215,7 @@ body{font-family:'IBM Plex Mono',monospace;background:var(--bg);color:var(--text
     <span class="toolbar-label">Bore</span>
     <button class="view-btn" id="vbtn-bore" onclick="drawBoreProfile()">Z-Profile</button>
     <div class="spacer"></div>
-    <span class="toolbar-label" style="color:var(--accent);font-size:8px;" id="coord-display"></span>
+    <span class="toolbar-label" style="color:var(--accent);font-size:10px;" id="coord-display"></span>
   </div>
 
   <div class="viewport-area">
@@ -223,12 +223,12 @@ body{font-family:'IBM Plex Mono',monospace;background:var(--bg);color:var(--text
 
     <div id="map-container">
       <canvas id="map-canvas" style="border:1px solid var(--border);"></canvas>
-      <div style="margin-top:10px;font-size:9px;color:var(--muted);" id="map-title"></div>
+      <div style="margin-top:10px;font-size:11px;color:var(--muted);" id="map-title"></div>
     </div>
 
     <div id="map-computing-overlay">
       <div style="width:32px;height:32px;border:3px solid var(--border);border-top-color:var(--accent);border-radius:50%;animation:spin .8s linear infinite;"></div>
-      <div style="font-size:10px;color:var(--accent);letter-spacing:.1em;">COMPUTING…</div>
+      <div style="font-size:12px;color:var(--accent);letter-spacing:.1em;">COMPUTING…</div>
     </div>
 
     <div id="opt-overlay">
@@ -259,23 +259,21 @@ const MU0 = 4e-7 * Math.PI;
 const N_RINGS = 24;
 
 function ellipticKE(m) {
+  // AGM (Abramowitz & Stegun 17.6): E/K = 1 - Σ_{n≥0} 2^{n-1} c_n²,
+  // with c_0 = √m and c_{n+1} = (a_n − b_n)/2.
   if (m >= 1.0) m = 0.9999999;
   if (m < 0) m = 0;
   let a = 1.0, b = Math.sqrt(1.0 - m);
-  for (let i = 0; i < 20; i++) {
+  let sum = 0.5 * m, pow = 0.5; // n = 0 term: 2^{-1} c_0²
+  for (let i = 0; i < 40; i++) {
+    const c1 = (a - b) / 2;
     const a1 = (a + b) / 2, b1 = Math.sqrt(a * b);
     a = a1; b = b1;
-    if (Math.abs(a - b) < 1e-12) break;
+    pow *= 2; sum += pow * c1 * c1;
+    if (c1 < 1e-15) break;
   }
   const K = Math.PI / (2 * a);
-  let a2 = 1.0, b2 = Math.sqrt(1.0 - m), power = 1.0, sum = 2.0 - m;
-  for (let i = 0; i < 20; i++) {
-    const a3 = (a2 + b2) / 2, b3 = Math.sqrt(a2 * b2);
-    power *= 2; sum -= power * Math.pow(a3 - b3, 2);
-    a2 = a3; b2 = b3;
-    if (Math.abs(a3 - b3) < 1e-12) break;
-  }
-  const E = (Math.PI / (4 * a)) * sum;
+  const E = K * (1 - sum);
   return [K, E];
 }
 
@@ -1233,6 +1231,7 @@ async function startOptimization() {
   }
 
   optRunning = true;
+  setControlsLocked(true);
 
   activeWorkers.forEach(w => w.terminate());
   activeWorkers = [];
@@ -1272,6 +1271,8 @@ async function startOptimization() {
 
     worker.onmessage = (e) => {
       if (e.data.type === 'newBest') {
+        // Ignore stale results if the lattice was rebuilt mid-run
+        if (e.data.offsets.length !== magnets.length) return;
         if (e.data.score < globalBestScore) {
           globalBestScore = e.data.score;
           e.data.offsets.forEach((off, idx) => { magnets[idx].offset = off; });
@@ -1311,8 +1312,28 @@ function stopOptimization() {
   finalizeOptimization();
 }
 
+// Disable all left-panel controls during SA (except the Run/Stop button) and
+// restore exactly the ones we disabled, so lattice-dependent disabled states
+// (fibN, symLock) are preserved.
+let _disabledDuringSA = [];
+function setControlsLocked(locked) {
+  if (locked) {
+    _disabledDuringSA = [];
+    document.querySelectorAll('.left input, .left select, .left button').forEach(el => {
+      if (el.id === 'btn-opt') return;
+      if (!el.disabled) { el.disabled = true; _disabledDuringSA.push(el); }
+    });
+  } else {
+    _disabledDuringSA.forEach(el => { el.disabled = false; });
+    _disabledDuringSA = [];
+  }
+}
+
 function finalizeOptimization() {
-  applyMinOffsetClamp();
+  setControlsLocked(false);
+  // levelUp:false — the SA already respects per-magnet bounds and pairwise gaps;
+  // raising everything to the global minimum would silently undo the optimization.
+  applyMinOffsetClamp({ levelUp: false });
   const { metrics, score } = evaluateField();
   drawScene();
   // Always switch to the bore Z-profile when the SA finishes
@@ -1594,7 +1615,10 @@ function createOptimizationWorker() {
     };
   `;
   const blob = new Blob([workerScript], { type: 'application/javascript' });
-  return new Worker(URL.createObjectURL(blob));
+  const url = URL.createObjectURL(blob);
+  const worker = new Worker(url);
+  URL.revokeObjectURL(url); // worker holds its own reference; avoid leaking one blob URL per run
+  return worker;
 }
 
 
@@ -1659,12 +1683,12 @@ function drawLineChart(ctx, size, axLine, bxLine, byLine, bzLine, boreAxis, rang
   drawSeries(byLine, '#a8ff3e');
   drawSeries(bzLine, '#00d4ff');
 
-  ctx.fillStyle = text; ctx.font = '10px IBM Plex Mono, monospace'; ctx.textAlign = 'center';
+  ctx.fillStyle = text; ctx.font = '12px IBM Plex Mono, monospace'; ctx.textAlign = 'center';
   ctx.fillText(`Position along ${boreAxis} (mm)`, size/2, size - 8);
   ctx.save(); ctx.translate(12, size/2); ctx.rotate(-Math.PI/2);
   ctx.fillText('B (T)', 0, 0); ctx.restore();
 
-  ctx.font = '9px IBM Plex Mono, monospace'; ctx.textAlign = 'center';
+  ctx.font = '11px IBM Plex Mono, monospace'; ctx.textAlign = 'center';
   for (let i = 0; i <= 4; i++) {
     const t = -range + i*range/2;
     ctx.fillStyle = text; ctx.fillText(t.toFixed(0), tX(t), pad + H + 14);
@@ -1675,7 +1699,7 @@ function drawLineChart(ctx, size, axLine, bxLine, byLine, bzLine, boreAxis, rang
     ctx.fillStyle = text; ctx.fillText(v.toFixed(4), pad - 6, tY(v) + 4);
   }
 
-  ctx.font = '10px IBM Plex Mono, monospace'; ctx.textAlign = 'left';
+  ctx.font = '12px IBM Plex Mono, monospace'; ctx.textAlign = 'left';
   [['Bx','#e53e3e'],['By','#a8ff3e'],['Bz','#00d4ff']].forEach(([l, c], i) => {
     ctx.fillStyle = c; ctx.fillRect(pad + 10 + i*50, pad + 8, 14, 3);
     ctx.fillStyle = text; ctx.fillText(l, pad + 26 + i*50, pad + 12);
@@ -1746,7 +1770,7 @@ function _drawMap2DImpl(plane, isPrint = false) {
   ctx.putImageData(img, padL, padT);
 
   ctx.strokeStyle = borderCol; ctx.fillStyle = textCol; ctx.lineWidth = 1;
-  ctx.font = '9px IBM Plex Mono, monospace';
+  ctx.font = '11px IBM Plex Mono, monospace';
   ctx.textAlign = 'right';
   for (let i = 0; i <= 4; i++) {
     const val = ext - (i * 2*ext / 4);
@@ -1762,7 +1786,7 @@ function _drawMap2DImpl(plane, isPrint = false) {
     ctx.beginPath(); ctx.moveTo(x, y); ctx.lineTo(x, y + 5); ctx.stroke();
     ctx.fillText(val.toFixed(1), x, y + 15);
   }
-  ctx.font = 'bold 10px IBM Plex Mono, monospace';
+  ctx.font = 'bold 12px IBM Plex Mono, monospace';
   ctx.fillText("mm", padL + mapSize + 15, padT + mapSize + 15);
 
   const cbX = padL + mapSize + 15, cbY = padT, cbW = 12, cbH = mapSize;
@@ -2252,15 +2276,20 @@ DATA;
 
     const elBot = idx++; lines.push(`#${elBot} = EDGE_LOOP('',(#${oeBotT}));`);
     const elTop = idx++; lines.push(`#${elTop} = EDGE_LOOP('',(#${oeTopT}));`);
-    const elLat = idx++; lines.push(`#${elLat} = EDGE_LOOP('',(#${oeBotF},#${oeTopF}));`);
+    // Lateral face: the two circles are disconnected, so they must be TWO
+    // separate bounds (outer + inner), not one EDGE_LOOP — strict importers
+    // reject a loop whose edges don't form a connected chain.
+    const elLatBot = idx++; lines.push(`#${elLatBot} = EDGE_LOOP('',(#${oeBotF}));`);
+    const elLatTop = idx++; lines.push(`#${elLatTop} = EDGE_LOOP('',(#${oeTopF}));`);
 
     const fobBot = idx++; lines.push(`#${fobBot} = FACE_OUTER_BOUND('',#${elBot},.T.);`);
     const fobTop = idx++; lines.push(`#${fobTop} = FACE_OUTER_BOUND('',#${elTop},.T.);`);
-    const fobLat = idx++; lines.push(`#${fobLat} = FACE_OUTER_BOUND('',#${elLat},.T.);`);
+    const fobLat = idx++; lines.push(`#${fobLat} = FACE_OUTER_BOUND('',#${elLatBot},.T.);`);
+    const fbLat  = idx++; lines.push(`#${fbLat} = FACE_BOUND('',#${elLatTop},.T.);`);
 
     const afBot = idx++; lines.push(`#${afBot} = ADVANCED_FACE('',(#${fobBot}),#${planeBot},.T.);`);
     const afTop = idx++; lines.push(`#${afTop} = ADVANCED_FACE('',(#${fobTop}),#${planeTop},.T.);`);
-    const afLat = idx++; lines.push(`#${afLat} = ADVANCED_FACE('',(#${fobLat}),#${cylSurf},.T.);`);
+    const afLat = idx++; lines.push(`#${afLat} = ADVANCED_FACE('',(#${fobLat},#${fbLat}),#${cylSurf},.T.);`);
 
     const shell = idx++; lines.push(`#${shell} = CLOSED_SHELL('',(#${afBot},#${afTop},#${afLat}));`);
     const brep = idx++;  lines.push(`#${brep} = MANIFOLD_SOLID_BREP('mag_${cIdx+1}',#${shell});`);
