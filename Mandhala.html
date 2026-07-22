@@ -196,7 +196,7 @@ body{font-family:'IBM Plex Mono',monospace;background:var(--bg);color:var(--text
     </div>
   </div>
 
-  <div class="footer">NitaD · Univ Paris-Saclay · 18 July 2026</div>
+  <div class="footer">NitaD · Univ Paris-Saclay · 22 July 2026</div>
 </div>
 
 <div class="main">
@@ -1391,6 +1391,91 @@ function createOptimizationWorker() {
     let params = {};
     let minOffs = [], maxOffs = [];
 
+    // ---- Incremental field cache -------------------------------------------
+    // The score only ever needs the field at a fixed set of sample points:
+    // the center plus every SAMPLE_DIRS point. A move perturbs a handful of
+    // magnets, so instead of re-summing all magnets at every sample on every
+    // step, we cache each magnet's contribution per sample and keep a running
+    // total. A move subtracts the moved magnets' old rows and adds new ones.
+    //
+    // SP = flat array of sample points [ {x,y,z}, ... ]; index 0 is the center.
+    // contrib = Float64Array, layout [magnet][sample][3] (Bx,By,Bz).
+    // totalB  = Float64Array [sample][3], the running sum over all magnets.
+    let SP = [];              // sample points (center first)
+    let NS = 0;               // number of sample points
+    let contrib = null;       // per-magnet, per-sample contribution
+    let totalB = null;        // running total per sample
+    let contribBak = null;    // scratch for rejected-move rollback
+
+    function buildSamplePoints() {
+      SP = [{ x: 0, y: 0, z: 0 }];
+      const tr = params.tr;
+      for (const { r, d } of SAMPLE_DIRS) {
+        SP.push({ x: d[0]*tr*r, y: d[1]*tr*r, z: d[2]*tr*r });
+      }
+      NS = SP.length;
+    }
+
+    // Contribution of a single magnet at a single sample point.
+    function magnetFieldAt(mag, p) {
+      const R = params.R, len = params.len, diam = params.diam, Br = params.Br;
+      const dist = R + mag.offset + len/2;
+      const cx = mag.dir.x*dist, cy = mag.dir.y*dist, cz = mag.dir.z*dist;
+      return cylinderField(p.x, p.y, p.z, cx, cy, cz, mag.mu.x, mag.mu.y, mag.mu.z, diam/2, len/2, Br);
+    }
+
+    // Full rebuild of the cache from scratch (O(magnets x samples)).
+    // Called once at start and after any wholesale reset (reheat / bounds).
+    function rebuildCache() {
+      const M = magnets.length;
+      contrib = new Float64Array(M * NS * 3);
+      totalB  = new Float64Array(NS * 3);
+      contribBak = new Float64Array(NS * 3); // only ever one magnet's row wide? see below
+      for (let m = 0; m < M; m++) {
+        const base = m * NS * 3;
+        for (let s = 0; s < NS; s++) {
+          const b = magnetFieldAt(magnets[m], SP[s]);
+          const o = base + s*3;
+          contrib[o]   = b.Bx;
+          contrib[o+1] = b.By;
+          contrib[o+2] = b.Bz;
+          totalB[s*3]   += b.Bx;
+          totalB[s*3+1] += b.By;
+          totalB[s*3+2] += b.Bz;
+        }
+      }
+    }
+
+    // Recompute one magnet's rows in the cache and patch the running total.
+    // O(samples). Assumes magnets[m].offset has just been updated.
+    function updateMagnetCache(m) {
+      const base = m * NS * 3;
+      for (let s = 0; s < NS; s++) {
+        const o = base + s*3;
+        const t = s*3;
+        // remove old contribution from the total
+        totalB[t]   -= contrib[o];
+        totalB[t+1] -= contrib[o+1];
+        totalB[t+2] -= contrib[o+2];
+        // recompute
+        const b = magnetFieldAt(magnets[m], SP[s]);
+        contrib[o]   = b.Bx;
+        contrib[o+1] = b.By;
+        contrib[o+2] = b.Bz;
+        // add new contribution
+        totalB[t]   += b.Bx;
+        totalB[t+1] += b.By;
+        totalB[t+2] += b.Bz;
+      }
+    }
+
+    // Read the cached field at sample s as {bx,by,bz}.
+    function cachedField(s) {
+      const t = s*3;
+      return { bx: totalB[t], by: totalB[t+1], bz: totalB[t+2] };
+    }
+
+    // Kept for compatibility / occasional exact checks: full direct sum.
     function fieldAt(px, py, pz) {
       let bx=0, by=0, bz=0;
       const R = params.R, len = params.len, diam = params.diam, Br = params.Br;
@@ -1404,13 +1489,13 @@ function createOptimizationWorker() {
     }
 
     function scoreNow() {
-      const c = fieldAt(0,0,0);
+      // Reads the cached running totals (O(samples)); no per-magnet re-sum.
+      const c = cachedField(0);
       const absBx = Math.max(Math.abs(c.bx), 1e-9);
       let minBx = c.bx, maxBx = c.bx, maxTrans = 0;
       let sumBx = c.bx, n = 1;
-      for (const { r, d } of SAMPLE_DIRS) {
-        const x = d[0]*params.tr*r, y = d[1]*params.tr*r, z = d[2]*params.tr*r;
-        const f = fieldAt(x, y, z);
+      for (let s = 1; s < NS; s++) {
+        const f = cachedField(s);
         if (f.bx < minBx) minBx = f.bx;
         if (f.bx > maxBx) maxBx = f.bx;
         const tr = Math.sqrt(f.by*f.by + f.bz*f.bz);
@@ -1467,6 +1552,38 @@ function createOptimizationWorker() {
 
     function clampOffset(i, v) { return Math.max(minOffs[i], Math.min(maxOffs[i], v)); }
 
+    // --- dirty tracking so the cache only recomputes magnets that moved ---
+    // A move touches a small number of magnets. We record which, then flush
+    // just those into the incremental cache before scoring. On reject we
+    // restore offsets from the snapshot and flush the same set back.
+    let _dirty = [];
+    let dirtyMark = null;
+    const savedPre = new Map();     // magnet index -> offset before this step's move
+    function beginStep() { savedPre.clear(); }
+    function markDirty(i) {
+      if (!dirtyMark[i]) { dirtyMark[i] = 1; _dirty.push(i); }
+    }
+    // Set an offset (clamped), marking the magnet dirty. Returns clamped value.
+    // Records the pre-move offset once per step so rejects can roll back.
+    function setOffset(i, v) {
+      const c = clampOffset(i, v);
+      if (c !== magnets[i].offset) {
+        if (!savedPre.has(i)) savedPre.set(i, magnets[i].offset);
+        magnets[i].offset = c;
+        markDirty(i);
+      }
+      return c;
+    }
+    // Flush all dirty magnets into the cache and clear the dirty set.
+    function flushDirty() {
+      for (const i of _dirty) { updateMagnetCache(i); dirtyMark[i] = 0; }
+      _dirty.length = 0;
+    }
+    function clearDirty() {
+      for (const i of _dirty) dirtyMark[i] = 0;
+      _dirty.length = 0;
+    }
+
     self.onmessage = function(e) {
       if (e.data.cmd !== 'start') return;
       magnets = e.data.magnets;
@@ -1475,8 +1592,14 @@ function createOptimizationWorker() {
       params = e.data.params;
       computeBounds();
 
-      // Clamp initial offsets
+      // Clamp initial offsets (direct — cache not built yet)
       for (let i = 0; i < magnets.length; i++) magnets[i].offset = clampOffset(i, magnets[i].offset);
+
+      // Build the incremental field cache once, up front.
+      buildSamplePoints();
+      dirtyMark = new Uint8Array(magnets.length);
+      _dirty = [];
+      rebuildCache();
 
       let currentScore = scoreNow();
 
@@ -1491,10 +1614,13 @@ function createOptimizationWorker() {
         const orb = orbits[Math.floor(Math.random() * orbits.length)];
         const orig = orb.map(i => magnets[i].offset);
         const nudge = (Math.random() - 0.5) * params.maxNudge;
-        for (const i of orb) magnets[i].offset = clampOffset(i, magnets[i].offset + nudge);
+        for (const i of orb) setOffset(i, magnets[i].offset + nudge);
+        flushDirty();
         const ds = scoreNow() - currentScore;
         if (ds > 0) { sumDe += ds; valid++; }
-        orb.forEach((i, k) => { magnets[i].offset = orig[k]; });
+        // restore this orbit and re-sync its cache rows
+        orb.forEach((i, k) => { magnets[i].offset = orig[k]; markDirty(i); });
+        flushDirty();
       }
       const avgDe = valid > 0 ? sumDe / valid : 0.01;
       // Target initial-accept ≈ 0.7 → T0 = -avgDe / ln(0.7) ≈ 2.8 * avgDe.
@@ -1513,52 +1639,55 @@ function createOptimizationWorker() {
       const progStep = Math.max(50, Math.floor(params.iters / 300));
 
       for (let iter = 0; iter < params.iters; iter++) {
+        beginStep();
         const currentNudge = params.maxNudge * (0.05 + 0.95 * (temp / T0));
 
-        // Pick move type
-        let savedOffsets;
+        // Pick move type. All writes go through setOffset(), which marks
+        // moved magnets dirty. We snapshot only the touched magnets so reject
+        // restores in O(moved), not O(magnets).
         if (params.symLock) {
           // Orbit-level moves only
           if (Math.random() < 0.1) {
             // Global uniform shift (symmetry-preserving trivially)
-            savedOffsets = magnets.map(m => m.offset);
             const shift = (Math.random() - 0.5) * currentNudge;
-            for (let i = 0; i < magnets.length; i++) magnets[i].offset = clampOffset(i, magnets[i].offset + shift);
+            for (let i = 0; i < magnets.length; i++) setOffset(i, magnets[i].offset + shift);
           } else {
             // Nudge 1–3 random orbits, each by a single shared delta
             const nOrb = Math.floor(Math.random() * 3) + 1;
-            savedOffsets = magnets.map(m => m.offset);
             for (let k = 0; k < nOrb; k++) {
               const orb = orbits[Math.floor(Math.random() * orbits.length)];
               const delta = (Math.random() - 0.5) * 2 * currentNudge;
-              for (const i of orb) magnets[i].offset = clampOffset(i, magnets[i].offset + delta);
+              for (const i of orb) setOffset(i, magnets[i].offset + delta);
             }
           }
         } else {
           // Independent per-magnet (legacy mode)
-          savedOffsets = magnets.map(m => m.offset);
           if (Math.random() < 0.1) {
             const shift = (Math.random() - 0.5) * currentNudge;
-            for (let i = 0; i < magnets.length; i++) magnets[i].offset = clampOffset(i, magnets[i].offset + shift);
+            for (let i = 0; i < magnets.length; i++) setOffset(i, magnets[i].offset + shift);
           } else {
             const nMove = Math.floor(Math.random() * 5) + 1;
             for (let k = 0; k < nMove; k++) {
               const i = Math.floor(Math.random() * magnets.length);
               const nudge = (Math.random() - 0.5) * 2 * currentNudge;
-              magnets[i].offset = clampOffset(i, magnets[i].offset + nudge);
+              setOffset(i, magnets[i].offset + nudge);
             }
           }
         }
 
-        // Reject moves that violate the pairwise gap constraint
+        // Reject moves that violate the pairwise gap constraint.
+        // The cache has NOT been flushed yet, so it still reflects the pre-move
+        // state; we only need to restore offsets and drop the dirty marks.
         if (!validateGap()) {
-          for (let i = 0; i < magnets.length; i++) magnets[i].offset = savedOffsets[i];
+          for (const i of savedPre.keys()) magnets[i].offset = savedPre.get(i);
+          clearDirty();
           if (iter % progStep === 0) {
             self.postMessage({ type: 'progress', iter, temp, currentScore });
           }
           continue;
         }
 
+        flushDirty();                 // commit moved magnets into the cache
         const newScore = scoreNow();
         const dE = newScore - currentScore;
         if (dE < 0 || Math.random() < Math.exp(-dE / (temp + 1e-10))) {
@@ -1570,7 +1699,11 @@ function createOptimizationWorker() {
             self.postMessage({ type: 'newBest', score: bestScore, offsets: bestOffsets, iter });
           }
         } else {
-          for (let i = 0; i < magnets.length; i++) magnets[i].offset = savedOffsets[i];
+          // Reject after flush: restore pre-move offsets and re-sync cache rows.
+          for (const i of savedPre.keys()) {
+            magnets[i].offset = savedPre.get(i);
+            updateMagnetCache(i);
+          }
         }
 
         // Reheat if stuck. Each successive reheat uses a smaller T0 so the SA
@@ -1595,6 +1728,9 @@ function createOptimizationWorker() {
           if (!validateGap()) {
             for (let i = 0; i < magnets.length; i++) magnets[i].offset = minOffs[i];
           }
+          // Wholesale change to all offsets → rebuild the cache from scratch.
+          clearDirty();
+          rebuildCache();
           currentScore = scoreNow();
           // Successive reheats use exponentially smaller T to avoid thrashing
           temp = T0 * Math.pow(0.5, reheatCount - 1);
@@ -1605,6 +1741,83 @@ function createOptimizationWorker() {
 
         if (iter % progStep === 0) {
           self.postMessage({ type: 'progress', iter, temp, currentScore });
+        }
+      }
+
+      // ---- Local polish: coordinate descent from the SA best -------------
+      // SA lands near a good basin but rarely at its bottom. A few sweeps of
+      // greedy line-search per degree of freedom (orbit under symLock, else
+      // per magnet) squeeze out the remaining gain. Cheap thanks to the cache:
+      // each trial is O(moved-magnets x samples), not O(all x samples).
+      //
+      // For each DOF we try a set of step sizes in both directions, keep any
+      // move that (a) satisfies the gap constraint and (b) lowers the score.
+      {
+        // restore SA best as the polish starting point
+        for (let i = 0; i < magnets.length; i++) magnets[i].offset = bestOffsets[i];
+        rebuildCache();
+        let polishScore = scoreNow();
+
+        // DOF groups: one entry per independent variable.
+        const groups = params.symLock
+          ? orbits
+          : magnets.map((_, i) => [i]);
+
+        const baseStep = params.maxNudge * 0.5;
+        const steps = [baseStep, baseStep * 0.35, baseStep * 0.12, baseStep * 0.04];
+        const POLISH_SWEEPS = 6;
+
+        for (let sweep = 0; sweep < POLISH_SWEEPS; sweep++) {
+          let improvedThisSweep = false;
+
+          for (let g = 0; g < groups.length; g++) {
+            const grp = groups[g];
+            let bestDelta = 0, bestLocal = polishScore;
+
+            for (const mag of steps) {
+              for (const dir of [+1, -1]) {
+                const delta = dir * mag;
+                beginStep();
+                for (const i of grp) setOffset(i, magnets[i].offset + delta);
+                if (savedPre.size === 0) { continue; } // clamped, no change
+                if (!validateGap()) {
+                  for (const i of savedPre.keys()) magnets[i].offset = savedPre.get(i);
+                  clearDirty();
+                  continue;
+                }
+                flushDirty();
+                const s = scoreNow();
+                // revert the trial (we only want to measure it here)
+                for (const i of savedPre.keys()) {
+                  magnets[i].offset = savedPre.get(i);
+                  updateMagnetCache(i);
+                }
+                if (s < bestLocal - 1e-12) { bestLocal = s; bestDelta = delta; }
+              }
+            }
+
+            // Commit the best delta found for this DOF, if any.
+            if (bestDelta !== 0) {
+              beginStep();
+              for (const i of grp) setOffset(i, magnets[i].offset + bestDelta);
+              if (validateGap()) {
+                flushDirty();
+                polishScore = scoreNow();
+                improvedThisSweep = true;
+                if (polishScore < bestScore) {
+                  bestScore = polishScore;
+                  bestOffsets = magnets.map(m => m.offset);
+                  self.postMessage({ type: 'newBest', score: bestScore, offsets: bestOffsets, iter: params.iters });
+                }
+              } else {
+                for (const i of savedPre.keys()) magnets[i].offset = savedPre.get(i);
+                clearDirty();
+              }
+            }
+          }
+
+          self.postMessage({ type: 'progress', iter: params.iters, temp: 0, currentScore: polishScore });
+          if (!improvedThisSweep) break; // converged
         }
       }
 
