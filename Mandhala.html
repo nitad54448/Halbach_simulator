@@ -91,7 +91,7 @@ body{font-family:'IBM Plex Mono',monospace;background:var(--bg);color:var(--text
 <div class="left">
   <div class="brand">
     <h1>Mandhala</h1>
-    <p>RADIAL DIPOLES · LEBEDEV / C60 / FIBONACCI · v2.5</p>
+    <p>RADIAL DIPOLES · LEBEDEV / C60 / FIBONACCI · v2.6</p>
   </div>
 
   <div class="section">
@@ -103,7 +103,7 @@ body{font-family:'IBM Plex Mono',monospace;background:var(--bg);color:var(--text
         <option value="fibonacci">Fibonacci (N-tunable)</option>
       </select>
     </div>
-    <div class="field-row"><label>Poles</label><input type="number" id="fibN" value="48" step="1" min="20" max="400" onchange="onGeomChange()" disabled></div>
+    <div class="field-row"><label>Poles</label><input type="number" id="fibN" value="48" step="1" min="20" max="400" onchange="onLatticeChange()" disabled></div>
     <div id="lattice-info" style="font-size:11px;margin-top:4px;text-align:center;color:var(--muted);letter-spacing:.05em;">—</div>
   </div>
 
@@ -114,6 +114,8 @@ body{font-family:'IBM Plex Mono',monospace;background:var(--bg);color:var(--text
       <div class="field-row"><label>Outer R (mm)</label><input type="number" id="outerRadius" value="70" step="5" onchange="onGeomChange()"></div>
       <div class="field-row"><label>Test R (mm)</label><input type="number" id="testRadius" value="10" step="1" onchange="onGeomChange()"></div>
     </div>
+    <div class="field-row" style="margin-top:8px;"><label>Hole clearance (mm) — STEP holder bore = magnet Ø + 2×clr</label>
+      <input type="number" id="holeClr" value="0.2" step="0.05" min="0" onchange="onGeomChange()"></div>
   </div>
 
   <div class="section">
@@ -191,12 +193,15 @@ body{font-family:'IBM Plex Mono',monospace;background:var(--bg);color:var(--text
       <button class="btn" onclick="exportCSV()">CSV (shop)</button>
     </div>
     <div class="btn-row">
-      <button class="btn" onclick="exportSTEP()">STEP (CAD)</button>
+      <button class="btn primary" onclick="exportSTEPHolder()">STEP (holder)</button>
+      <button class="btn" onclick="exportSTEPMagnets()">STEP (magnets)</button>
+    </div>
+    <div class="btn-row">
       <button class="btn" onclick="resetOffsets()">Zero Offsets</button>
     </div>
   </div>
 
-  <div class="footer">NitaD · Univ Paris-Saclay · 22 July 2026</div>
+  <div class="footer">NitaD · Univ Paris-Saclay · 25 July 2026</div>
 </div>
 
 <div class="main">
@@ -592,6 +597,29 @@ let optRunning = false;
 let currentMapPlane = null;
 let activeWorkers = [];
 let lastDrawTime = 0;
+let saWatchdog = null;      // aborts the run if every worker goes silent
+let saFailed = false;       // set when a worker dies before finishing
+
+// Terminate every SA worker and release its blob URL. The URL must outlive the
+// Worker constructor (revoking it on the next line is a documented race), so
+// it is stashed on the worker and freed here instead.
+function releaseWorkers() {
+  activeWorkers.forEach(w => {
+    try { w.terminate(); } catch (e) { /* already gone */ }
+    if (w._blobUrl) { URL.revokeObjectURL(w._blobUrl); w._blobUrl = null; }
+  });
+  activeWorkers = [];
+}
+
+function armWatchdog() {
+  clearTimeout(saWatchdog);
+  saWatchdog = setTimeout(() => {
+    if (!optRunning) return;
+    console.error('SA watchdog: no worker activity for 90 s — aborting.');
+    saFailed = true;
+    stopOptimization();
+  }, 90000);
+}
 
 // Which target is the active constraint. The OTHER becomes the objective.
 //   'homog' → ppm ≤ targetHomog is the constraint; maximize |Bx|.
@@ -633,15 +661,13 @@ function updateTargetReadout() {
 //   absolute ceiling, but the geometry rarely reaches more than ~30-40% of Br).
 //   Lower bound 0. Step scaled.
 // - targetHomog: lower bound 1 ppm, no upper hard cap. Step adapts to current ppm.
-function updateTargetRanges(metrics) {
+function updateTargetRanges(metrics, range) {
   const fieldInput = document.getElementById('targetField');
-  let ceiling;
-  try {
-    const r = estimateFieldRange();
-    ceiling = r.bxStrong;
-  } catch (e) {
-    ceiling = parseFloat(document.getElementById('magBr').value);
-  }
+  // `range` is passed in by evaluateField(). estimateFieldRange() costs two
+  // full field sums, and this used to run it a second time on every keystroke.
+  let ceiling = (range && isFinite(range.bxStrong)) ? range.bxStrong : NaN;
+  if (!isFinite(ceiling)) ceiling = parseFloat(document.getElementById('magBr').value);
+  if (!isFinite(ceiling) || ceiling <= 0) ceiling = 1.0;
   fieldInput.min = '0';
   fieldInput.max = (ceiling * 1.05).toFixed(3);  // tiny headroom for rounding
   fieldInput.step = Math.max(0.001, ceiling / 200).toFixed(3);
@@ -655,22 +681,32 @@ function updateTargetRanges(metrics) {
   homogInput.step = step.toString();
 }
 
-function onGeomChange() {
+// FULL rebuild — only when the lattice topology itself changes (distribution
+// or Fibonacci N). This necessarily discards the offsets, because the set of
+// magnets is different.
+function onLatticeChange() {
   magnets = buildRadialArray();
   orbits = buildOrbits(magnets);
   orbitOf = new Array(magnets.length).fill(-1);
   orbits.forEach((orb, oi) => orb.forEach(mi => orbitOf[mi] = oi));
   buildNeighbourList();
-  applyMinOffsetClamp();
+  applyMinOffsetClamp();            // levelUp: fresh lattice starts level
   updateLatticeUI();
   drawScene();
   evaluateField();
 }
 
-// Called when the lattice distribution changes (Lebedev ↔ Fibonacci).
-// Resets offsets so the user sees a clean starting point.
-function onLatticeChange() {
-  onGeomChange();
+// DIMENSIONAL change only (inner/outer/test radius, cylinder diameter/length,
+// hole clearance). The lattice directions are unchanged, so the offsets are
+// KEPT — previously this rebuilt the array and silently reset every offset to
+// zero, destroying the result of an optimization run on any parameter tweak.
+// Offsets are only re-clamped into the new feasible interval.
+function onGeomChange() {
+  if (magnets.length === 0) { onLatticeChange(); return; }
+  applyMinOffsetClamp({ levelUp: false });
+  updateLatticeUI();
+  drawScene();
+  evaluateField();
 }
 
 // Update UI labels/info that depend on the current lattice and magnet count
@@ -785,6 +821,7 @@ function getParams() {
     len: parseFloat(document.getElementById('magLen').value),
     gap: parseFloat(document.getElementById('magGap').value),
     Br: parseFloat(document.getElementById('magBr').value),
+    holeClr: parseFloat(document.getElementById('holeClr').value) || 0,
     // Active constraint mode + targets. The OTHER quantity becomes the objective.
     //   activeTarget='homog' → enforce ppm ≤ targetHomog, maximize |Bx|
     //   activeTarget='field' → enforce |Bx| ≥ targetField, minimize ppm
@@ -916,21 +953,31 @@ function evaluateField() {
   }
   document.getElementById('sv-Score').textContent = status;
 
-  updateTargetRanges(metrics);
+  // ONE call, shared by the range updater and the hint line below.
+  let range = null;
+  try { range = estimateFieldRange(); } catch (e) { range = null; }
+
+  updateTargetRanges(metrics, range);
 
   // Live "reachable" hint based on the current geometry. Only the field side has
   // a cheap deterministic ceiling; the ppm floor requires SA, so we just note that.
   const hint = document.getElementById('reachableHint');
   if (hint) {
-    try {
-      const { bxStrong, bxWeak } = estimateFieldRange();
-      hint.textContent = `geometry can reach |Bx| ≈ ${bxWeak.toFixed(3)}—${bxStrong.toFixed(3)} T`;
-    } catch (e) {
-      hint.textContent = '—';
-    }
+    hint.textContent = range
+      ? `geometry can reach |Bx| ≈ ${range.bxWeak.toFixed(3)}—${range.bxStrong.toFixed(3)} T`
+      : '—';
   }
 
   return { metrics, score };
+}
+
+// Debounced wrapper for high-frequency `input` events. A full evaluation is
+// tens of thousands of elliptic-integral calls; running it on every keystroke
+// made the panel unusable.
+let _evalTimer = null;
+function evaluateFieldDebounced(delay = 140) {
+  clearTimeout(_evalTimer);
+  _evalTimer = setTimeout(evaluateField, delay);
 }
 
 
@@ -972,6 +1019,17 @@ function buildNeighbourList() {
       return { j: e.j, sinHalfA: Math.sin(alpha / 2) };
     });
   }
+
+  // Symmetrize: "j is one of my k nearest" does not imply "i is one of j's".
+  // Without this, a validation pass that only inspects the magnets that moved
+  // can miss the pair (i, j) when only j moved. Cheap, and it also makes the
+  // full pairwise sweep exact rather than merely conservative.
+  for (let i = 0; i < N; i++) {
+    for (const nb of neighbours[i]) {
+      const back = neighbours[nb.j];
+      if (!back.some(e => e.j === i)) back.push({ j: i, sinHalfA: nb.sinHalfA });
+    }
+  }
 }
 
 // Per-magnet minimum offset from each magnet's OWN nearest neighbour (assumes
@@ -985,6 +1043,12 @@ function computeMinOffsets(params) {
 
   const minOffs = new Array(magnets.length).fill(minOffTest);
   const maxOffs = new Array(magnets.length).fill(maxOff);
+  // Per-magnet infeasibility. The interval is collapsed below so the rest of
+  // the code always has minOffs <= maxOffs, but we must record that it WAS
+  // empty — previously the collapse happened first and the caller's
+  // "minOffs[i] > maxOffs[i]" test was therefore dead code, so the
+  // "cylinder too wide for lattice spacing" diagnostic could never fire.
+  const infeasibleFlags = new Array(magnets.length).fill(false);
 
   for (let i = 0; i < magnets.length; i++) {
     let tightest = 0;
@@ -998,9 +1062,10 @@ function computeMinOffsets(params) {
       if (minOffThisPair > tightest) tightest = minOffThisPair;
     }
     minOffs[i] = Math.max(minOffs[i], tightest);
-    if (maxOffs[i] < minOffs[i]) maxOffs[i] = minOffs[i];
+    if (maxOffs[i] < minOffs[i] - 1e-9) { infeasibleFlags[i] = true; maxOffs[i] = minOffs[i]; }
+    else if (maxOffs[i] < minOffs[i]) maxOffs[i] = minOffs[i];
   }
-  return { minOffs, maxOffs };
+  return { minOffs, maxOffs, infeasibleFlags };
 }
 
 // True pairwise constraint check (used in the SA worker — see workerScript).
@@ -1017,14 +1082,14 @@ function computeMinOffsets(params) {
 // message alone. SA is disabled anyway, so no optimization runs on the invalid state.
 function applyMinOffsetClamp({ levelUp = true } = {}) {
   const params = getParams();
-  const { minOffs, maxOffs } = computeMinOffsets(params);
+  const { minOffs, maxOffs, infeasibleFlags } = computeMinOffsets(params);
 
   // Gather feasibility signals BEFORE deciding whether to clamp.
   const outerTooSmall = params.R_outer < params.R + params.len - 1e-6;
   let infeasible = 0;
   let globalMin = 0;
   for (let i = 0; i < magnets.length; i++) {
-    if (minOffs[i] > maxOffs[i] + 1e-9) infeasible++;
+    if (infeasibleFlags[i]) infeasible++;
     if (minOffs[i] > globalMin) globalMin = minOffs[i];
   }
 
@@ -1087,15 +1152,25 @@ function applyMinOffsetClamp({ levelUp = true } = {}) {
 
 
 //dessins 3D
+// Each dipole is a THREE.Group holding three meshes. The old version only
+// disposed the top-level children, so the nested body/cap geometries and the
+// label sprite textures were never released — and drawScene() runs on every
+// checkbox toggle and after every SA run. Traverse the whole subtree.
 function clearGroup(group) {
+  const disposeNode = (obj) => {
+    if (obj.geometry) obj.geometry.dispose();
+    const mats = obj.material
+      ? (Array.isArray(obj.material) ? obj.material : [obj.material])
+      : [];
+    for (const m of mats) {
+      if (m.map) m.map.dispose();
+      m.dispose();
+    }
+  };
   while (group.children.length > 0) {
     const child = group.children[0];
     group.remove(child);
-    if (child.geometry) child.geometry.dispose();
-    if (child.material) {
-      if (Array.isArray(child.material)) child.material.forEach(m => m.dispose());
-      else child.material.dispose();
-    }
+    child.traverse(disposeNode);
   }
 }
 
@@ -1231,10 +1306,10 @@ async function startOptimization() {
   }
 
   optRunning = true;
+  saFailed = false;
   setControlsLocked(true);
 
-  activeWorkers.forEach(w => w.terminate());
-  activeWorkers = [];
+  releaseWorkers();
 
   document.getElementById('btn-opt').textContent = '■ Stop';
   document.getElementById('btn-opt').onclick = stopOptimization;
@@ -1242,9 +1317,11 @@ async function startOptimization() {
 
   const params = {
     ...getParams(),
-    iters: parseInt(document.getElementById('optIters').value),
-    maxNudge: parseFloat(document.getElementById('optNudge').value),
-    symLock: document.getElementById('symLock').checked
+    iters: Math.max(1, parseInt(document.getElementById('optIters').value) || 10000),
+    maxNudge: Math.max(1e-3, parseFloat(document.getElementById('optNudge').value) || 1),
+    // The checkbox is left `checked` while `disabled` on Fibonacci, so read the
+    // lattice too rather than trusting the widget.
+    symLock: document.getElementById('symLock').checked && currentLattice() !== 'fibonacci'
   };
 
   let globalBestScore = computeScore(computeMetrics(params), params);
@@ -1269,7 +1346,27 @@ async function startOptimization() {
     const worker = createOptimizationWorker();
     activeWorkers.push(worker);
 
+    // Without this, a worker that fails to boot never sends 'done', so
+    // completedThreads never reaches numThreads, finalizeOptimization() never
+    // runs, and the entire left panel stays disabled with no error shown.
+    const threadFinished = () => {
+      completedThreads++;
+      if (completedThreads >= numThreads) finalizeOptimization();
+    };
+    worker.onerror = (err) => {
+      console.error('SA worker error:', err.message || err);
+      err.preventDefault && err.preventDefault();
+      saFailed = true;
+      threadFinished();
+    };
+    worker.onmessageerror = () => {
+      console.error('SA worker: message could not be deserialized.');
+      saFailed = true;
+      threadFinished();
+    };
+
     worker.onmessage = (e) => {
+      armWatchdog();
       if (e.data.type === 'newBest') {
         // Ignore stale results if the lattice was rebuilt mid-run
         if (e.data.offsets.length !== magnets.length) return;
@@ -1290,8 +1387,7 @@ async function startOptimization() {
         const now = performance.now();
         if (now - lastDrawTime > 250) { updateMagnetPositions(); lastDrawTime = now; }
       } else if (e.data.type === 'done') {
-        completedThreads++;
-        if (completedThreads === numThreads) finalizeOptimization();
+        threadFinished();
       }
     };
 
@@ -1304,11 +1400,12 @@ async function startOptimization() {
       params: { ...params, tempMultiplier }
     });
   }
+
+  armWatchdog();
 }
 
 function stopOptimization() {
-  activeWorkers.forEach(w => w.terminate());
-  activeWorkers = [];
+  releaseWorkers();
   finalizeOptimization();
 }
 
@@ -1330,7 +1427,19 @@ function setControlsLocked(locked) {
 }
 
 function finalizeOptimization() {
+  // Re-entrancy guard: Stop can race the last worker's 'done', and a second
+  // pass would call setControlsLocked(false) with an already-drained list,
+  // leaving the panel permanently disabled.
+  if (!optRunning) return;
+  optRunning = false;               // set BEFORE applyMinOffsetClamp, which
+                                    // skips the SA-button refresh while running
+  clearTimeout(saWatchdog);
+  releaseWorkers();
+
   setControlsLocked(false);
+  document.getElementById('btn-opt').textContent = '▶ Run SA';
+  document.getElementById('btn-opt').onclick = startOptimization;
+
   // levelUp:false — the SA already respects per-magnet bounds and pairwise gaps;
   // raising everything to the global minimum would silently undo the optimization.
   applyMinOffsetClamp({ levelUp: false });
@@ -1338,11 +1447,13 @@ function finalizeOptimization() {
   drawScene();
   // Always switch to the bore Z-profile when the SA finishes
   drawBoreProfile(false);
-  document.getElementById('btn-opt').textContent = '▶ Run SA';
-  document.getElementById('btn-opt').onclick = startOptimization;
   document.getElementById('opt-overlay').style.display = 'none';
   document.getElementById('opt-progress').style.width = '0%';
-  optRunning = false;
+
+  if (saFailed) {
+    showTooltip('<b style="color:var(--accent3)">SA ABORTED</b><br>A worker failed or stalled — see the browser console. The best configuration found so far has been kept.', 15000);
+    return;
+  }
   // Push the achieved metrics into the bottom-left tooltip as a summary
   const params2 = getParams();
   const ppmTotal = metrics.ppmBx + 2 * metrics.ppmTrans;
@@ -1366,6 +1477,7 @@ function createOptimizationWorker() {
   const workerScript = `
     const MU0 = 4e-7 * Math.PI;
     const N_RINGS = 24;
+    const CACHE_REBUILD_EVERY = 2000;
 
     ${ellipticKE.toString()}
     ${ringField.toString()}
@@ -1405,7 +1517,6 @@ function createOptimizationWorker() {
     let NS = 0;               // number of sample points
     let contrib = null;       // per-magnet, per-sample contribution
     let totalB = null;        // running total per sample
-    let contribBak = null;    // scratch for rejected-move rollback
 
     function buildSamplePoints() {
       SP = [{ x: 0, y: 0, z: 0 }];
@@ -1430,7 +1541,6 @@ function createOptimizationWorker() {
       const M = magnets.length;
       contrib = new Float64Array(M * NS * 3);
       totalB  = new Float64Array(NS * 3);
-      contribBak = new Float64Array(NS * 3); // only ever one magnet's row wide? see below
       for (let m = 0; m < M; m++) {
         const base = m * NS * 3;
         for (let s = 0; s < NS; s++) {
@@ -1543,6 +1653,22 @@ function createOptimizationWorker() {
       for (let i = 0; i < magnets.length; i++) {
         for (const nb of neighbours[i]) {
           if (nb.j < i) continue;
+          const chord = 2 * Math.min(R + magnets[i].offset, R + magnets[nb.j].offset) * nb.sinHalfA;
+          if (chord < req - 1e-9) return false;
+        }
+      }
+      return true;
+    }
+
+    // Same test restricted to the magnets that actually moved this step.
+    // Every pair with at least one moved endpoint is covered because the
+    // neighbour list is symmetric (see buildNeighbourList in the main thread);
+    // pairs where nothing moved were already valid. This turns an O(N*k) sweep
+    // per iteration into O(moved*k), which is the dominant SA cost.
+    function validateGapFor(indices) {
+      const R = params.R, req = params.diam + params.gap;
+      for (const i of indices) {
+        for (const nb of neighbours[i]) {
           const chord = 2 * Math.min(R + magnets[i].offset, R + magnets[nb.j].offset) * nb.sinHalfA;
           if (chord < req - 1e-9) return false;
         }
@@ -1678,7 +1804,7 @@ function createOptimizationWorker() {
         // Reject moves that violate the pairwise gap constraint.
         // The cache has NOT been flushed yet, so it still reflects the pre-move
         // state; we only need to restore offsets and drop the dirty marks.
-        if (!validateGap()) {
+        if (!validateGapFor(savedPre.keys())) {
           for (const i of savedPre.keys()) magnets[i].offset = savedPre.get(i);
           clearDirty();
           if (iter % progStep === 0) {
@@ -1704,6 +1830,16 @@ function createOptimizationWorker() {
             magnets[i].offset = savedPre.get(i);
             updateMagnetCache(i);
           }
+        }
+
+        // The running totals are maintained by subtract-then-add, so rounding
+        // error accumulates over tens of thousands of accepted moves and the
+        // worker's score slowly drifts away from the main thread's exact
+        // recomputation. Resynchronise periodically; it costs one full pass
+        // every CACHE_REBUILD_EVERY iterations.
+        if ((iter + 1) % CACHE_REBUILD_EVERY === 0) {
+          rebuildCache();
+          currentScore = scoreNow();
         }
 
         // Reheat if stuck. Each successive reheat uses a smaller T0 so the SA
@@ -1780,7 +1916,7 @@ function createOptimizationWorker() {
                 beginStep();
                 for (const i of grp) setOffset(i, magnets[i].offset + delta);
                 if (savedPre.size === 0) { continue; } // clamped, no change
-                if (!validateGap()) {
+                if (!validateGapFor(savedPre.keys())) {
                   for (const i of savedPre.keys()) magnets[i].offset = savedPre.get(i);
                   clearDirty();
                   continue;
@@ -1800,7 +1936,7 @@ function createOptimizationWorker() {
             if (bestDelta !== 0) {
               beginStep();
               for (const i of grp) setOffset(i, magnets[i].offset + bestDelta);
-              if (validateGap()) {
+              if (validateGapFor(savedPre.keys())) {
                 flushDirty();
                 polishScore = scoreNow();
                 improvedThisSweep = true;
@@ -1830,7 +1966,10 @@ function createOptimizationWorker() {
   const blob = new Blob([workerScript], { type: 'application/javascript' });
   const url = URL.createObjectURL(blob);
   const worker = new Worker(url);
-  URL.revokeObjectURL(url); // worker holds its own reference; avoid leaking one blob URL per run
+  // Revoking on the very next line is a documented race: the script fetch is
+  // asynchronous, so the URL must stay alive until the worker is torn down.
+  // releaseWorkers() frees it.
+  worker._blobUrl = url;
   return worker;
 }
 
@@ -1919,48 +2058,142 @@ function drawLineChart(ctx, size, axLine, bxLine, byLine, bzLine, boreAxis, rang
   });
 }
 
-//cartes 2D pour B
-function _drawMap2DImpl(plane, isPrint = false) {
- 
- const mc = document.getElementById('map-container');
-  const c  = document.getElementById('map-canvas');
-  const size = Math.min(mc.clientWidth - 40, mc.clientHeight - 60, 600);
-  
-  const padL = 45, padB = 40, padR = 90, padT = 20;
-  const mapSize = size - padL - padR;
+// ═══════════════════════════════════════════════════════════════
+//  2D |B| MAPS
+//
+//  An 80x80 grid is 6400 field points; at 48 magnets x 24 current rings that
+//  is ~7.4 million elliptic-integral evaluations. Running that on the main
+//  thread froze the tab for tens of seconds (and exportPDF did it three times
+//  over), so the grid is computed in a dedicated worker and only the drawing
+//  happens on the main thread.
+// ═══════════════════════════════════════════════════════════════
+let fieldWorker = null;
+let fieldWorkerUrl = null;
+let fieldReqSeq = 0;
+const fieldPending = new Map();
 
-  c.width = size; 
+function getFieldWorker() {
+  if (fieldWorker) return fieldWorker;
+  const src = `
+    const MU0 = 4e-7 * Math.PI;
+    const N_RINGS = 24;
+    ${ellipticKE.toString()}
+    ${ringField.toString()}
+    ${cylinderField.toString()}
+    self.onmessage = function(e) {
+      const { id, magnets, params, plane, N, ext } = e.data;
+      const R = params.R, len = params.len, diam = params.diam, Br = params.Br;
+      const step = 2 * ext / (N - 1);
+      const out = new Float64Array(N * N);
+      let vMin = Infinity, vMax = -Infinity;
+      for (let iy = 0; iy < N; iy++) {
+        for (let ix = 0; ix < N; ix++) {
+          const u = -ext + ix*step, v = -ext + iy*step;
+          let px = 0, py = 0, pz = 0;
+          if (plane === 'xy')      { px = u; py = v; }
+          else if (plane === 'xz') { px = u; pz = v; }
+          else                     { py = u; pz = v; }
+          let bx = 0, by = 0, bz = 0;
+          for (const m of magnets) {
+            const d = R + m.offset + len/2;
+            const b = cylinderField(px, py, pz, m.dir.x*d, m.dir.y*d, m.dir.z*d,
+                                    m.mu.x, m.mu.y, m.mu.z, diam/2, len/2, Br);
+            bx += b.Bx; by += b.By; bz += b.Bz;
+          }
+          const bv = Math.sqrt(bx*bx + by*by + bz*bz);
+          out[iy*N + ix] = bv;
+          if (bv < vMin) vMin = bv;
+          if (bv > vMax) vMax = bv;
+        }
+      }
+      self.postMessage({ id, vals: out, vMin, vMax, N }, [out.buffer]);
+    };
+  `;
+  try {
+    const blob = new Blob([src], { type: 'application/javascript' });
+    fieldWorkerUrl = URL.createObjectURL(blob);
+    fieldWorker = new Worker(fieldWorkerUrl);
+    fieldWorker.onmessage = (e) => {
+      const p = fieldPending.get(e.data.id);
+      if (p) { fieldPending.delete(e.data.id); p.resolve(e.data); }
+    };
+    fieldWorker.onerror = (err) => {
+      console.error('Field worker error:', err.message || err);
+      err.preventDefault && err.preventDefault();
+      fieldPending.forEach(p => p.reject(err));
+      fieldPending.clear();
+      try { fieldWorker.terminate(); } catch (_) {}
+      if (fieldWorkerUrl) { URL.revokeObjectURL(fieldWorkerUrl); fieldWorkerUrl = null; }
+      fieldWorker = null;
+    };
+  } catch (e) {
+    console.warn('Worker unavailable, falling back to main-thread maps.', e);
+    fieldWorker = null;
+  }
+  return fieldWorker;
+}
+
+// Synchronous fallback used when Workers are unavailable (file:// on some
+// browsers, locked-down environments).
+function computeMapGridSync(plane, ext, N, params) {
+  const step = 2 * ext / (N - 1);
+  const vals = new Float64Array(N * N);
+  let vMin = Infinity, vMax = -Infinity;
+  for (let iy = 0; iy < N; iy++) {
+    for (let ix = 0; ix < N; ix++) {
+      const u = -ext + ix*step, v = -ext + iy*step;
+      let px = 0, py = 0, pz = 0;
+      if (plane === 'xy')      { px = u; py = v; }
+      else if (plane === 'xz') { px = u; pz = v; }
+      else                     { py = u; pz = v; }
+      const bv = fieldAt(px, py, pz, params).b;
+      vals[iy*N + ix] = bv;
+      if (bv < vMin) vMin = bv;
+      if (bv > vMax) vMax = bv;
+    }
+  }
+  return { vals, vMin, vMax, N };
+}
+
+function computeMapGrid(plane, ext, N, params) {
+  const w = getFieldWorker();
+  if (!w) return Promise.resolve(computeMapGridSync(plane, ext, N, params));
+  const id = ++fieldReqSeq;
+  const snapshot = magnets.map(m => ({
+    dir: { x: m.dir.x, y: m.dir.y, z: m.dir.z },
+    mu:  { x: m.mu.x,  y: m.mu.y,  z: m.mu.z  },
+    offset: m.offset
+  }));
+  return new Promise((resolve, reject) => {
+    fieldPending.set(id, { resolve, reject });
+    w.postMessage({ id, magnets: snapshot, params, plane, N, ext });
+  });
+}
+
+//cartes 2D pour B
+function renderMap2D(plane, grid, isPrint = false) {
+  const mc = document.getElementById('map-container');
+  const c  = document.getElementById('map-canvas');
+
+  const padL = 45, padB = 40, padR = 90, padT = 20;
+  // Guard against a viewport too narrow to hold the padding: mapSize used to
+  // be able to go <= 0, and createImageData(0, 0) throws IndexSizeError.
+  const size = Math.max(padL + padR + 120,
+                        Math.min(mc.clientWidth - 40, mc.clientHeight - 60, 600));
+  const mapSize = Math.max(120, size - padL - padR);
+
+  c.width = size;
   c.height = padT + mapSize + padB;
   const ctx = c.getContext('2d');
-  const params = getParams();
 
   const bg = isPrint ? '#ffffff' : '#080b0f';
   const textCol = isPrint ? '#000000' : '#e2eaf5';
   const borderCol = isPrint ? '#445566' : '#2a3a4a';
   ctx.fillStyle = bg; ctx.fillRect(0, 0, c.width, c.height);
 
-
-
-
   const ext = parseFloat(document.getElementById('testRadius').value);
-  const N = 80;
-  const vals = [], step = 2*ext/(N - 1);
-  let vMin = Infinity, vMax = -Infinity;
-
-  for (let iy = 0; iy < N; iy++) {
-    const row = [];
-    for (let ix = 0; ix < N; ix++) {
-      const u = -ext + ix*step, v = -ext + iy*step;
-      let px = 0, py = 0, pz = 0;
-      if (plane === 'xy') { px = u; py = v; pz = 0; }
-      else if (plane === 'xz') { px = u; pz = v; py = 0; }
-      else { py = u; pz = v; px = 0; }
-      const bv = fieldAt(px, py, pz, params).b;
-      row.push(bv);
-      if (bv < vMin) vMin = bv; if (bv > vMax) vMax = bv;
-    }
-    vals.push(row);
-  }
+  const N = grid.N, vals = grid.vals;
+  let vMin = grid.vMin, vMax = grid.vMax;
 
 
 
@@ -1970,7 +2203,7 @@ function _drawMap2DImpl(plane, isPrint = false) {
   const bpp = mapSize / N;
   for (let iy = 0; iy < N; iy++) {
     for (let ix = 0; ix < N; ix++) {
-      const t = (vMax > vMin) ? (vals[iy][ix] - vMin) / (vMax - vMin) : 0;
+      const t = (vMax > vMin) ? (vals[iy*N + ix] - vMin) / (vMax - vMin) : 0;
       const [r, g, b] = heatmap(t);
       for (let dy = 0; dy < Math.ceil(bpp); dy++) for (let dx = 0; dx < Math.ceil(bpp); dx++) {
         const px2 = Math.floor(ix*bpp) + dx, py2 = Math.floor(iy*bpp) + dy;
@@ -2027,10 +2260,28 @@ function setMapTab(plane) {
   document.getElementById('vbtn-map-' + plane).classList.add('active');
   drawMap2D(plane);
 }
-function drawMap2D(plane) {
+
+// Token so that rapidly switching tabs discards stale grids instead of
+// painting them over the newer one.
+let mapToken = 0;
+const MAP_GRID_N = 80;
+
+async function drawMap2D(plane, isPrint = false) {
   const overlay = document.getElementById('map-computing-overlay');
-  overlay.style.display = 'flex';
-  setTimeout(() => _drawMap2DImpl(plane), 30);
+  const myToken = ++mapToken;
+  if (!isPrint) overlay.style.display = 'flex';
+  try {
+    const params = getParams();
+    const ext = params.tr;
+    const grid = await computeMapGrid(plane, ext, MAP_GRID_N, params);
+    if (!isPrint && myToken !== mapToken) return; // superseded
+    renderMap2D(plane, grid, isPrint);
+  } catch (e) {
+    console.error('Map computation failed:', e);
+    document.getElementById('map-title').textContent = 'Map computation failed — see console';
+  } finally {
+    overlay.style.display = 'none';
+  }
 }
 function heatmap(t) {
   const stops = [[0,0,128],[0,128,200],[0,200,80],[200,200,0],[255,50,0],[200,0,0]];
@@ -2164,21 +2415,21 @@ async function exportPDF() {
     // === Title ===
     doc.setFontSize(16);
     doc.setTextColor(0);
-    doc.text(cleanStr("Radial Sphere - Simulation Report"), margin, y); y += 8;
+    doc.text(cleanStr("Mandhala - Simulation Report"), margin, y); y += 8;
 
     // === Metadata block ===
     doc.setFontSize(10);
     doc.setTextColor(100);
-    doc.text(cleanStr(`Program: Radial Sphere Simulator v2.4 (${window.location.href})`), margin, y); y += 5;
+    doc.text(cleanStr(`Program: Mandhala Simulator v2.6 (${window.location.href})`), margin, y); y += 5;
     doc.text(cleanStr(`Generated: ${timestampText}`), margin, y); y += 5;
     const latticeMode = currentLattice();
     let structDesc;
     if (latticeMode === 'fibonacci') {
-      structDesc = `Fibonacci sphere N=${document.getElementById('fibN').value}, Z-pole cut -> ${magnets.length} dipoles`;
+      structDesc = `Fibonacci sphere N=${document.getElementById('fibN').value}, |z| >= 0.9 caps and |x| < 1e-3 sites removed -> ${magnets.length} dipoles`;
     } else if (latticeMode === 'c60') {
-      structDesc = `C60 Mandhala, 2 hexagonal caps removed -> ${magnets.length} dipoles`;
+      structDesc = `C60 Mandhala, |z| >= 0.8 hexagonal caps removed -> ${magnets.length} dipoles`;
     } else {
-      structDesc = `Lebedev-110, 10 pole caps + 2 on-axis cuts -> ${magnets.length} dipoles`;
+      structDesc = `Lebedev-110, |z| >= 0.9 caps and |x| < 1e-3 sites removed -> ${magnets.length} dipoles`;
     }
     doc.text(cleanStr(`Structure: ${structDesc}`), margin, y); y += 5;
     doc.text(cleanStr(`Moment rule: radial, +x hemisphere S-inward, -x hemisphere N-inward - Field: +X - Bore: +/-Z`), margin, y); y += 8;
@@ -2191,6 +2442,7 @@ async function exportPDF() {
       `Inner radius: ${p.R} mm    Outer radius: ${p.R_outer} mm    Test radius: ${p.tr} mm`,
       `Cylinder diameter: ${p.diam} mm    Length: ${p.len} mm    Min gap: ${p.gap} mm`,
       `Remanence Br: ${p.Br} T`,
+      `Holder bore: dia ${(p.diam + 2*p.holeClr).toFixed(2)} mm (magnet dia + 2 x ${p.holeClr} mm clearance), radial through-bores`,
       `Optimization mode: ${p.activeTarget === 'homog' ? `homogeneity <= ${p.targetHomog.toFixed(0)} ppm (max |Bx|)` : `|Bx| >= ${p.targetField.toFixed(3)} T (min ppm)`}`,
       `Symmetry orbits: ${orbits.length} (DOF for SA)`
     ].forEach(t => { doc.text(cleanStr(`* ${t}`), margin + 5, y); y += 5; });
@@ -2220,7 +2472,10 @@ async function exportPDF() {
 
     // 3D views
     const origBg = scene.background;
+    const origFogColor = scene.fog ? scene.fog.color.getHex() : null;
     scene.background = new THREE.Color(0xffffff);
+    if (scene.fog) scene.fog.color.setHex(0xffffff); // otherwise geometry fades to
+                                                    // dark against a white page
     gridHelper.visible = false; axisHelper.visible = false;
     const prevLabels = document.getElementById('showLabels').checked;
     document.getElementById('showLabels').checked = true;
@@ -2236,16 +2491,14 @@ async function exportPDF() {
     for (const v of views) {
       doc.addPage();
       spherical.theta = v.theta; spherical.phi = v.phi;
-      camera.position.x = spherical.radius*Math.sin(spherical.phi)*Math.sin(spherical.theta);
-      camera.position.y = spherical.radius*Math.sin(spherical.phi)*Math.cos(spherical.theta);
-      camera.position.z = spherical.radius*Math.cos(spherical.phi);
-      camera.lookAt(0, 0, 0);
+      placeCamera(v.theta, v.phi, spherical.radius, 0, 0);
       renderer.render(scene, camera);
       const imgData = canvas.toDataURL("image/jpeg", 1.0);
       doc.setFontSize(14); doc.text(cleanStr(`3D View: ${v.name}`), margin, 10);
       doc.addImage(imgData, 'JPEG', margin, 15, imgW, imgW * (canvas.height / canvas.width));
     }
     scene.background = origBg;
+    if (scene.fog && origFogColor !== null) scene.fog.color.setHex(origFogColor);
     axisHelper.visible = true; 
     spherical.theta = origCam.theta; spherical.phi = origCam.phi; spherical.radius = origCam.radius;
     document.getElementById('showLabels').checked = prevLabels;
@@ -2256,21 +2509,23 @@ async function exportPDF() {
     const mapCanvas = document.getElementById('map-canvas');
     const activePlane = currentMapPlane;
     const mapDisplay = document.getElementById('map-container').style.display;
+    // The container must be laid out before the canvas can be sized from it.
+    document.getElementById('map-container').style.display = 'flex';
     const plots = [
-      { name: 'Bore Profile (Z)', run: () => drawBoreProfile(true) },
-      { name: 'XY Plane |B|',     run: () => _drawMap2DImpl('xy', true) },
-      { name: 'XZ Plane |B|',     run: () => _drawMap2DImpl('xz', true) },
-      { name: 'YZ Plane |B|',     run: () => _drawMap2DImpl('yz', true) }
+      { name: 'Bore Profile (Z)', run: async () => drawBoreProfile(true) },
+      { name: 'XY Plane |B|',     run: () => drawMap2D('xy', true) },
+      { name: 'XZ Plane |B|',     run: () => drawMap2D('xz', true) },
+      { name: 'YZ Plane |B|',     run: () => drawMap2D('yz', true) }
     ];
     for (const pl of plots) {
       doc.addPage();
       doc.setFontSize(14); doc.text(cleanStr(pl.name), margin, 10);
-      pl.run();
+      await pl.run();
       const chartData = mapCanvas.toDataURL("image/png", 1.0);
       doc.addImage(chartData, 'PNG', margin, 15, imgW, imgW * (mapCanvas.height / mapCanvas.width));
     }
     if (activePlane === 'bore') drawBoreProfile(false);
-    else if (activePlane) _drawMap2DImpl(activePlane, false);
+    else if (activePlane) await drawMap2D(activePlane, false);
     document.getElementById('map-container').style.display = mapDisplay;
 
     // Schlegel Diagram (North Only)
@@ -2307,7 +2562,7 @@ async function exportPDF() {
       y += 5;
     });
 
-    doc.save(`Radial_Sphere_${timestampFile}.pdf`);
+    doc.save(`Mandhala_${timestampFile}.pdf`);
   } catch (err) {
     console.error("PDF generation failed:", err);
   } finally {
@@ -2354,10 +2609,11 @@ function exportCSV() {
   // Header rows with simulation context (prefixed with # so they're comment-safe;
   // most spreadsheet apps will just show them in column A)
   const lines = [];
-  lines.push(`# Radial Sphere magnet placement · generated ${new Date().toISOString()}`);
+  lines.push(`# Mandhala magnet placement · generated ${new Date().toISOString()}`);
   lines.push(`# Lattice: ${modeLabel} · ${magnets.length} dipoles · ${orbits.length} symmetry orbits`);
   lines.push(`# Geometry: R=${p.R}mm, R_outer=${p.R_outer}mm, test_R=${p.tr}mm`);
   lines.push(`# Cylinder: diam=${p.diam}mm, length=${p.len}mm, gap=${p.gap}mm, Br=${p.Br}T`);
+  lines.push(`# Holder bore: diam=${(p.diam + 2*p.holeClr).toFixed(3)}mm (clearance ${p.holeClr}mm/side) · r_inner_mm is the magnet insertion depth`);
   lines.push(`# Units: all positions in millimetres, angles in degrees, directions unitless`);
   lines.push(`# Coordinate system: right-handed, +X is field direction, +Z is bore axis`);
 
@@ -2406,22 +2662,55 @@ function exportCSV() {
     lines.push(row.join(','));
   });
 
-  downloadBlob(lines.join('\n') + '\n', 'text/csv;charset=utf-8', `Radial_Sphere_${modeLabel}_${nowIso}.csv`);
+  downloadBlob(lines.join('\n') + '\n', 'text/csv;charset=utf-8', `Mandhala_${modeLabel}_${nowIso}.csv`);
   showTooltip(`CSV exported: ${magnets.length} magnets`, 3000);
 }
 
-// JSON export — saves full config so you can reload later (parameters + offsets)
 // ═══════════════════════════════════════════════════════════════
-//  STEP EXPORT (AP214) — one closed cylindrical solid per magnet
-//  Produces a MANIFOLD_SOLID_BREP per cylinder (3 faces: top disk, bottom disk,
-//  lateral cylindrical surface), stitched into a single ADVANCED_BREP_SHAPE.
-//  Opens directly in Fusion 360, SolidWorks, FreeCAD, Onshape, etc.
+//  STEP EXPORT (AP214)
+//
+//  Two exports are available:
+//
+//   1. exportSTEPHolder()  — THE PART YOU MACHINE. A spherical shell running
+//      from Inner R to Outer R, pierced by one radial through-bore per dipole.
+//      Bore diameter = magnet diameter + 2 x hole clearance.
+//
+//   2. exportSTEPMagnets() — the magnets themselves, one solid cylinder each,
+//      positioned at their optimized radii. Useful as a mating check / BOM.
+//
+//  Why the holder is representable exactly: every bore axis passes through the
+//  sphere centre, so each bore/sphere intersection is a PLANE CIRCLE of radius
+//  a sitting at axial distance sqrt(R^2 - a^2) from the centre — not a general
+//  space curve. That makes an analytic B-rep possible:
+//
+//      outer sphere face   (1 SPHERICAL_SURFACE, N circular inner bounds)
+//      inner sphere face   (1 SPHERICAL_SURFACE, N circular inner bounds)
+//      N bore walls        (CYLINDRICAL_SURFACE, bounded by those 2 circles)
+//
+//  The sphere faces use natural bounds (a closed surface carrying only inner
+//  wires). The seam meridian is rotated into the widest hole-free azimuth gap
+//  so that no bore wire straddles u = 0, which is what upsets strict readers.
 // ═══════════════════════════════════════════════════════════════
-function buildStepFile(cylinders) {
-  const header = `ISO-10303-21;
+
+// Shared numeric formatter. ISO-10303-21 real literals must contain a '.' and
+// use an UPPERCASE 'E' exponent; the previous version emitted JavaScript's
+// lowercase 'e' (e.g. "6.123233996e-17") for the tiny components that fall out
+// of the Gram-Schmidt frame, which strict importers reject. Fixed notation with
+// a nanometre-level snap-to-zero avoids exponents entirely.
+function stepNum(x) {
+  if (!isFinite(x)) x = 0;
+  if (Math.abs(x) < 1e-12) return '0.';
+  if (Number.isInteger(x)) return x.toFixed(1);
+  let s = x.toFixed(9).replace(/0+$/, '');
+  if (s.endsWith('.')) s += '0';
+  return s;
+}
+
+function stepHeader(desc, filename) {
+  return `ISO-10303-21;
 HEADER;
-FILE_DESCRIPTION(('Radial sphere dipoles'),'2;1');
-FILE_NAME('magnets.step','${new Date().toISOString()}',('Radial Sphere Simulator'),('Univ Paris-Saclay'),'','','');
+FILE_DESCRIPTION(('${desc}'),'2;1');
+FILE_NAME('${filename}','${new Date().toISOString()}',('Mandhala Simulator'),('Univ Paris-Saclay'),'','','');
 FILE_SCHEMA(('AUTOMOTIVE_DESIGN { 1 0 10303 214 1 1 1 1 }'));
 ENDSEC;
 DATA;
@@ -2436,122 +2725,261 @@ DATA;
 #9 = UNCERTAINTY_MEASURE_WITH_UNIT(LENGTH_MEASURE(1.0E-7),#6,'distance_accuracy_value','confusion accuracy');
 #10 = (GEOMETRIC_REPRESENTATION_CONTEXT(3)GLOBAL_UNCERTAINTY_ASSIGNED_CONTEXT((#9))GLOBAL_UNIT_ASSIGNED_CONTEXT((#6,#7,#8))REPRESENTATION_CONTEXT('Context','3D'));
 `;
+}
 
-  let idx = 100;
+// Small entity-emitter so the body below reads like geometry, not string glue.
+function stepWriter(startIdx = 100) {
+  let idx = startIdx;
   const lines = [];
-  const brepIds = [];
-
-  const num = (x) => {
-    if (Object.is(x, -0)) x = 0;
-    if (x === 0) return '0.';
-    if (Number.isInteger(x)) return x + '.';
-    return x.toPrecision(10).replace(/0+$/, '').replace(/\.$/, '.0');
+  const raw = (s) => { const i = idx++; lines.push(`#${i} = ${s};`); return i; };
+  return {
+    lines,
+    raw,
+    pt:  (x, y, z) => raw(`CARTESIAN_POINT('',(${stepNum(x)},${stepNum(y)},${stepNum(z)}))`),
+    dir: (x, y, z) => raw(`DIRECTION('',(${stepNum(x)},${stepNum(y)},${stepNum(z)}))`),
+    ax2: (p, a, r, name = '') => raw(`AXIS2_PLACEMENT_3D('${name}',#${p},#${a},#${r})`),
+    next: () => idx
   };
+}
+
+// Unit vector perpendicular to u.
+function perpTo(u) {
+  let rx = 1, ry = 0, rz = 0;
+  if (Math.abs(u[0]) > 0.9) { rx = 0; ry = 1; rz = 0; }
+  const d = u[0]*rx + u[1]*ry + u[2]*rz;
+  let ex = rx - d*u[0], ey = ry - d*u[1], ez = rz - d*u[2];
+  const n = Math.hypot(ex, ey, ez);
+  return [ex/n, ey/n, ez/n];
+}
+
+// Pick the azimuth for the spherical surface's seam (u = 0 half-plane) that is
+// furthest from every bore, so no hole boundary crosses the parametric seam.
+function pickSeamAzimuth(holes, R) {
+  const centres = [], halves = [];
+  for (const h of holes) {
+    const [x, y, z] = h.dir;
+    const sinTheta = Math.hypot(x, y);
+    const rho = Math.asin(Math.min(0.999, h.radius / R));   // angular radius
+    if (sinTheta < 1e-6) return 0;                          // bore over a pole
+    const s = Math.min(1, Math.sin(rho) / sinTheta);
+    centres.push(Math.atan2(y, x));
+    halves.push(Math.asin(s) + 0.03);                       // + safety margin
+  }
+  const angDist = (a, b) => {
+    let d = Math.abs(a - b) % (2*Math.PI);
+    return d > Math.PI ? 2*Math.PI - d : d;
+  };
+  let best = 0, bestClear = -Infinity;
+  for (let k = 0; k < 1440; k++) {
+    const cand = -Math.PI + k * (2*Math.PI / 1440);
+    let clear = Infinity;
+    for (let i = 0; i < centres.length; i++) {
+      const c = angDist(cand, centres[i]) - halves[i];
+      if (c < clear) clear = c;
+    }
+    if (clear > bestClear) { bestClear = clear; best = cand; }
+  }
+  return best;
+}
+
+// holes: [{ dir:[ux,uy,uz] unit, radius:a, label:string }]
+function buildHolderStepFile(R_in, R_out, holes) {
+  const w = stepWriter(100);
+  const { raw, pt, dir, ax2 } = w;
+
+  const phi0 = pickSeamAzimuth(holes, R_in);
+  const origin  = pt(0, 0, 0);
+  const zAxis   = dir(0, 0, 1);
+  const seamRef = dir(Math.cos(phi0), Math.sin(phi0), 0);
+  const sphPlace = ax2(origin, zAxis, seamRef, 'sphere_frame');
+
+  const surfIn  = raw(`SPHERICAL_SURFACE('inner',#${sphPlace},${stepNum(R_in)})`);
+  const surfOut = raw(`SPHERICAL_SURFACE('outer',#${sphPlace},${stepNum(R_out)})`);
+
+  const innerBounds = [], outerBounds = [], boreFaces = [];
+
+  holes.forEach((h, k) => {
+    const u = h.dir, a = h.radius;
+    const ref = perpTo(u);
+    const hIn  = Math.sqrt(Math.max(0, R_in*R_in  - a*a));   // circle plane offsets
+    const hOut = Math.sqrt(Math.max(0, R_out*R_out - a*a));
+
+    const dAx  = dir(u[0], u[1], u[2]);
+    const dRef = dir(ref[0], ref[1], ref[2]);
+
+    // Bore axis passes through the origin, so the cylinder can be placed there.
+    const cylPlace = ax2(origin, dAx, dRef, 'bore_' + (k + 1));
+    const cylSurf  = raw(`CYLINDRICAL_SURFACE('',#${cylPlace},${stepNum(a)})`);
+
+    const cIn  = raw(`CIRCLE('',#${ax2(pt(u[0]*hIn,  u[1]*hIn,  u[2]*hIn ), dAx, dRef)},${stepNum(a)})`);
+    const cOut = raw(`CIRCLE('',#${ax2(pt(u[0]*hOut, u[1]*hOut, u[2]*hOut), dAx, dRef)},${stepNum(a)})`);
+
+    const vIn  = raw(`VERTEX_POINT('',#${pt(u[0]*hIn  + a*ref[0], u[1]*hIn  + a*ref[1], u[2]*hIn  + a*ref[2])})`);
+    const vOut = raw(`VERTEX_POINT('',#${pt(u[0]*hOut + a*ref[0], u[1]*hOut + a*ref[1], u[2]*hOut + a*ref[2])})`);
+
+    // One closed edge per circle, shared by the sphere face and the bore wall
+    // with opposite orientations — that is what makes the shell manifold.
+    const ecIn  = raw(`EDGE_CURVE('',#${vIn},#${vIn},#${cIn},.T.)`);
+    const ecOut = raw(`EDGE_CURVE('',#${vOut},#${vOut},#${cOut},.T.)`);
+
+    const loop = (edge, sense) =>
+      raw(`EDGE_LOOP('',(#${raw(`ORIENTED_EDGE('',*,*,#${edge},${sense})`)}))`);
+
+    innerBounds.push(raw(`FACE_BOUND('',#${loop(ecIn,  '.T.')},.T.)`));
+    outerBounds.push(raw(`FACE_BOUND('',#${loop(ecOut, '.F.')},.T.)`));
+
+    const bnd1 = raw(`FACE_OUTER_BOUND('',#${loop(ecIn,  '.F.')},.T.)`);
+    const bnd2 = raw(`FACE_BOUND('',#${loop(ecOut, '.T.')},.T.)`);
+    // .F.: material lies OUTSIDE the bore, so the face normal points inward.
+    boreFaces.push(raw(`ADVANCED_FACE('${h.label || ('bore_' + (k + 1))}',(#${bnd1},#${bnd2}),#${cylSurf},.F.)`));
+  });
+
+  // .T. on the outer sphere (normal outward, away from material),
+  // .F. on the inner sphere (normal must point into the cavity).
+  const faceOut = raw(`ADVANCED_FACE('outer_sphere',(${outerBounds.map(i => '#' + i).join(',')}),#${surfOut},.T.)`);
+  const faceIn  = raw(`ADVANCED_FACE('inner_sphere',(${innerBounds.map(i => '#' + i).join(',')}),#${surfIn},.F.)`);
+
+  const shell = raw(`CLOSED_SHELL('',(#${faceOut},#${faceIn},${boreFaces.map(i => '#' + i).join(',')}))`);
+  const brep  = raw(`MANIFOLD_SOLID_BREP('holder',#${shell})`);
+
+  const bodyEnd = w.lines.length;
+  const tail = stepProductTailFrom(w, bodyEnd, [brep], 'MANDHALA_HOLDER', 'Spherical holder, radially bored');
+  return stepHeader('Mandhala holder shell with radial bores', 'holder.step')
+       + w.lines.slice(0, bodyEnd).join('\n') + '\n' + tail
+       + 'ENDSEC;\nEND-ISO-10303-21;\n';
+}
+
+// One closed cylindrical solid per magnet (the original export, kept as a
+// mating/BOM check). Fixed: uppercase exponent-free real literals.
+function buildMagnetsStepFile(cylinders) {
+  const w = stepWriter(100);
+  const { raw, pt, dir, ax2 } = w;
+  const brepIds = [];
 
   cylinders.forEach((cyl, cIdx) => {
     const { center, axis, refDir, radius, length } = cyl;
     const half = length / 2;
-    const bx = center[0] - half*axis[0], by = center[1] - half*axis[1], bz = center[2] - half*axis[2];
-    const tx = center[0] + half*axis[0], ty = center[1] + half*axis[1], tz = center[2] + half*axis[2];
+    const b = [center[0] - half*axis[0], center[1] - half*axis[1], center[2] - half*axis[2]];
+    const t = [center[0] + half*axis[0], center[1] + half*axis[1], center[2] + half*axis[2]];
 
-    const pBot = idx++;   lines.push(`#${pBot} = CARTESIAN_POINT('',(${num(bx)},${num(by)},${num(bz)}));`);
-    const pTop = idx++;   lines.push(`#${pTop} = CARTESIAN_POINT('',(${num(tx)},${num(ty)},${num(tz)}));`);
-    const dAxis = idx++;  lines.push(`#${dAxis} = DIRECTION('',(${num(axis[0])},${num(axis[1])},${num(axis[2])}));`);
-    const dAxisNeg = idx++; lines.push(`#${dAxisNeg} = DIRECTION('',(${num(-axis[0])},${num(-axis[1])},${num(-axis[2])}));`);
-    const dRef = idx++;   lines.push(`#${dRef} = DIRECTION('',(${num(refDir[0])},${num(refDir[1])},${num(refDir[2])}));`);
+    const pBot = pt(b[0], b[1], b[2]);
+    const pTop = pt(t[0], t[1], t[2]);
+    const dAx    = dir(axis[0], axis[1], axis[2]);
+    const dAxNeg = dir(-axis[0], -axis[1], -axis[2]);
+    const dRef   = dir(refDir[0], refDir[1], refDir[2]);
 
-    const apBot = idx++;    lines.push(`#${apBot} = AXIS2_PLACEMENT_3D('',#${pBot},#${dAxis},#${dRef});`);
-    const apTop = idx++;    lines.push(`#${apTop} = AXIS2_PLACEMENT_3D('',#${pTop},#${dAxis},#${dRef});`);
-    const apBotOut = idx++; lines.push(`#${apBotOut} = AXIS2_PLACEMENT_3D('',#${pBot},#${dAxisNeg},#${dRef});`);
+    const apBot    = ax2(pBot, dAx, dRef);
+    const apTop    = ax2(pTop, dAx, dRef);
+    const apBotOut = ax2(pBot, dAxNeg, dRef);
 
-    const cylSurf = idx++; lines.push(`#${cylSurf} = CYLINDRICAL_SURFACE('',#${apBot},${num(radius)});`);
-    const planeBot = idx++; lines.push(`#${planeBot} = PLANE('',#${apBotOut});`);
-    const planeTop = idx++; lines.push(`#${planeTop} = PLANE('',#${apTop});`);
+    const cylSurf  = raw(`CYLINDRICAL_SURFACE('',#${apBot},${stepNum(radius)})`);
+    const planeBot = raw(`PLANE('',#${apBotOut})`);
+    const planeTop = raw(`PLANE('',#${apTop})`);
+    const circBot  = raw(`CIRCLE('',#${apBot},${stepNum(radius)})`);
+    const circTop  = raw(`CIRCLE('',#${apTop},${stepNum(radius)})`);
 
-    const circBot = idx++; lines.push(`#${circBot} = CIRCLE('',#${apBot},${num(radius)});`);
-    const circTop = idx++; lines.push(`#${circTop} = CIRCLE('',#${apTop},${num(radius)});`);
+    const vBot = raw(`VERTEX_POINT('',#${pt(b[0] + radius*refDir[0], b[1] + radius*refDir[1], b[2] + radius*refDir[2])})`);
+    const vTop = raw(`VERTEX_POINT('',#${pt(t[0] + radius*refDir[0], t[1] + radius*refDir[1], t[2] + radius*refDir[2])})`);
 
-    const pBotEdge = idx++;
-    lines.push(`#${pBotEdge} = CARTESIAN_POINT('',(${num(bx + radius*refDir[0])},${num(by + radius*refDir[1])},${num(bz + radius*refDir[2])}));`);
-    const pTopEdge = idx++;
-    lines.push(`#${pTopEdge} = CARTESIAN_POINT('',(${num(tx + radius*refDir[0])},${num(ty + radius*refDir[1])},${num(tz + radius*refDir[2])}));`);
+    const ecBot = raw(`EDGE_CURVE('',#${vBot},#${vBot},#${circBot},.T.)`);
+    const ecTop = raw(`EDGE_CURVE('',#${vTop},#${vTop},#${circTop},.T.)`);
 
-    const vBot = idx++; lines.push(`#${vBot} = VERTEX_POINT('',#${pBotEdge});`);
-    const vTop = idx++; lines.push(`#${vTop} = VERTEX_POINT('',#${pTopEdge});`);
+    const loop = (edge, sense) =>
+      raw(`EDGE_LOOP('',(#${raw(`ORIENTED_EDGE('',*,*,#${edge},${sense})`)}))`);
 
-    const ecBot = idx++; lines.push(`#${ecBot} = EDGE_CURVE('',#${vBot},#${vBot},#${circBot},.T.);`);
-    const ecTop = idx++; lines.push(`#${ecTop} = EDGE_CURVE('',#${vTop},#${vTop},#${circTop},.T.);`);
+    const fobBot = raw(`FACE_OUTER_BOUND('',#${loop(ecBot, '.F.')},.T.)`);
+    const fobTop = raw(`FACE_OUTER_BOUND('',#${loop(ecTop, '.T.')},.T.)`);
+    const fobLat = raw(`FACE_OUTER_BOUND('',#${loop(ecBot, '.T.')},.T.)`);
+    const fbLat  = raw(`FACE_BOUND('',#${loop(ecTop, '.F.')},.T.)`);
 
-    const oeBotF = idx++; lines.push(`#${oeBotF} = ORIENTED_EDGE('',*,*,#${ecBot},.T.);`);
-    const oeTopF = idx++; lines.push(`#${oeTopF} = ORIENTED_EDGE('',*,*,#${ecTop},.F.);`);
-    const oeBotT = idx++; lines.push(`#${oeBotT} = ORIENTED_EDGE('',*,*,#${ecBot},.F.);`);
-    const oeTopT = idx++; lines.push(`#${oeTopT} = ORIENTED_EDGE('',*,*,#${ecTop},.T.);`);
+    const afBot = raw(`ADVANCED_FACE('',(#${fobBot}),#${planeBot},.T.)`);
+    const afTop = raw(`ADVANCED_FACE('',(#${fobTop}),#${planeTop},.T.)`);
+    const afLat = raw(`ADVANCED_FACE('',(#${fobLat},#${fbLat}),#${cylSurf},.T.)`);
 
-    const elBot = idx++; lines.push(`#${elBot} = EDGE_LOOP('',(#${oeBotT}));`);
-    const elTop = idx++; lines.push(`#${elTop} = EDGE_LOOP('',(#${oeTopT}));`);
-    // Lateral face: the two circles are disconnected, so they must be TWO
-    // separate bounds (outer + inner), not one EDGE_LOOP — strict importers
-    // reject a loop whose edges don't form a connected chain.
-    const elLatBot = idx++; lines.push(`#${elLatBot} = EDGE_LOOP('',(#${oeBotF}));`);
-    const elLatTop = idx++; lines.push(`#${elLatTop} = EDGE_LOOP('',(#${oeTopF}));`);
-
-    const fobBot = idx++; lines.push(`#${fobBot} = FACE_OUTER_BOUND('',#${elBot},.T.);`);
-    const fobTop = idx++; lines.push(`#${fobTop} = FACE_OUTER_BOUND('',#${elTop},.T.);`);
-    const fobLat = idx++; lines.push(`#${fobLat} = FACE_OUTER_BOUND('',#${elLatBot},.T.);`);
-    const fbLat  = idx++; lines.push(`#${fbLat} = FACE_BOUND('',#${elLatTop},.T.);`);
-
-    const afBot = idx++; lines.push(`#${afBot} = ADVANCED_FACE('',(#${fobBot}),#${planeBot},.T.);`);
-    const afTop = idx++; lines.push(`#${afTop} = ADVANCED_FACE('',(#${fobTop}),#${planeTop},.T.);`);
-    const afLat = idx++; lines.push(`#${afLat} = ADVANCED_FACE('',(#${fobLat},#${fbLat}),#${cylSurf},.T.);`);
-
-    const shell = idx++; lines.push(`#${shell} = CLOSED_SHELL('',(#${afBot},#${afTop},#${afLat}));`);
-    const brep = idx++;  lines.push(`#${brep} = MANIFOLD_SOLID_BREP('mag_${cIdx+1}',#${shell});`);
-
-    brepIds.push(brep);
+    const shell = raw(`CLOSED_SHELL('',(#${afBot},#${afTop},#${afLat}))`);
+    brepIds.push(raw(`MANIFOLD_SOLID_BREP('mag_${cIdx + 1}',#${shell})`));
   });
 
-  // Global world frame and assembly
-  const pOrig = idx++;   lines.push(`#${pOrig} = CARTESIAN_POINT('',(0.,0.,0.));`);
-  const dZ = idx++;      lines.push(`#${dZ} = DIRECTION('',(0.,0.,1.));`);
-  const dX = idx++;      lines.push(`#${dX} = DIRECTION('',(1.,0.,0.));`);
-  const apWorld = idx++; lines.push(`#${apWorld} = AXIS2_PLACEMENT_3D('world',#${pOrig},#${dZ},#${dX});`);
-
-  const prod = idx++;    lines.push(`#${prod} = PRODUCT('MAGNETS','Radial sphere magnet set','',(#3));`);
-  const pdf = idx++;     lines.push(`#${pdf} = PRODUCT_DEFINITION_FORMATION('','',#${prod});`);
-  const pdef = idx++;    lines.push(`#${pdef} = PRODUCT_DEFINITION('','',#${pdf},#5);`);
-  const pds = idx++;     lines.push(`#${pds} = PRODUCT_DEFINITION_SHAPE('','',#${pdef});`);
-  const sr = idx++;
-  const allItems = [apWorld, ...brepIds].map(i => `#${i}`).join(',');
-  lines.push(`#${sr} = ADVANCED_BREP_SHAPE_REPRESENTATION('',(${allItems}),#10);`);
-  const sdsr = idx++;    lines.push(`#${sdsr} = SHAPE_DEFINITION_REPRESENTATION(#${pds},#${sr});`);
-
-  return header + lines.join('\n') + `\nENDSEC;\nEND-ISO-10303-21;\n`;
+  const bodyEnd = w.lines.length;
+  const tail = stepProductTailFrom(w, bodyEnd, brepIds, 'MANDHALA_MAGNETS', 'Radial dipole set');
+  return stepHeader('Mandhala dipole cylinders', 'magnets.step')
+       + w.lines.slice(0, bodyEnd).join('\n') + '\n' + tail
+       + 'ENDSEC;\nEND-ISO-10303-21;\n';
 }
 
-function exportSTEP() {
+function stepProductTailFrom(w, mark, brepIds, prodName, prodDesc) {
+  const { raw, pt, dir, ax2 } = w;
+  const apWorld = ax2(pt(0, 0, 0), dir(0, 0, 1), dir(1, 0, 0), 'world');
+  const prod = raw(`PRODUCT('${prodName}','${prodDesc}','',(#3))`);
+  const pdf  = raw(`PRODUCT_DEFINITION_FORMATION('','',#${prod})`);
+  const pdef = raw(`PRODUCT_DEFINITION('','',#${pdf},#5)`);
+  const pds  = raw(`PRODUCT_DEFINITION_SHAPE('','',#${pdef})`);
+  const items = [apWorld, ...brepIds].map(i => '#' + i).join(',');
+  const sr = raw(`ADVANCED_BREP_SHAPE_REPRESENTATION('',(${items}),#10)`);
+  raw(`SHAPE_DEFINITION_REPRESENTATION(#${pds},#${sr})`);
+  return w.lines.slice(mark).join('\n') + '\n';
+}
+
+// ── Export entry points ────────────────────────────────────────────────────
+function exportSTEPHolder() {
+  const p = getParams();
+  const a = p.diam / 2 + p.holeClr;          // bore radius
+
+  if (!(p.R_outer > p.R)) {
+    showTooltip('<span style="color:var(--accent3)">STEP holder: Outer R must exceed Inner R.</span>', 6000);
+    return;
+  }
+  if (a >= p.R * 0.999) {
+    showTooltip('<span style="color:var(--accent3)">STEP holder: bore radius is larger than the inner sphere — reduce the magnet diameter or clearance.</span>', 8000);
+    return;
+  }
+
+  // Bores must not merge into each other on the inner sphere, where they are
+  // widest relative to the spacing.
+  let worst = Infinity;
+  for (let i = 0; i < magnets.length; i++) {
+    for (const nb of neighbours[i]) {
+      const chord = 2 * p.R * nb.sinHalfA;
+      if (chord < worst) worst = chord;
+    }
+  }
+  if (isFinite(worst) && worst < 2 * a) {
+    showTooltip(`<span style="color:var(--accent3)">STEP holder: adjacent bores intersect (spacing ${worst.toFixed(2)} mm &lt; bore Ø ${(2*a).toFixed(2)} mm). Increase Inner R, or reduce diameter / clearance.</span>`, 9000);
+    return;
+  }
+
+  const holes = magnets.map((mag, i) => ({
+    dir: [mag.dir.x, mag.dir.y, mag.dir.z],
+    radius: a,
+    label: 'bore_' + (i + 1)
+  }));
+
+  const step = buildHolderStepFile(p.R, p.R_outer, holes);
+  const nowIso = new Date().toISOString().replace(/[:.]/g, '-').slice(0, 19);
+  downloadBlob(step, 'application/step', `Mandhala_holder_${currentLattice()}_${nowIso}.step`);
+  showTooltip(
+    `<b style="color:var(--accent)">STEP holder exported</b><br>` +
+    `shell R ${p.R.toFixed(1)} → ${p.R_outer.toFixed(1)} mm · ${holes.length} radial bores Ø${(2*a).toFixed(2)} mm<br>` +
+    `insertion depths (magnet inner face radius) are in the CSV export`, 9000);
+}
+
+function exportSTEPMagnets() {
   const p = getParams();
   const cylinders = magnets.map((mag) => {
     const rInner = p.R + mag.offset;
-    const cx = mag.dir.x * (rInner + p.len/2);
-    const cy = mag.dir.y * (rInner + p.len/2);
-    const cz = mag.dir.z * (rInner + p.len/2);
-    // Orthonormal frame around axis = mag.mu
-    let rx = 1, ry = 0, rz = 0;
-    if (Math.abs(mag.mu.x) > 0.9) { rx = 0; ry = 1; }
-    const d2 = mag.mu.x*rx + mag.mu.y*ry + mag.mu.z*rz;
-    let e1x = rx - d2*mag.mu.x, e1y = ry - d2*mag.mu.y, e1z = rz - d2*mag.mu.z;
-    const n = Math.sqrt(e1x*e1x + e1y*e1y + e1z*e1z);
+    const c = rInner + p.len / 2;
+    const axis = [mag.mu.x, mag.mu.y, mag.mu.z];
     return {
-      center: [cx, cy, cz],
-      axis:   [mag.mu.x, mag.mu.y, mag.mu.z],
-      refDir: [e1x/n, e1y/n, e1z/n],
+      center: [mag.dir.x * c, mag.dir.y * c, mag.dir.z * c],
+      axis,
+      refDir: perpTo(axis),
       radius: p.diam / 2,
       length: p.len
     };
   });
-  const step = buildStepFile(cylinders);
+  const step = buildMagnetsStepFile(cylinders);
   const nowIso = new Date().toISOString().replace(/[:.]/g, '-').slice(0, 19);
-  downloadBlob(step, 'application/step', `Radial_Sphere_${currentLattice()}_${nowIso}.step`);
+  downloadBlob(step, 'application/step', `Mandhala_magnets_${currentLattice()}_${nowIso}.step`);
   showTooltip(`STEP exported: ${magnets.length} cylinders`, 3000);
 }
 
@@ -2580,7 +3008,20 @@ function buildDefaultTooltip() {
     label = `${N} dipoles on Lebedev-110 (poles removed, bore ‖ Z)`;
     symNote = 'D₂ₕ symmetry · By = Bz = 0 by construction';
   }
-  return `<b style="color:var(--accent)">RADIAL SPHERE</b> · ${label}<br>Each dipole points radially · +x hemisphere S-in, −x hemisphere N-in · ${symNote}<br>Rotate: drag · Zoom: scroll · Pan: right-drag`;
+  return `<b style="color:var(--accent)">MANDHALA</b> · ${label}<br>Each dipole points radially · +x hemisphere S-in, −x hemisphere N-in · ${symNote}<br>Rotate: drag · Zoom: scroll · Pan: right-drag`;
+}
+
+// The scene is Z-up, so camera.up = (0,0,1) everywhere — except looking
+// straight down the Z axis (top view, phi -> 0), where up becomes parallel to
+// the view direction and lookAt() degenerates. Swap to Y-up near the poles.
+function placeCamera(theta, phi, radius, panX = 0, panY = 0) {
+  camera.position.x = radius*Math.sin(phi)*Math.sin(theta) + panX;
+  camera.position.y = radius*Math.sin(phi)*Math.cos(theta) + panY;
+  camera.position.z = radius*Math.cos(phi);
+  const nearPole = phi < 0.12 || phi > Math.PI - 0.12;
+  if (nearPole) camera.up.set(0, 1, 0);
+  else          camera.up.set(0, 0, 1);
+  camera.lookAt(panX, panY, 0);
 }
 
 let prevTime = 0;
@@ -2596,11 +3037,7 @@ function animate(time) {
         Math.abs(spherical.phi   - targetView.phi)   < 1e-4) targetView = null;
   }
 
-  camera.position.x = spherical.radius*Math.sin(spherical.phi)*Math.sin(spherical.theta) + panOffset.x;
-  camera.position.y = spherical.radius*Math.sin(spherical.phi)*Math.cos(spherical.theta) + panOffset.y;
-  camera.position.z = spherical.radius*Math.cos(spherical.phi);
-  camera.up.set(0, 0, 1);
-  camera.lookAt(panOffset.x, panOffset.y, 0);
+  placeCamera(spherical.theta, spherical.phi, spherical.radius, panOffset.x, panOffset.y);
 
   if (!isMouseDown && !targetView && !optRunning) spherical.theta += 0.0003;
   renderer.render(scene, camera);
@@ -2623,7 +3060,8 @@ document.querySelectorAll('input, select').forEach(el => {
   el.addEventListener('input', () => {
     // Target inputs route through onTargetEdit which calls evaluateField itself.
     if (el.id === 'targetHomog' || el.id === 'targetField') return;
-    evaluateField();
+    if (optRunning) return;
+    evaluateFieldDebounced();
     if (currentMapPlane) {
       clearTimeout(mapTimer);
       mapTimer = setTimeout(() => {
@@ -2636,7 +3074,7 @@ document.querySelectorAll('input, select').forEach(el => {
 
 // INIT
 resize();
-onGeomChange();
+onLatticeChange();   // first build: create the lattice from scratch
 updateTargetReadout();
 // Initial camera distance scales with inner radius
 spherical.radius = parseFloat(document.getElementById('baseRadius').value) * 5.5;
