@@ -437,7 +437,7 @@ input.calc-field.warn {
     <div class="section-title">Phase Relation</div>
     <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 10px; align-items: end;">
       <div class="field-row" style="margin-bottom: 0;">
-        <label>Phase Offset (°)</label>
+        <label>Ring 2 rotation (°)</label>
         <input type="number" id="phaseOffset2" value="0" step="1" oninput="update()">
       </div>
       <button class="btn" id="btn-estimate" onclick="estimateOptimalOffset()"
@@ -466,6 +466,8 @@ input.calc-field.warn {
         <label>Thickness (mm)</label>
         <input type="number" id="holderThick" value="40" min="2" max="150" step="1" oninput="update()">
       </div>
+      <div class="field-row"><label>Pocket clearance / side (mm)</label><input type="number" id="holderClr" value="0.2" min="0" step="0.05" oninput="update()"></div>
+      <div style="font-size:10px;color:var(--muted)">Holder: open-top rectangular pockets. Visibility controls affect the preview only; STEP includes the complete assembly.</div>
       <div class="field-row checkbox-row">
         <input type="checkbox" id="showHolder" checked onchange="update()">
         <label for="showHolder">Visible</label>
@@ -628,6 +630,7 @@ let panOffset = { x: 0, y: 0 };
 let targetView = null;
 
 canvas.addEventListener('mousedown', e => {
+  if(busy)return;
   isMouseDown = true; mouseButton = e.button;
   lastMouse = { x: e.clientX, y: e.clientY };
   canvas.style.cursor = e.button === 2 ? 'move' : 'grabbing';
@@ -636,6 +639,7 @@ canvas.addEventListener('mousedown', e => {
 canvas.addEventListener('contextmenu', e => e.preventDefault());
 window.addEventListener('mouseup', () => { isMouseDown = false; canvas.style.cursor = 'default'; });
 window.addEventListener('mousemove', e => {
+  if(busy)return;
   if (!isMouseDown) return;
   const dx = e.clientX - lastMouse.x;
   const dy = e.clientY - lastMouse.y;
@@ -650,6 +654,7 @@ window.addEventListener('mousemove', e => {
   targetView = null;
 });
 canvas.addEventListener('wheel', e => {
+  if(busy)return;
   spherical.radius = Math.max(40, Math.min(600, spherical.radius + e.deltaY * 0.3));
   targetView = null;
   e.preventDefault();
@@ -660,6 +665,8 @@ let currentMapPlane = null;
 
 
 function setView(mode) {
+  if(busy)return;
+  ++mapVersion;cancelFieldJob('map');
   window.isSphereView = false;
   document.getElementById('map-container').style.display = 'none';
   document.getElementById('sphere-colorbar').style.display = 'none';
@@ -678,6 +685,8 @@ function setView(mode) {
 }
 
 function setMapTab(plane) {
+  if(busy)return;
+  ++mapVersion;cancelFieldJob('map');
   window.isSphereView = false;
   plane = plane.toLowerCase();
   const container = document.getElementById('map-container');
@@ -699,6 +708,8 @@ function setMapTab(plane) {
 }
 
 function showSphereMap() {
+  if(busy)return;
+  ++mapVersion;cancelFieldJob('map');
   window.isSphereView = true;
   document.getElementById('map-container').style.display = 'none';
   document.getElementById('sphere-colorbar').style.display = 'flex';
@@ -743,7 +754,7 @@ function ringField(a, I, rho, zeta) {
   const z2   = zeta * zeta;
   const Q    = (a + rho) * (a + rho) + z2;
   const D    = (a - rho) * (a - rho) + z2;
-  if (D < 1e-20) return { Baxial: 0, Bradial: 0 }; // field point on the wire
+  if (D < 1e-20) return { Baxial: NaN, Bradial: NaN }; // ideal filament: undefined
   const m    = 4 * a * rho / Q;
   const sqQ  = Math.sqrt(Q);
   const [K, E] = ellipticKE(m);
@@ -793,10 +804,8 @@ function cylinderField(px, py, pz,
   for (let n = 0; n < N_RINGS; n++) {
     const t    = -halfL + (n + 0.5) * ds;
     const zeta = d_ax - t;
-    // Skip a ring only if the field point sits ON the ring's wire (true singularity).
-    // Do NOT skip when merely radially inside the cylinder near a ring plane:
-    // that biases the field for points in and around the magnet body.
-    if (Math.abs(rho - a) < ds * 0.1 && Math.abs(zeta) < ds * 0.5) continue;
+    // Keep the existing 32-slice approximation, retaining every current ring.
+    // A point exactly on an ideal filament is undefined (NaN), not zero.
 
     const { Baxial, Bradial } = ringField(a, dI, rho, zeta);
     B_axial_total  += Baxial;
@@ -901,32 +910,151 @@ function updateUIToggle() {
 }
 
 
+// Preview visibility never changes the physical model or exported assembly.
+let busy=false, updateTimer=null, sceneVersion=0, mapVersion=0;
+function lockControls(locked) {
+  if(locked) {
+    lockControls.saved=[];
+    document.querySelectorAll('input,select,button').forEach(e=>{if(!e.disabled){e.disabled=true;lockControls.saved.push(e);}});
+  } else { (lockControls.saved||[]).forEach(e=>e.disabled=false);lockControls.saved=[]; }
+}
+function holderParams() {
+  return {Ri:Number(document.getElementById('holderIn').value)/2,Ro:Number(document.getElementById('holderOut').value)/2,
+    L:Number(document.getElementById('holderThick').value),clearance:Number(document.getElementById('holderClr').value)};
+}
+function inputErrors() {
+  const errors=[];
+  const positive=['holderIn','holderOut','holderThick','testRadius'];
+  const nonnegative=['minGap','holderClr'];
+  const contour=Number(document.getElementById('numContours').value);
+  if(document.getElementById('numContours').value.trim()===''||!Number.isInteger(contour)||contour<0||contour>50)
+    errors.push('Contour count must be an integer from 0 to 50');
+  const count=Number(document.getElementById('numRings').value);
+  const k=Number(document.getElementById('halbachK').value);
+  if(![1,2].includes(count)||![1,2,3,4].includes(k)) errors.push('Invalid ring count or Halbach order');
+  for(let i=1;i<=Math.min(count,2);i++) {
+    const n=Number(document.getElementById('nPoles'+i).value);
+    if(!Number.isInteger(n)||n<2||n>64) errors.push('Pole count must be an integer from 2 to 64');
+    const shape=document.getElementById('magnetShape'+i).value;
+    if(!['cylinder','cuboid'].includes(shape)) errors.push('Invalid magnet shape');
+    positive.push('magB'+i,'magRadius'+i,...(shape==='cylinder'?['magDiam'+i,'magLen'+i]:['magWidth'+i,'magHeight'+i,'magLenCuboid'+i]));
+    for(const id of ['magZ'+i,...(i===2?['phaseOffset2']:[])]) {
+      const e=document.getElementById(id);
+      if(e.value.trim()===''||!Number.isFinite(Number(e.value))) errors.push(id+' must be a finite number');
+    }
+  }
+  for(const [ids,allowZero] of [[positive,false],[nonnegative,true]]) for(const id of ids) {
+    const e=document.getElementById(id),v=Number(e.value);
+    if(e.value.trim()===''||!Number.isFinite(v)||(allowZero?v<0:v<=0)) errors.push(id+' must be '+(allowZero?'non-negative':'positive'));
+  }
+  return errors;
+}
+function validInputs() {
+  const errors=inputErrors();
+  if(errors.length) {
+    for(const id of ['stat-Binner','stat-Bouter','varianceResult']) document.getElementById(id).value='Invalid inputs';
+    showTooltip(errors.join(' · '),4000);return false;
+  }
+  return true;
+}
+function magnetBoxes(params, extra=0) {
+  const boxes=[];
+  params.rings.forEach((r,ri)=>{
+    for(let i=0;i<r.nPoles;i++) {
+      const t=i*2*Math.PI/r.nPoles,theta=t+r.phaseOffset,phi=params.k*t+r.phaseOffset;
+      boxes.push({cx:r.rPlace*Math.cos(theta),cy:r.rPlace*Math.sin(theta),cz:r.zOffset,phi,
+        hL:r.magLen/2+extra,hW:(r.shape==='cylinder'?r.magDiam:r.magWidth)/2+extra,
+        hH:(r.shape==='cylinder'?r.magDiam:r.magHeight)/2+extra,ri,i});
+    }
+  });return boxes;
+}
+function boxCorners(b) {
+  const c=Math.cos(b.phi),s=Math.sin(b.phi);
+  return [[-1,-1],[1,-1],[1,1],[-1,1]].map(([x,y])=>[b.cx+x*b.hL*c-y*b.hW*s,b.cy+x*b.hL*s+y*b.hW*c]);
+}
+function pocketLayout(params,h) {
+  const errors=[],pockets=magnetBoxes(params,h.clearance);
+  if(!(h.Ro>h.Ri && h.Ri>0 && h.L>0)) errors.push('Holder outer diameter must exceed its positive inner diameter');
+  for(const b of pockets) {
+    const corners=boxCorners(b), c=Math.cos(b.phi),s=Math.sin(b.phi);
+    const u=-b.cx*c-b.cy*s,v=b.cx*s-b.cy*c;
+    const near=Math.hypot(Math.max(0,Math.abs(u)-b.hL),Math.max(0,Math.abs(v)-b.hW));
+    if(near<=h.Ri+1e-6||corners.some(([x,y])=>Math.hypot(x,y)>=h.Ro-1e-6)) errors.push('Pocket must leave material at both holder radii');
+    b.floor=b.cz-b.hH;b.top=h.L/2;b.corners=corners;
+    if(b.floor<=-h.L/2+1e-6||b.cz+b.hH>h.L/2+1e-6) errors.push('Magnet and clearance must fit above a positive holder floor and below the holder top');
+  }
+  for(let i=0;i<pockets.length;i++) for(let j=i+1;j<pockets.length;j++) {
+    const a=pockets[i],b=pockets[j];let gap=-Infinity;
+    for(const t of [a.phi,a.phi+Math.PI/2,b.phi,b.phi+Math.PI/2]) {
+      const x=Math.cos(t),y=Math.sin(t);
+      const extent=q=>q.hL*Math.abs(Math.cos(q.phi)*x+Math.sin(q.phi)*y)+q.hW*Math.abs(-Math.sin(q.phi)*x+Math.cos(q.phi)*y);
+      gap=Math.max(gap,Math.abs((b.cx-a.cx)*x+(b.cy-a.cy)*y)-extent(a)-extent(b));
+    }
+    if(gap<=1e-6) errors.push('Open-top pockets overlap; adjust ring placement or rotation');
+  }
+  return {pockets,errors:[...new Set(errors)]};
+}
+function testVolumeClear(params,radius) {
+  // Conservative box envelope prevents samples inside magnet material.
+  return magnetBoxes(params).every(b=>{
+    const c=Math.cos(b.phi),s=Math.sin(b.phi),u=-b.cx*c-b.cy*s,v=b.cx*s-b.cy*c;
+    const distance=Math.hypot(Math.max(0,Math.abs(u)-b.hL),Math.max(0,Math.abs(v)-b.hW),Math.max(0,Math.abs(b.cz)-b.hH));
+    return distance>radius+1e-6;
+  });
+}
+function exportErrors(params=getMagnetParams()) {
+  const errors=inputErrors();if(errors.length)return errors;
+  const col=checkCollisions(params,Number(document.getElementById('minGap').value));
+  if(col.collides)errors.push(col.info);
+  errors.push(...pocketLayout(params,holderParams()).errors);
+  return errors;
+}
+function disposeGroup(group) {
+  if(!group)return;
+  const geometries=new Set(),materials=new Set(),textures=new Set();
+  group.traverse(o=>{if(o.geometry)geometries.add(o.geometry);if(o.material)for(const m of (Array.isArray(o.material)?o.material:[o.material]))materials.add(m);});
+  for(const m of materials)for(const v of Object.values(m))if(v?.isTexture)textures.add(v);
+  geometries.forEach(g=>g.dispose());textures.forEach(t=>t.dispose());materials.forEach(m=>m.dispose());scene.remove(group);
+}
+function volumePoints(radius,dense=false) {
+  const points=[[0,0,0]],n=dense?256:64;
+  for(const scale of (dense?[.35,.7,1]:[.5,1]))for(let i=0;i<n;i++) {
+    const z=1-2*(i+.5)/n,t=(i+.37)*Math.PI*(3-Math.sqrt(5)),r=Math.sqrt(1-z*z)*radius*scale;
+    points.push([r*Math.cos(t),r*Math.sin(t),z*radius*scale]);
+  }return points;
+}
+function magnitudeMetric(values) {
+  let min=Infinity,max=-Infinity,sum=0;
+  for(const v of values){if(!Number.isFinite(v))return Infinity;min=Math.min(min,v);max=Math.max(max,v);sum+=v;}
+  const mean=sum/values.length;
+  return mean>1e-6?(max-min)/mean:Infinity;
+}
+
 //prams
 function getMagnetParams() {
-  const k        = parseInt(document.getElementById('halbachK').value) || 2;
-  const numRings = parseInt(document.getElementById('numRings').value) || 1;
+  const k        = Number(document.getElementById('halbachK').value);
+  const numRings = Number(document.getElementById('numRings').value);
 
   const rings = [];
   for (let i = 1; i <= numRings; i++) {
     const shape = document.getElementById('magnetShape' + i).value || 'cylinder';
-    const nPoles = Math.max(2, Math.min(64,
-      parseInt(document.getElementById('nPoles' + i).value) || 8));
-    const Br = parseFloat(document.getElementById('magB' + i).value) || 1.2;
-    const rPlace = (parseFloat(document.getElementById('magRadius' + i).value) || 70) / 2;
-    const zOffset = parseFloat(document.getElementById('magZ' + i).value) || 0;
+    const nPoles = Number(document.getElementById('nPoles' + i).value);
+    const Br = Number(document.getElementById('magB' + i).value);
+    const rPlace = (Number(document.getElementById('magRadius' + i).value)) / 2;
+    const zOffset = Number(document.getElementById('magZ' + i).value);
     const phaseOffset = (i === 2)
-      ? (parseFloat(document.getElementById('phaseOffset2').value) * Math.PI / 180)
+      ? (Number(document.getElementById('phaseOffset2').value) * Math.PI / 180)
       : 0;
     const visible = document.getElementById('showRing' + i).checked;
 
     let magDiam, magLen, magWidth, magHeight;
     if (shape === 'cylinder') {
-      magDiam = parseFloat(document.getElementById('magDiam' + i).value) || 20;
-      magLen  = parseFloat(document.getElementById('magLen' + i).value)  || 20;
+      magDiam = Number(document.getElementById('magDiam' + i).value);
+      magLen  = Number(document.getElementById('magLen' + i).value);
     } else {
-      magLen    = parseFloat(document.getElementById('magLenCuboid' + i).value) || 20;
-      magWidth  = parseFloat(document.getElementById('magWidth' + i).value)     || 20;
-      magHeight = parseFloat(document.getElementById('magHeight' + i).value)    || 20;
+      magLen    = Number(document.getElementById('magLenCuboid' + i).value);
+      magWidth  = Number(document.getElementById('magWidth' + i).value);
+      magHeight = Number(document.getElementById('magHeight' + i).value);
       magDiam   = Math.max(magWidth, magHeight);
     }
     rings.push({
@@ -951,7 +1079,7 @@ function _sumField(x, y, z, params) {
     for (let i = 0; i < nPoles; i++) {
       const theta0 = i * angleStep;
       const theta  = theta0 + ring.phaseOffset;
-      const phi    = k * theta;                 // k * (theta0 + phaseOffset)
+      const phi    = k * theta0 + ring.phaseOffset;                 // rigid rotation of ring and moments
 
       const cx = ring.rPlace * Math.cos(theta);
       const cy = ring.rPlace * Math.sin(theta);
@@ -990,8 +1118,8 @@ function fieldAt(x, y, z) {
 // Collision detection (honours Min Gap, per-ring shapes, cross-ring pairs)
 //
 // Each magnet is treated as a 3D box in its local frame aligned to the radial
-// direction:
-//   - radial axis (outward from bore axis)   : length = L (radial span)
+// magnetisation direction:
+//   - length axis (outward from bore axis)   : length = L (radial span)
 //   - tangential axis (perpendicular in XY)  : length = W (cylinder D or cuboid W)
 //   - axial axis (along Z)                   : length = H (cylinder D or cuboid H)
 //
@@ -1015,7 +1143,7 @@ function checkCollisions(params, minGap) {
     // Half-extents in the magnet's local frame (radial, tangential, axial)
     let hRadial, hTangential, hAxial;
     if (ring.shape === 'cylinder') {
-      // Cylinder axis is RADIAL. Bounding OBB: radial=L, tangential=D, axial=D.
+      // Cylinder axis follows the Halbach moment. Bounding OBB: radial=L, tangential=D, axial=D.
       hRadial     = ring.magLen  / 2;
       hTangential = ring.magDiam / 2;
       hAxial      = ring.magDiam / 2;
@@ -1034,7 +1162,7 @@ function checkCollisions(params, minGap) {
         cx: ring.rPlace * Math.cos(theta),
         cy: ring.rPlace * Math.sin(theta),
         cz: ring.zOffset,
-        theta,
+        theta: params.k * i * angleStep + ring.phaseOffset,
         hRadial,
         hTangential,
         hAxial
@@ -1102,25 +1230,126 @@ function checkCollisions(params, minGap) {
 }
 
 
-//2D projections
-function drawSingleMap(plane) {
-  const c = document.getElementById('map-canvas');
-  const container = document.getElementById('map-container');
-  if (!c || container.style.display === 'none') return;
-
-  document.body.style.cursor = 'wait';
-  const overlay = document.getElementById('map-computing-overlay');
-  if (overlay) overlay.style.display = 'flex';
-  setTimeout(() => _drawSingleMapImpl(plane), 30);
+function pointInBoxes(point,boxes) {
+  return boxes.some(b=>{
+    const x=point[0]-b.cx,y=point[1]-b.cy,z=point[2]-b.cz,c=Math.cos(b.phi),s=Math.sin(b.phi);
+    return Math.abs(x*c+y*s)<=b.hL+1e-8 && Math.abs(-x*s+y*c)<=b.hW+1e-8 && Math.abs(z)<=b.hH+1e-8;
+  });
+}
+async function numericalJob(job,progress=()=>{},pause=()=>Promise.resolve()) {
+  let lastYield=performance.now();
+  const tick=async()=>{if(performance.now()-lastYield>12){await pause();lastYield=performance.now();}};
+  const sample=async(params,points)=>{
+    const out=new Float64Array(points.length),boxes=magnetBoxes(params);
+    for(let i=0;i<points.length;i++) {
+      out[i]=pointInBoxes(points[i],boxes)?NaN:fieldAtWithParams(...points[i],params);
+      if((i&15)===0)await tick();
+    }return out;
+  };
+  if(job.kind==='points') return sample(job.params,job.points);
+  if(job.kind==='map') {
+    const points=[];
+    for(let j=0;j<job.N;j++)for(let i=0;i<job.N;i++) {
+      const u=(i/(job.N-1)*2-1)*job.xRange,v=(1-j/(job.N-1)*2)*job.yRange;
+      points.push(job.plane==='xy'?[u,v,0]:job.plane==='xz'?[u,0,v]:[0,u,v]);
+    }
+    const values=await sample(job.params,points);
+    if(job.plane==='xy')points.forEach((p,i)=>{if(Math.hypot(p[0],p[1])>job.xRange)values[i]=NaN;});
+    return values;
+  }
+  if(job.kind==='optimize') {
+    const sparse=volumePoints(job.radius),dense=volumePoints(job.radius,true),candidates=[],visited=new Set();
+    const original=job.params.rings[1].phaseOffset*180/Math.PI;
+    const evaluate=async angle=>{
+      angle=((angle%360)+360)%360;
+      const key=angle.toFixed(7);if(visited.has(key))return;visited.add(key);
+      const params={...job.params,rings:job.params.rings.map((r,i)=>i===1?{...r,phaseOffset:angle*Math.PI/180}:r)};
+      if(checkCollisions(params,job.minGap).collides||!testVolumeClear(params,job.radius))return;
+      const score=magnitudeMetric(await sample(params,sparse));
+      if(Number.isFinite(score)){candidates.push({angle,score,params});candidates.sort((a,b)=>a.score-b.score);if(candidates.length>12)candidates.pop();}
+    };
+    await evaluate(original);
+    for(let angle=0;angle<360;angle+=3){await evaluate(angle);progress({fraction:.65*angle/360});await tick();}
+    if(!candidates.length)throw new Error('No non-overlapping configuration with a clear test sphere was found.');
+    const seeds=candidates.slice(0,3);
+    for(let i=0;i<seeds.length;i++)for(let d=-3;d<=3;d+=.25){await evaluate(seeds[i].angle+d);progress({fraction:.65+.2*(i+(d+3)/6)/seeds.length});await tick();}
+    // Keep the feasible incumbent as a dense-validation candidate even if it
+    // ranked below the sparse shortlist; never worsen a verified incumbent.
+    const baseline={...job.params,rings:job.params.rings.map(r=>({...r}))};
+    const finalists=candidates.slice(0,8);
+    if(!checkCollisions(baseline,job.minGap).collides&&testVolumeClear(baseline,job.radius))finalists.push({angle:original,params:baseline});
+    let best=null;
+    for(let i=0;i<finalists.length;i++){
+      const c=finalists[i],score=magnitudeMetric(await sample(c.params,dense));
+      if(Number.isFinite(score)&&(!best||score<best.score))best={angle:c.angle,score};
+      progress({fraction:.85+.15*(i+1)/finalists.length});await tick();
+    }
+    if(!best)throw new Error('No finite validated field result was found.');
+    return {...best,samples:dense.length};
+  }
+  throw new Error('Unknown numerical job');
+}
+const fieldJobs=new Map();
+function cancelFieldJob(channel) {
+  const pending=fieldJobs.get(channel);if(!pending)return;
+  pending.cancelled=true;
+  if(pending.worker)pending.worker.terminate();
+  if(pending.url)URL.revokeObjectURL(pending.url);
+  fieldJobs.delete(channel);const e=new Error('Superseded calculation');e.name='AbortError';pending.reject(e);
+}
+function fieldJob(job,channel='map',progress=()=>{}) {
+  cancelFieldJob(channel);
+  return new Promise((resolve,reject)=>{
+    const pending={reject,cancelled:false};fieldJobs.set(channel,pending);
+    const finish=(error,value)=>{
+      if(pending.cancelled)return;
+      if(pending.worker)pending.worker.terminate();if(pending.url)URL.revokeObjectURL(pending.url);
+      if(fieldJobs.get(channel)===pending)fieldJobs.delete(channel);
+      error?reject(error):resolve(value);
+    };
+    try {
+      const src=`const MU0=${MU0};const N_RINGS=${N_RINGS};
+        ${ellipticKE.toString()}\n${ringField.toString()}\n${cylinderField.toString()}\n${cuboidField.toString()}
+        ${_sumField.toString()}\n${fieldAtWithParams.toString()}\n${checkCollisions.toString()}
+        ${magnetBoxes.toString()}\n${testVolumeClear.toString()}\n${pointInBoxes.toString()}
+        ${volumePoints.toString()}\n${magnitudeMetric.toString()}\n${numericalJob.toString()}
+        self.onmessage=async e=>{try{const value=await numericalJob(e.data,p=>self.postMessage({progress:p}));self.postMessage({value});}catch(error){self.postMessage({error:error.message});}};`;
+      pending.url=URL.createObjectURL(new Blob([src],{type:'application/javascript'}));
+      pending.worker=new Worker(pending.url);
+      pending.worker.onmessage=e=>{if(e.data.progress)progress(e.data.progress);else finish(e.data.error?new Error(e.data.error):null,e.data.value);};
+      pending.worker.onerror=e=>{e.preventDefault?.();finish(new Error(e.message||'Field worker failed'));};
+      pending.worker.onmessageerror=()=>finish(new Error('Could not read worker result'));
+      pending.worker.postMessage(job);
+    } catch(error) {
+      if(pending.worker)pending.worker.terminate();if(pending.url)URL.revokeObjectURL(pending.url);
+      pending.worker=null;pending.url=null;
+      const pause=async()=>{await new Promise(r=>setTimeout(r,0));if(pending.cancelled){const e=new Error('Cancelled');e.name='AbortError';throw e;}};
+      numericalJob(job,progress,pause).then(value=>finish(null,value),finish);
+    }
+  });
 }
 
-function _drawSingleMapImpl(plane) {
+
+//2D projections
+function drawSingleMap(plane) {
+  if(!validInputs())return;
+  const container=document.getElementById('map-container');
+  if(!container||container.style.display==='none')return;
+  _drawSingleMapImpl(plane).catch(e=>{if(e.name!=='AbortError')showTooltip('Map failed: '+e.message,5000);});
+}
+
+async function _drawSingleMapImpl(plane) {
+  const version=++mapVersion;
+  const params=getMagnetParams();
+  const mapOverlay=document.getElementById('map-computing-overlay');
+  if(mapOverlay)mapOverlay.style.display='flex';
+  try {
   const c = document.getElementById('map-canvas');
   const container = document.getElementById('map-container');
 
   c.style.width = '0px';
   c.style.height = '0px';
-  const size = Math.floor(Math.min(container.clientWidth, container.clientHeight) * 0.8);
+  const size = Math.max(280,Math.floor(Math.min(container.clientWidth, container.clientHeight) * 0.8));
 
   const dpr = window.devicePixelRatio || 1;
   c.style.width = size + "px";
@@ -1162,31 +1391,14 @@ function _drawSingleMapImpl(plane) {
   const xRange = reqX;
   const yRange = reqY;
 
-  const values = new Float32Array(plotW * plotH);
-  let maxB = -Infinity, minB = Infinity;
-
-  for (let j = 0; j < plotH; j++) {
-    for (let i = 0; i < plotW; i++) {
-      const u = (i / (plotW - 1)) * 2 * xRange - xRange;
-      const v = ((plotH - 1 - j) / (plotH - 1)) * 2 * yRange - yRange;
-      let rx = 0, ry = 0, rz = 0;
-      if (plane === 'xy') { rx = u; ry = v; rz = 0; }
-      else if (plane === 'xz') { rx = u; ry = 0; rz = v; }
-      else if (plane === 'yz') { rx = 0; ry = u; rz = v; }
-
-      const rad = Math.sqrt(rx * rx + ry * ry);
-      let inside = (plane === 'xy') ? (rad <= boreRi) : (rad <= boreRi && Math.abs(rz) <= halfZ);
-
-      const idx = j * plotW + i;
-      if (inside) {
-        const B = fieldAt(rx, ry, rz);
-        values[idx] = B;
-        if (B > maxB) maxB = B;
-        if (B < minB) minB = B;
-      } else {
-        values[idx] = -1;
-      }
-    }
+  const grid=await fieldJob({kind:'map',params,plane,xRange,yRange,N:96},'map');
+  if(version!==mapVersion)return;
+  const values=new Float32Array(plotW*plotH);
+  let minB=Infinity,maxB=-Infinity;
+  for(let j=0;j<plotH;j++)for(let i=0;i<plotW;i++) {
+    const gi=Math.round(i/(plotW-1)*95),gj=Math.round(j/(plotH-1)*95);
+    const v=grid[gj*96+gi];values[j*plotW+i]=Number.isFinite(v)?v:-1;
+    if(Number.isFinite(v)){minB=Math.min(minB,v);maxB=Math.max(maxB,v);}
   }
 
   if (minB === Infinity) { minB = 0; maxB = 1; }
@@ -1431,7 +1643,7 @@ function _drawSingleMapImpl(plane) {
   ctx.textAlign = "center";
   ctx.fillText("B Field", cbX + cbW / 2, mt - 15);
 
-  const Bcenter = fieldAt(0, 0, 0);
+  const Bcenter = fieldAtWithParams(0, 0, 0, params);
   ctx.save();
   ctx.fillStyle = isExport ? "#111827" : "#e2eaf5";
   ctx.font = "12px 'JetBrains Mono', monospace";
@@ -1440,81 +1652,35 @@ function _drawSingleMapImpl(plane) {
   ctx.fillText("Center: " + Bcenter.toFixed(3) + " T", ml + plotW / 2, mt - 8);
   ctx.restore();
 
-  document.body.style.cursor = '';
-  const overlay2 = document.getElementById('map-computing-overlay');
-  if (overlay2) overlay2.style.display = 'none';
+  } finally {
+    if(version===mapVersion) {document.body.style.cursor='';if(mapOverlay)mapOverlay.style.display='none';}
+  }
 }
-
 
 //offset, bug corrigé le 19 avril
 async function estimateOptimalOffset() {
-  const rings = getMagnetParams().rings;
-  if (rings.length < 2) return;
-
-  const targetR = parseFloat(document.getElementById('testRadius').value);
-  if (isNaN(targetR) || targetR <= 0) {
-    showTooltip("Invalid radius entered. Please check the Test Radius field.", 3000);
-    return;
-  }
-
-  document.body.style.cursor = 'wait';
-  const btn = document.getElementById('btn-estimate');
-  const originalBtnText = btn.innerText;
-  btn.innerText = "Computing...";
-  await new Promise(r => setTimeout(r, 50));
-
-  const points = [];
-  const numPoints = 256;
-  const phi = Math.PI * (3 - Math.sqrt(5));
-  for (let i = 0; i < numPoints; i++) {
-    const y = 1 - (i / (numPoints - 1)) * 2;
-    const radiusAtY = Math.sqrt(1 - y * y);
-    const theta = phi * i;
-    const x = Math.cos(theta) * radiusAtY;
-    const z = Math.sin(theta) * radiusAtY;
-    points.push({ x: x * targetR, y: y * targetR, z: z * targetR });
-  }
-
-  let bestAngle = 0;
-  let bestScore = Infinity;
-  const phaseInput = document.getElementById('phaseOffset2');
-
-  // Use ring-2 poles count for symmetry cycle
-  const maxSearchAngle = 360 / rings[1].nPoles;
-  const stepSize = 0.25;
-
-  for (let a = 0; a <= maxSearchAngle; a += stepSize) {
-    phaseInput.value = a;
-    const currentParams = getMagnetParams();
-
-    let minB = Infinity, maxB = -Infinity, sumB = 0;
-    for (let i = 0; i < numPoints; i++) {
-      const p = points[i];
-      const B = fieldAtWithParams(p.x, p.y, p.z, currentParams);
-      if (B < minB) minB = B;
-      if (B > maxB) maxB = B;
-      sumB += B;
-    }
-    const avgB = sumB / numPoints;
-    const score = avgB > 1e-6 ? (maxB - minB) / avgB : Infinity;
-    if (score < bestScore) { bestScore = score; bestAngle = a; }
-  }
-
-  phaseInput.value = bestAngle.toFixed(2);
-  update();
-
-  document.body.style.cursor = 'default';
-  btn.innerText = originalBtnText;
-
-  const variancePct = (bestScore * 100).toFixed(2);
-  showTooltip(`Optimization Complete!\nTarget Sphere: Ø${targetR*2} mm\nBest Phase Offset: ${bestAngle}°\nField Variance: ${variancePct}%`, 6000);
+  if(busy||!validInputs())return;
+  const params=getMagnetParams();if(params.rings.length<2)return;
+  const radius=Number(document.getElementById('testRadius').value),minGap=Number(document.getElementById('minGap').value);
+  const btn=document.getElementById('btn-estimate'),original=btn.textContent;
+  busy=true;clearTimeout(updateTimer);lockControls(true);
+  // The same button becomes a cancellation control while the worker searches.
+  btn.disabled=false;const oldClick=btn.onclick;
+  btn.onclick=()=>cancelFieldJob('optimize');btn.textContent='Cancel';
+  try {
+    const result=await fieldJob({kind:'optimize',params,radius,minGap},'optimize',p=>{btn.textContent='Cancel ('+Math.round(p.fraction*100)+'%)';});
+    document.getElementById('phaseOffset2').value=result.angle.toFixed(8);
+    showTooltip('Rotation search complete: '+result.angle.toFixed(2)+'° · '+(result.score*100).toFixed(2)+'% sampled variation · '+result.samples+' validation points',10000);
+  } catch(e) {showTooltip(e.name==='AbortError'?'Rotation search cancelled; original rotation retained.':'Rotation search failed: '+e.message,7000);}
+  finally {busy=false;lockControls(false);btn.onclick=oldClick;btn.textContent=original;update();}
 }
-
 
 //disply, solide ou fleches
 let displayMode = 'solid';
 
 function setDisplay(mode) {
+  if(busy)return;
+  ++mapVersion;cancelFieldJob('map');
   displayMode = mode;
   document.querySelectorAll('[id^=dbtn-]').forEach(b => b.classList.remove('active'));
   document.getElementById('dbtn-' + mode).classList.add('active');
@@ -1528,7 +1694,9 @@ let magnetData = [];
 
 
 //sphere, pas très utile
-function buildSphereGeometry() {
+async function buildSphereGeometry() {
+  const version=sceneVersion;
+  const group=window.sphereMapGroup;
   const targetR = parseFloat(document.getElementById('testRadius').value) || 10;
   const params = getMagnetParams();
 
@@ -1539,18 +1707,22 @@ function buildSphereGeometry() {
   const bValues = new Float32Array(vCount);
   let minB = Infinity, maxB = -Infinity;
 
-  for(let i = 0; i < vCount; i++) {
-    const x = pos.getX(i), y = pos.getY(i), z = pos.getZ(i);
-    const B = fieldAtWithParams(x, y, z, params);
-    bValues[i] = B;
-    if(B < minB) minB = B;
-    if(B > maxB) maxB = B;
+  const points=[];
+  for(let i=0;i<vCount;i++)points.push([pos.getX(i),pos.getY(i),pos.getZ(i)]);
+  let sampled;
+  try {sampled=await fieldJob({kind:'points',params,points},'sphere');}
+  catch(e){geometry.dispose();if(e.name!=='AbortError')showTooltip('Sphere map failed: '+e.message,6000);return;}
+  if(version!==sceneVersion){geometry.dispose();return;}
+  for(let i=0;i<vCount;i++){
+    const B=sampled[i];bValues[i]=B;
+    if(Number.isFinite(B)){minB=Math.min(minB,B);maxB=Math.max(maxB,B);}
   }
+  if(!Number.isFinite(minB)){geometry.dispose();showTooltip('No valid sphere samples outside magnet material',5000);return;}
   if (maxB === minB) maxB = minB + 0.001;
 
   const color = new THREE.Color();
   for(let i = 0; i < vCount; i++) {
-    const v = (bValues[i] - minB) / (maxB - minB);
+    const v = Number.isFinite(bValues[i])?(bValues[i] - minB) / (maxB - minB):0;
     color.setRGB(
       Math.min(1, Math.pow(v, 0.4)),
       Math.min(1, Math.pow(v, 1.2)),
@@ -1568,7 +1740,7 @@ function buildSphereGeometry() {
 
   const axesHelper = new THREE.AxesHelper(targetR * 1.5);
   sphere.add(axesHelper);
-  window.sphereMapGroup.add(sphere);
+  group.add(sphere);
 
   const cb = document.getElementById('sphere-colorbar');
   if (cb && window.isSphereView) {
@@ -1595,9 +1767,10 @@ const COLOR_HOLDER = 0x8fb39a;  // muted green
 const COLOR_CALC   = 0xc8a8e0;  // soft violet (for sphere if we want to show)
 
 function buildScene() {
-  if (magnetGroup) scene.remove(magnetGroup);
-  if (arrowGroup) scene.remove(arrowGroup);
-  if (window.sphereMapGroup) scene.remove(window.sphereMapGroup);
+  if(!validInputs()) return;
+  ++sceneVersion;
+  cancelFieldJob('stats');cancelFieldJob('sphere');
+  disposeGroup(magnetGroup);disposeGroup(arrowGroup);disposeGroup(window.sphereMapGroup);
 
   magnetGroup = new THREE.Group();
   arrowGroup = new THREE.Group();
@@ -1629,6 +1802,12 @@ function buildScene() {
     const holePath = new THREE.Path();
     holePath.absarc(0, 0, holderIn / 2 * scale, 0, Math.PI * 2, true);
     s.holes.push(holePath);
+    const layout=pocketLayout(params,holderParams());
+    if(!layout.errors.length)for(const pocket of layout.pockets) {
+      const hole=new THREE.Path();
+      [...pocket.corners].reverse().forEach(([x,y],i)=>i?hole.lineTo(x,y):hole.moveTo(x,y));
+      hole.closePath();s.holes.push(hole);
+    }
 
     const extrudeSettings = { depth: holderThick * scale, bevelEnabled: false, curveSegments: 64 };
     const holderGeo = new THREE.ExtrudeGeometry(s, extrudeSettings);
@@ -1639,6 +1818,11 @@ function buildScene() {
       transparent: true, opacity: 0.35, side: THREE.DoubleSide
     });
     magnetGroup.add(new THREE.Mesh(holderGeo, holderMat));
+    if(!layout.errors.length)for(const pocket of layout.pockets) {
+      const height=pocket.floor+holderThick/2;
+      const fill=new THREE.Mesh(new THREE.BoxGeometry(2*pocket.hL,2*pocket.hW,height),holderMat);
+      fill.position.set(pocket.cx,pocket.cy,-holderThick/2+height/2);fill.rotation.z=pocket.phi;magnetGroup.add(fill);
+    }
   }
 
   // ==== MAGNETS ====
@@ -1653,7 +1837,7 @@ function buildScene() {
     for (let i = 0; i < nPoles; i++) {
       const theta0 = i * angleStep;
       const angle = theta0 + ring.phaseOffset;
-      const magAngle = halbachK * angle;        // k * (theta0 + phaseOffset)
+      const magAngle = halbachK * theta0 + ring.phaseOffset;        // rigid rotation of ring and moments
 
       const px = ring.rPlace * Math.cos(angle) * scale;
       const py = ring.rPlace * Math.sin(angle) * scale;
@@ -1758,7 +1942,7 @@ function buildScene() {
           const y = -R_max + iy * stepSize;
           const z = zSteps > 1 ? -Z_max + iz * zStepSize : 0;
           if (Math.sqrt(x*x + y*y) > R_max) continue;
-          const v = fieldVectorAt(x, y, z);
+          const v = _sumField(x, y, z, params);
           const mag = Math.sqrt(v.Bx*v.Bx + v.By*v.By + v.Bz*v.Bz);
           if (mag > maxMag && mag < maxBr * 2) maxMag = mag;
           samples.push({x, y, z, vx: v.Bx, vy: v.By, vz: v.Bz, mag});
@@ -1829,64 +2013,29 @@ function computeStats() {
   updateHelperTooltip(col);
 }
 
-function calculateVariance(colInfo) {
-  const targetR = parseFloat(document.getElementById('testRadius').value);
-  const resultField = document.getElementById('varianceResult');
-
-  // Trigger collision check if not provided
-  if (!colInfo) {
-    const params = getMagnetParams();
-    const minGap = parseFloat(document.getElementById('minGap').value);
-    const minGapVal = (isNaN(minGap) || minGap < 0) ? 0 : minGap;
-    colInfo = checkCollisions(params, minGapVal);
-  }
-
-  if (isNaN(targetR) || targetR <= 0) {
-    resultField.value = "N/A";
-    resultField.classList.toggle('warn', !!colInfo.collides);
-    return;
-  }
-
-  const params = getMagnetParams();
-  const numPoints = 256;
-  const phi = Math.PI * (3 - Math.sqrt(5));
-
-  let minB = Infinity, maxB = -Infinity, sumB = 0;
-  for (let i = 0; i < numPoints; i++) {
-    const y_norm = 1 - (i / (numPoints - 1)) * 2;
-    const radiusAtY = Math.sqrt(1 - y_norm * y_norm);
-    const theta = phi * i;
-    const x = Math.cos(theta) * radiusAtY * targetR;
-    const y = y_norm * targetR;
-    const z = Math.sin(theta) * radiusAtY * targetR;
-    const B = fieldAtWithParams(x, y, z, params);
-    if (B < minB) minB = B;
-    if (B > maxB) maxB = B;
-    sumB += B;
-  }
-
-  const avgB = sumB / numPoints;
-  if (avgB < 1e-6) {
-    resultField.value = "N/A";
-  } else {
-    const variance = ((maxB - minB) / avgB) * 100;
-    resultField.value = variance.toFixed(2) + " %";
-  }
-
-  // Red when collision
-  resultField.classList.toggle('warn', !!colInfo.collides);
+async function calculateVariance(colInfo) {
+  const version=sceneVersion,params=getMagnetParams(),radius=Number(document.getElementById('testRadius').value);
+  const resultField=document.getElementById('varianceResult');
+  if(!testVolumeClear(params,radius)) { resultField.value='Test sphere intersects magnets';return; }
+  resultField.value='Computing…';
+  try {
+    const values=await fieldJob({kind:'points',params,points:volumePoints(radius,true)},'stats');
+    if(version!==sceneVersion)return;
+    const value=magnitudeMetric(values);
+    resultField.value=Number.isFinite(value)?(value*100).toFixed(2)+' % (sampled volume)':'N/A';
+    resultField.classList.toggle('warn',!!colInfo?.collides);
+  } catch(e) {if(version===sceneVersion && e.name!=='AbortError')resultField.value='Calculation failed';}
 }
-
 
 function updateHelperTooltip(colInfo) {
   const t = document.getElementById('tooltip');
   if (!t || t._userMsg) return; // don't overwrite transient messages
 
   const params = getMagnetParams();
-  const totalMags = params.rings.reduce((s, r) => s + (r.visible ? r.nPoles : 0), 0);
+  const totalMags = params.rings.reduce((s, r) => s + r.nPoles, 0);
 
   let html = `<b style="color:var(--accent)">HALBACH ARRAY</b><br>
-    Z axis = bore axis · Magnets: ${totalMags}<br>
+    Z axis = bore axis · Physical magnets: ${totalMags}<br>
     Red cap = N · Blue cap = S pole<br>`;
 
   if (colInfo && colInfo.collides) {
@@ -1896,6 +2045,8 @@ function updateHelperTooltip(colInfo) {
     t.classList.remove('has-warning');
   }
 
+  const holderIssues=pocketLayout(params,holderParams()).errors;
+  if(holderIssues.length)html += '<span style="color:var(--danger)">Holder export: '+holderIssues.join(' · ')+'</span><br>';
   html += `Rotate: Left drag &nbsp;|&nbsp; Zoom: Scroll · Pan: Right drag`;
   t.innerHTML = html;
 }
@@ -2062,7 +2213,7 @@ function updateHelperTooltip(colInfo) {
 
     // Oriented side loop:
     //   bottom-circle (forward)  + seam (forward) + top-circle (reverse) + seam (reverse)
-    const oeBotSide = ORIENTED_EDGE(eBot, true);
+    const oeBotSide = ORIENTED_EDGE(eBot, false);
     const oeSeamUp  = ORIENTED_EDGE(eSeam, true);
     const oeTopSide = ORIENTED_EDGE(eTop, false);
     const oeSeamDn  = ORIENTED_EDGE(eSeam, false);
@@ -2193,10 +2344,10 @@ function updateHelperTooltip(colInfo) {
     const faceMinusL = faceWithNormal('000',
       [-Lxx,-Lxy,-Lxz], [Lwx,Lwy,Lwz],
       [
-        ORIENTED_EDGE(E.e_010_000, false), // 000→010
-        ORIENTED_EDGE(E.e_010_011, true ), // 010→011
-        ORIENTED_EDGE(E.e_011_001, true ), // 011→001
-        ORIENTED_EDGE(E.e_000_001, false), // 001→000
+        ORIENTED_EDGE(E.e_000_001, true),
+        ORIENTED_EDGE(E.e_011_001, false),
+        ORIENTED_EDGE(E.e_010_011, false),
+        ORIENTED_EDGE(E.e_010_000, true)
       ]);
 
     // Side +L face (i=1): corners 100,101,111,110; outward normal = +Lx
@@ -2204,10 +2355,10 @@ function updateHelperTooltip(colInfo) {
     const facePlusL = faceWithNormal('100',
       [Lxx,Lxy,Lxz], [Lwx,Lwy,Lwz],
       [
-        ORIENTED_EDGE(E.e_100_101, true ),
-        ORIENTED_EDGE(E.e_101_111, true ),
-        ORIENTED_EDGE(E.e_110_111, false), // 111→110
-        ORIENTED_EDGE(E.e_100_110, false), // 110→100
+        ORIENTED_EDGE(E.e_100_110, true),
+        ORIENTED_EDGE(E.e_110_111, true),
+        ORIENTED_EDGE(E.e_101_111, false),
+        ORIENTED_EDGE(E.e_100_101, false)
       ]);
 
     // Side -W face (j=0): corners 000,100,101,001; outward normal = -Lw
@@ -2240,7 +2391,7 @@ function updateHelperTooltip(colInfo) {
   // ─── Build a tube (annular ring) B-rep for the holder ───────────────────────
   // Centre at origin, axis along +Z, outer radius Ro, inner radius Ri, length L.
   // Two planar annular faces (top & bottom) + outer & inner cylindrical surfaces.
-  function buildTubeBrep(name, Ri, Ro, L){
+  function buildTubeBrep(name, Ri, Ro, L, pockets=[]){
     const halfL = L/2;
 
     // Points
@@ -2310,7 +2461,33 @@ function updateHelperTooltip(colInfo) {
     const loopTopInner = EDGE_LOOP([ORIENTED_EDGE(eTopI, false)]);
     const fbTopInner   = FACE_BOUND(loopTopInner, true);
     const planeTop     = PLANE(apTop);
-    const faceTop      = ADVANCED_FACE([fbTopOuter, fbTopInner], planeTop, true);
+    const pocketBounds=[],pocketFaces=[];
+    for(const pocket of pockets) {
+      const corners=pocket.corners;
+      const vertices=[],pointIds=[];
+      for(const z of [pocket.floor,halfL]) for(const [x,y] of corners) {
+        const p=CARTESIAN_POINT('',x,y,z);pointIds.push(p);vertices.push(VERTEX_POINT(p));
+      }
+      const edge=(a,b)=>{
+        const pa=[...corners[a%4],a<4?pocket.floor:halfL],pb=[...corners[b%4],b<4?pocket.floor:halfL];
+        const delta=pb.map((v,i)=>v-pa[i]),len=Math.hypot(...delta);
+        const d=DIRECTION('',...delta.map(v=>v/len));
+        return EDGE_CURVE(vertices[a],vertices[b],LINE(pointIds[a],VECTOR('',d,len)),true);
+      };
+      const bottom=[],top=[],vertical=[];
+      for(let j=0;j<4;j++){bottom.push(edge(j,(j+1)%4));top.push(edge(j+4,(j+1)%4+4));vertical.push(edge(j,j+4));}
+      pocketBounds.push(FACE_BOUND(EDGE_LOOP([...top].reverse().map(e=>ORIENTED_EDGE(e,false))),true));
+      const floorPlane=PLANE(AXIS2_PLACEMENT_3D('',pointIds[0],dZ,dX));
+      pocketFaces.push(ADVANCED_FACE([FACE_OUTER_BOUND(EDGE_LOOP(bottom.map(e=>ORIENTED_EDGE(e,true))),true)],floorPlane,true));
+      for(let j=0;j<4;j++) {
+        const next=(j+1)%4,dx=corners[next][0]-corners[j][0],dy=corners[next][1]-corners[j][1],len=Math.hypot(dx,dy);
+        const normal=DIRECTION('',-dy/len,dx/len,0);
+        const plane=PLANE(AXIS2_PLACEMENT_3D('',pointIds[j],normal,dZ));
+        const loop=EDGE_LOOP([ORIENTED_EDGE(bottom[j],false),ORIENTED_EDGE(vertical[j],true),ORIENTED_EDGE(top[j],true),ORIENTED_EDGE(vertical[next],false)]);
+        pocketFaces.push(ADVANCED_FACE([FACE_OUTER_BOUND(loop,true)],plane,true));
+      }
+    }
+    const faceTop=ADVANCED_FACE([fbTopOuter,fbTopInner,...pocketBounds],planeTop,true);
 
     // Outer cylindrical face (outward normal = +r direction)
     const cylOut = CYLINDRICAL_SURFACE(apCylOutBot, Ro);
@@ -2335,13 +2512,14 @@ function updateHelperTooltip(colInfo) {
     const fbIn = FACE_OUTER_BOUND(loopIn, true);
     const faceIn = ADVANCED_FACE([fbIn], cylIn, false);  // reversed sense
 
-    const shell = CLOSED_SHELL([faceBot, faceTop, faceOut, faceIn]);
+    const shell = CLOSED_SHELL([faceBot, faceTop, faceOut, faceIn,...pocketFaces]);
     const solid = MANIFOLD_SOLID_BREP(name, shell);
     return solid;
   }
 
   // ─── Main entry point: build STEP string from current scene parameters ───────
   window.buildSTEPString = function(){
+    const errors=exportErrors();if(errors.length)throw new Error(errors.join(' · '));
     resetId();
     entities.length = 0;
 
@@ -2381,14 +2559,14 @@ function updateHelperTooltip(colInfo) {
 
     for (let rIdx = 0; rIdx < rings.length; rIdx++) {
       const ring = rings[rIdx];
-      if (!ring.visible) continue;
+      // Export every physical ring, regardless of preview visibility.
       const nPoles = ring.nPoles;
       const angleStep = (2 * Math.PI) / nPoles;
 
       for (let i = 0; i < nPoles; i++) {
         const theta0 = i * angleStep;
         const angle = theta0 + ring.phaseOffset;
-        const magAngle = halbachK * angle;      // k * (theta0 + phaseOffset)
+        const magAngle = halbachK * theta0 + ring.phaseOffset;      // rigid rotation of ring and moments
 
         const cx = ring.rPlace * Math.cos(angle);
         const cy = ring.rPlace * Math.sin(angle);
@@ -2426,12 +2604,12 @@ function updateHelperTooltip(colInfo) {
     }
 
     // --- Holder (tube) ---
-    const showHolder = document.getElementById('showHolder')?.checked ?? true;
+    const showHolder = true;
     if (showHolder) {
       const holderIn = parseFloat(document.getElementById('holderIn').value) || 60;
       const holderOut = parseFloat(document.getElementById('holderOut').value) || 120;
       const holderThick = parseFloat(document.getElementById('holderThick').value) || 40;
-      const holderSolid = buildTubeBrep('Holder', holderIn/2, holderOut/2, holderThick);
+      const holderSolid = buildTubeBrep('Holder', holderIn/2, holderOut/2, holderThick, pocketLayout(params,holderParams()).pockets);
       solids.push(holderSolid);
     }
 
@@ -2462,10 +2640,11 @@ END-ISO-10303-21;
 
 
 async function exportSTEP() {
-  if (!magnetGroup || magnetGroup.children.length === 0) {
-    showTooltip("Nothing to export. Make sure Holder or Magnets are visible.", 3000);
-    return;
-  }
+  if(busy||!validInputs())return;
+  const errors=exportErrors();if(errors.length){showTooltip('Cannot export: '+errors.join(' · '),9000);return;}
+  busy=true;clearTimeout(updateTimer);lockControls(true);
+  try {
+  // Export the physical assembly even when every preview mesh is hidden.
 
   // Busy overlay
   const overlay = document.createElement('div');
@@ -2512,12 +2691,24 @@ async function exportSTEP() {
     overlay.remove();
     showTooltip(`STEP exported successfully.\nReady for CAD software (FreeCAD, Fusion, SolidWorks...).`, 4000);
   };
+  } finally {busy=false;lockControls(false);}
+
 }
 
 
 //pdf
 async function generatePDF() {
-  const overlay = document.createElement('div');
+  if(busy||!validInputs())return;
+  busy=true;clearTimeout(updateTimer);lockControls(true);
+  ++mapVersion;cancelFieldJob('map');
+  const saved={background:scene.background,fog:scene.fog?.color.getHex(),spherical:{...spherical},pan:{...panOffset},target:targetView,
+    plane:currentMapPlane,mapDisplay:document.getElementById('map-container').style.display,mapVisibility:document.getElementById('map-container').style.visibility,
+    sphere:window.isSphereView,mode:displayMode,axis:axisHelper.visible,fogObject:scene.fog,
+    tone:renderer.toneMapping,exposure:renderer.toneMappingExposure,clearColor:renderer.getClearColor(new THREE.Color()).clone(),
+    clearAlpha:renderer.getClearAlpha(),ambient:ambientLight.intensity,directional:dirLight.intensity};
+  let overlay=null;
+  try {
+  overlay = document.createElement('div');
   overlay.id = 'pdf-loading-overlay';
   overlay.style.cssText = 'position:fixed; inset:0; background:rgba(10,12,16,0.95); z-index:9999; display:flex; justify-content:center; align-items:center; flex-direction:column; gap:16px;';
   overlay.innerHTML = `
@@ -2543,6 +2734,11 @@ async function generatePDF() {
   doc.setFontSize(10);
 
   const p = getMagnetParams();
+  const radius=Number(document.getElementById('testRadius').value);
+  if(!testVolumeClear(p,radius))throw new Error('Test sphere intersects magnet material');
+  const reportValues=await fieldJob({kind:'points',params:p,points:volumePoints(radius,true)},'report');
+  const reportVariation=magnitudeMetric(reportValues);
+  document.getElementById('varianceResult').value=Number.isFinite(reportVariation)?(reportVariation*100).toFixed(2)+' % (769 volume samples)':'N/A';
   const holderIn = document.getElementById('holderIn').value;
   const holderOut = document.getElementById('holderOut').value;
   const holderThick = document.getElementById('holderThick').value;
@@ -2577,7 +2773,8 @@ async function generatePDF() {
   doc.setFont("helvetica", "bold");
   doc.text("Holder Parameters", margin, y); y += 6;
   doc.setFont("helvetica", "normal");
-  doc.text(`Inner Ø: ${holderIn} mm | Outer Ø: ${holderOut} mm | Thickness: ${holderThick} mm`, margin, y); y += 10;
+  doc.text(`Inner Ø: ${holderIn} mm | Outer Ø: ${holderOut} mm | Thickness: ${holderThick} mm`, margin, y); y += 5;
+  doc.text(`Open-top rectangular pockets; clearance ${holderParams().clearance} mm per side`, margin, y); y += 10;
 
   doc.setFont("helvetica", "bold");
   doc.text("Computed & Display Parameters", margin, y); y += 6;
@@ -2665,14 +2862,14 @@ async function generatePDF() {
   for (let i = 0; i < planes.length; i++) {
     doc.addPage();
     const plane = planes[i];
-    _drawSingleMapImpl(plane);
+    await _drawSingleMapImpl(plane);
     doc.setFont("helvetica", "bold");
     doc.text(`2D Field Map: ${plane.toUpperCase()} Plane`, margin, 20);
     doc.addImage(mapCanvas.toDataURL("image/png"), "PNG", margin, 25, contentWidth, contentWidth);
   }
 
   if (originalPlane) {
-    _drawSingleMapImpl(originalPlane);
+    await _drawSingleMapImpl(originalPlane);
   } else {
     const ctx = mapCanvas.getContext('2d');
     ctx.clearRect(0, 0, mapCanvas.width, mapCanvas.height);
@@ -2704,6 +2901,22 @@ async function generatePDF() {
     overlay.remove();
     showTooltip("PDF Downloaded successfully.", 3000);
   };
+  } catch(error) {
+    console.error(error);overlay?.remove();showTooltip('PDF export failed: '+error.message,8000);
+  } finally {
+    window.isExportingPDF=false;
+    scene.background=saved.background;scene.fog=saved.fogObject;
+    if(scene.fog&&saved.fog!==undefined)scene.fog.color.setHex(saved.fog);
+    renderer.toneMapping=saved.tone;renderer.toneMappingExposure=saved.exposure;renderer.setClearColor(saved.clearColor,saved.clearAlpha);
+    ambientLight.intensity=saved.ambient;dirLight.intensity=saved.directional;
+    spherical={...saved.spherical};panOffset={...saved.pan};targetView=saved.target;
+    currentMapPlane=saved.plane;window.isSphereView=saved.sphere;displayMode=saved.mode;axisHelper.visible=saved.axis;
+    const container=document.getElementById('map-container');container.style.display=saved.mapDisplay;container.style.visibility=saved.mapVisibility;
+    document.getElementById('map-computing-overlay').style.display='none';
+    busy=false;lockControls(false);buildScene();
+    if(saved.plane)drawSingleMap(saved.plane);
+  }
+
 }
 
 
@@ -2731,7 +2944,7 @@ function resize() {
   renderer.setSize(W, H);
   camera.aspect = W / H;
   camera.updateProjectionMatrix();
-  if (magnetData.length && currentMapPlane) drawSingleMap(currentMapPlane);
+  if (!busy && magnetData.length && currentMapPlane) drawSingleMap(currentMapPlane);
 }
 window.addEventListener('resize', resize);
 
@@ -2741,7 +2954,7 @@ function animate(time) {
   const dt = (time - prevTime) * 0.001;
   prevTime = time;
 
-  if (targetView) {
+  if (targetView && !busy) {
     spherical.theta += (targetView.theta - spherical.theta) * 0.08;
     spherical.phi += (targetView.phi - spherical.phi) * 0.08;
     spherical.radius += (targetView.radius - spherical.radius) * 0.08;
@@ -2753,7 +2966,7 @@ function animate(time) {
   camera.up.set(0, 0, 1);
   camera.lookAt(panOffset.x, panOffset.y, 0);
 
-  if (!isMouseDown && !targetView) {
+  if (!isMouseDown && !targetView && !busy) {
     spherical.theta += 0.0005;
   }
 
@@ -2771,17 +2984,18 @@ setTimeout(() => {
 
 animate(0);
 
-let updateTimer = null;
+// updateTimer is declared with the application state.
 document.querySelectorAll('input, select').forEach(el => {
-  el.addEventListener('input', () => {
-    clearTimeout(updateTimer);
-    updateTimer = setTimeout(update, 80);
-  });
+  el.addEventListener('input', update);
 });
-
 function update() {
-  buildScene();
-  if (currentMapPlane) drawSingleMap(currentMapPlane);
+  if(busy)return;
+  clearTimeout(updateTimer);
+  updateTimer=setTimeout(()=>{
+    if(busy)return;
+    try {buildScene();if(currentMapPlane)drawSingleMap(currentMapPlane);}
+    catch(error){console.error(error);showTooltip('Update failed: '+error.message,6000);}
+  },40);
 }
 
 // Click on canvas: show magnet info
