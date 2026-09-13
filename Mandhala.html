@@ -103,20 +103,20 @@ body{font-family:'IBM Plex Mono',monospace;background:var(--bg);color:var(--text
         <option value="fibonacci">Fibonacci (N-tunable)</option>
       </select>
     </div>
-    <div class="field-row"><label>Poles</label><input type="number" id="fibN" value="48" step="1" min="20" max="400" onchange="onLatticeChange()" disabled></div>
+    <div class="field-row"><label>Poles</label><input type="number" id="fibN" value="48" step="1" min="20" max="400" oninput="onLatticeChange()" disabled></div>
     <div id="lattice-info" style="font-size:11px;margin-top:4px;text-align:center;color:var(--muted);letter-spacing:.05em;">—</div>
   </div>
 
   <div class="section">
     <div class="section-title">Sphere Geometry</div>
     <div class="three-col">
-      <div class="field-row"><label>Inner R (mm)</label><input type="number" id="baseRadius" value="36" step="5" onchange="onGeomChange()"></div>
-      <div class="field-row"><label>Outer R (mm)</label><input type="number" id="outerRadius" value="70" step="5" onchange="onGeomChange()"></div>
-      <div class="field-row"><label>Test R (mm)</label><input type="number" id="testRadius" value="10" step="1" onchange="onGeomChange()"></div>
+      <div class="field-row"><label>Inner R (mm)</label><input type="number" id="baseRadius" value="36" step="5" oninput="onGeomChange()"></div>
+      <div class="field-row"><label>Outer R (mm)</label><input type="number" id="outerRadius" value="70" step="5" oninput="onGeomChange()"></div>
+      <div class="field-row"><label>Test R (mm)</label><input type="number" id="testRadius" value="10" step="1" oninput="onGeomChange()"></div>
     </div>
     <div class="two-col" style="margin-top:8px;">
       <div class="field-row"><label>Hole clearance (mm)</label>
-        <input type="number" id="holeClr" value="0.2" step="0.05" min="0" onchange="onGeomChange()"></div>
+        <input type="number" id="holeClr" value="0.2" step="0.05" min="0" oninput="onGeomChange()"></div>
       <div class="field-row"><label>Z access bore R (mm)</label>
         <input type="number" id="zBore" value="0" step="1" min="0" onchange="onZBoreChange()"></div>
     </div>
@@ -126,12 +126,12 @@ body{font-family:'IBM Plex Mono',monospace;background:var(--bg);color:var(--text
   <div class="section">
     <div class="section-title" id="cylinder-section-title">Cylinder Dipoles</div>
     <div class="two-col">
-      <div class="field-row"><label>Diameter (mm)</label><input type="number" id="magDiam" value="10" step="0.5" onchange="onGeomChange()"></div>
-      <div class="field-row"><label>Length (mm)</label><input type="number" id="magLen" value="20" step="0.5" onchange="onGeomChange()"></div>
+      <div class="field-row"><label>Diameter (mm)</label><input type="number" id="magDiam" value="10" step="0.5" oninput="onGeomChange()"></div>
+      <div class="field-row"><label>Length (mm)</label><input type="number" id="magLen" value="20" step="0.5" oninput="onGeomChange()"></div>
     </div>
     <div class="two-col">
       <div class="field-row"><label>Min Gap (mm)</label><input type="number" id="magGap" value="2" step="0.5" onchange="onGapChange()"></div>
-      <div class="field-row"><label>Remanence Br (T)</label><input type="number" id="magBr" value="1.32" step="0.05" oninput="evaluateField()"></div>
+      <div class="field-row"><label>Remanence Br (T)</label><input type="number" id="magBr" value="1.32" step="0.05" oninput="evaluateFieldDebounced()"></div>
     </div>
     <div id="feasibility-status" style="font-size:11px;margin-top:6px;text-align:center;letter-spacing:.05em;color:var(--accent);">—</div>
   </div>
@@ -143,7 +143,7 @@ body{font-family:'IBM Plex Mono',monospace;background:var(--bg);color:var(--text
       <div class="stat-card"><div class="sv" id="sv-Bx">—</div><div class="sl">Bx center (T)</div></div>
       <div class="stat-card"><div class="sv" id="sv-By">—</div><div class="sl">By center (T)</div></div>
       <div class="stat-card"><div class="sv" id="sv-Bz">—</div><div class="sl">Bz center (T)</div></div>
-      <div class="stat-card"><div class="sv" id="sv-Var">—</div><div class="sl">Homog. ppm</div></div>
+      <div class="stat-card"><div class="sv" id="sv-Var">—</div><div class="sl">Sampled homog. ppm</div></div>
       <div class="stat-card"><div class="sv" id="sv-Score" style="font-size:12px;">—</div><div class="sl">Target Status</div></div>
     </div>
   </div>
@@ -160,7 +160,7 @@ body{font-family:'IBM Plex Mono',monospace;background:var(--bg);color:var(--text
       <label>Optimization Targets <span style="color:var(--muted);font-weight:400;text-transform:none;letter-spacing:0;">(last edited = active constraint)</span></label>
       <div class="two-col" style="margin-top:4px;">
         <div class="field-row target-active" id="targetHomogBox" style="margin-bottom:0;">
-          <label id="targetHomogLabel">Min Homog. (ppm) ●</label>
+          <label id="targetHomogLabel">Max inhomog. (ppm) ●</label>
           <input type="number" id="targetHomog" value="10000" step="10" min="1" oninput="onTargetEdit('homog')">
         </div>
         <div class="field-row target-inactive" id="targetFieldBox" style="margin-bottom:0;">
@@ -261,18 +261,15 @@ body{font-family:'IBM Plex Mono',monospace;background:var(--bg);color:var(--text
 <script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js"></script>
 <script>
 
-//finite cylinder magnet via elliptic integrals
-//  Ref: Derby & Olbert, AJP 2010; Furlani 2001
-//  Note: N_RINGS slices a uniformly magnetized cylinder into current
-//  sheets (surface currents K = Br/mu0 along the lateral surface).
+// Uniformly magnetized cylinder: adaptive integration of lateral surface current K = Br/mu0.
 // ═══════════════════════════════════════════════════════════════
 const MU0 = 4e-7 * Math.PI;
-const N_RINGS = 24;
+const FIELD_RTOL = 1e-10;
 
 function ellipticKE(m) {
   // AGM (Abramowitz & Stegun 17.6): E/K = 1 - Σ_{n≥0} 2^{n-1} c_n²,
   // with c_0 = √m and c_{n+1} = (a_n − b_n)/2.
-  if (m >= 1.0) m = 0.9999999;
+  if (m >= 1.0) m = 1 - Number.EPSILON;
   if (m < 0) m = 0;
   let a = 1.0, b = Math.sqrt(1.0 - m);
   let sum = 0.5 * m, pow = 0.5; // n = 0 term: 2^{-1} c_0²
@@ -289,9 +286,20 @@ function ellipticKE(m) {
 }
 
 function ringField(a, I, rho, zeta) {
+  // Near-axis series avoids subtracting almost equal elliptic terms in Br.
+  const q=a*a+zeta*zeta;
+  if(rho < 1e-3*Math.sqrt(q)) {
+    const C=MU0*I*a*a/2,z=zeta,r2=rho*rho;
+    const d0=C*q**(-1.5),d1=-3*C*z*q**(-2.5);
+    const d2=C*(-3*q**(-2.5)+15*z*z*q**(-3.5));
+    const d3=C*(45*z*q**(-3.5)-105*z**3*q**(-4.5));
+    const d4=C*(45*q**(-3.5)-630*z*z*q**(-4.5)+945*z**4*q**(-5.5));
+    const d5=C*(-1575*z*q**(-4.5)+9450*z**3*q**(-5.5)-10395*z**5*q**(-6.5));
+    return {Baxial:d0-r2*d2/4+r2*r2*d4/64,Bradial:-rho*d1/2+rho*r2*d3/16-rho*r2*r2*d5/384};
+  }
   const Q = (a + rho) * (a + rho) + zeta * zeta;
   const D = (a - rho) * (a - rho) + zeta * zeta;
-  if (D < 1e-20) return { Baxial: 0, Bradial: 0 }; // on the wire
+  if (D === 0) throw new Error('Field is undefined on an ideal current filament.');
   const m = 4 * a * rho / Q;
   const sqQ = Math.sqrt(Q);
   const [K, E] = ellipticKE(m);
@@ -300,6 +308,44 @@ function ringField(a, I, rho, zeta) {
     Baxial: pre * (K + E * (a * a - rho * rho - zeta * zeta) / D),
     Bradial: (rho < 1e-10) ? 0 : pre * (zeta / rho) * (-K + E * (a * a + rho * rho + zeta * zeta) / D)
   };
+}
+
+// Adaptive 8-point Gauss-Legendre quadrature, compared with two half-panels.
+// Absolute tolerance is in tesla; failure to converge is reported, not hidden.
+function integrateCylinderCurrent(a, K, rho, z, halfL) {
+  const nodes = [0.1834346424956498,0.5255324099163290,0.7966664774136267,0.9602898564975363];
+  const weights = [0.3626837833783620,0.3137066458778873,0.2223810344533745,0.1012285362903763];
+  const panel = (lo, hi) => {
+    const mid=(lo+hi)/2, h=(hi-lo)/2;
+    let ax=0, rad=0;
+    for(let i=0;i<4;i++) for(const sign of [-1,1]) {
+      const b=ringField(a,K,rho,z-(mid+sign*h*nodes[i]));
+      ax+=weights[i]*b.Baxial; rad+=weights[i]*b.Bradial;
+    }
+    return [ax*h,rad*h];
+  };
+  const refine = (lo,hi,whole,tol,depth) => {
+    const mid=(lo+hi)/2, left=panel(lo,mid),right=panel(mid,hi);
+    const sum=[left[0]+right[0],left[1]+right[1]];
+    if(Math.max(Math.abs(sum[0]-whole[0]),Math.abs(sum[1]-whole[1])) <=
+       tol+FIELD_RTOL*Math.max(Math.abs(sum[0]),Math.abs(sum[1]))) return sum;
+    if(depth>=22) throw new Error('Field integration did not converge; sample is too close to a magnet surface.');
+    const l=refine(lo,mid,left,tol/2,depth+1),r=refine(mid,hi,right,tol/2,depth+1);
+    return [l[0]+r[0],l[1]+r[1]];
+  };
+  // Geometric panels resolve narrow peaks near the cylindrical current sheet.
+  const cuts=[-halfL,halfL];
+  if(z>-halfL && z<halfL) cuts.push(z);
+  let d=Math.max(Math.abs(rho-a),halfL*1e-12);
+  for(;d<4*halfL;d*=2) for(const v of [z-d,z+d]) if(v>-halfL&&v<halfL) cuts.push(v);
+  cuts.sort((a,b)=>a-b);
+  let ax=0,rad=0;
+  for(let i=1;i<cuts.length;i++) {
+    if(cuts[i]===cuts[i-1]) continue;
+    const v=refine(cuts[i-1],cuts[i],panel(cuts[i-1],cuts[i]),1e-13*(cuts[i]-cuts[i-1])/(2*halfL),0);
+    ax+=v[0];rad+=v[1];
+  }
+  return [ax,rad];
 }
 
 // Cylinder field in GLOBAL frame.
@@ -324,16 +370,16 @@ function cylinderField(px, py, pz, cx, cy, cz, mux, muy, muz, a_mm, halfL_mm, Br
   const d_e2 = dx*e2x + dy*e2y + dz*e2z;
   const rho = Math.sqrt(d_e1*d_e1 + d_e2*d_e2);
 
-  const ds = 2 * halfL / N_RINGS, dI = K * ds;
-  let Bax = 0, Brad = 0;
-  for (let n = 0; n < N_RINGS; n++) {
-    const zeta = d_ax - (-halfL + (n + 0.5) * ds);
-    // Skip ring only if the field point sits ON the ring's wire (true singularity).
-    // Do NOT skip when on-axis or just outside a cap; those are finite.
-    if (Math.abs(rho - a) < ds * 0.1 && Math.abs(zeta) < ds * 0.5) continue;
-    const { Baxial, Bradial } = ringField(a, dI, rho, zeta);
-    Bax += Baxial; Brad += Bradial;
+  // Integrate the continuous surface current; never omit nearby current.
+  // The ideal sheet has two one-sided fields. Its surface value is undefined.
+  if (Math.abs(rho - a) <= 1e-14 * Math.max(a, halfL) && Math.abs(d_ax) <= halfL)
+    throw new Error('Field on the ideal magnet current sheet is undefined; move the sample off the surface.');
+  if (rho < 1e-12) {
+    const plus = d_ax + halfL, minus = d_ax - halfL;
+    const axial = Br / 2 * (plus / Math.hypot(a, plus) - minus / Math.hypot(a, minus));
+    return { Bx: axial*mux, By: axial*muy, Bz: axial*muz };
   }
+  const [Bax, Brad] = integrateCylinderCurrent(a, K, rho, d_ax, halfL);
   if (rho < 1e-12) return { Bx: Bax*mux, By: Bax*muy, Bz: Bax*muz };
   const inv = 1 / rho;
   return {
@@ -547,6 +593,7 @@ let panOffset = { x: 0, y: 0 };
 let targetView = null;
 
 canvas.addEventListener('mousedown', e => {
+  if(exportRunning) return;
   isMouseDown = true; mouseBtn = e.button;
   lastMouse = { x: e.clientX, y: e.clientY };
   canvas.style.cursor = e.button === 2 ? 'move' : 'grabbing';
@@ -555,6 +602,7 @@ canvas.addEventListener('mousedown', e => {
 canvas.addEventListener('contextmenu', e => e.preventDefault());
 window.addEventListener('mouseup', () => { isMouseDown = false; canvas.style.cursor = 'default'; });
 window.addEventListener('mousemove', e => {
+  if(exportRunning) return;
   if (!isMouseDown) return;
   const dx = e.clientX - lastMouse.x, dy = e.clientY - lastMouse.y;
   if (mouseBtn === 2) {
@@ -567,17 +615,20 @@ window.addEventListener('mousemove', e => {
   targetView = null;
 });
 canvas.addEventListener('wheel', e => {
+  if(exportRunning) return;
   spherical.radius = Math.max(60, Math.min(700, spherical.radius + e.deltaY * 0.35));
   targetView = null; e.preventDefault();
 }, { passive: false });
 
 let lastTouchDist = 0;
 canvas.addEventListener('touchstart', e => {
+  if(exportRunning) return;
   if (e.touches.length === 1) { isMouseDown = true; lastMouse = { x: e.touches[0].clientX, y: e.touches[0].clientY }; }
   if (e.touches.length === 2) { lastTouchDist = Math.hypot(e.touches[0].clientX - e.touches[1].clientX, e.touches[0].clientY - e.touches[1].clientY); }
   e.preventDefault();
 }, { passive: false });
 canvas.addEventListener('touchmove', e => {
+  if(exportRunning) return;
   if (e.touches.length === 1 && isMouseDown) {
     const dx = e.touches[0].clientX - lastMouse.x, dy = e.touches[0].clientY - lastMouse.y;
     spherical.theta -= dx * 0.008;
@@ -633,9 +684,10 @@ function armWatchdog() {
 let activeTarget = 'homog';
 
 function onTargetEdit(which) {
+  if(exportRunning || optRunning) return;
   activeTarget = which;
   updateTargetReadout();
-  evaluateField();
+  evaluateFieldDebounced();
 }
 
 function updateTargetReadout() {
@@ -650,13 +702,13 @@ function updateTargetReadout() {
   if (activeTarget === 'homog') {
     homogBox.classList.add('target-active');     homogBox.classList.remove('target-inactive');
     fieldBox.classList.add('target-inactive');   fieldBox.classList.remove('target-active');
-    homogLabel.textContent = 'Min Homog. (ppm) ●';
+    homogLabel.textContent = 'Max inhomog. (ppm) ●';
     fieldLabel.textContent = 'Min Field |Bx| (T)';
     readout.textContent = `Active: homogeneity ≤ ${tH.toFixed(0)} ppm · maximize |Bx|`;
   } else {
     fieldBox.classList.add('target-active');     fieldBox.classList.remove('target-inactive');
     homogBox.classList.add('target-inactive');   homogBox.classList.remove('target-active');
-    homogLabel.textContent = 'Min Homog. (ppm)';
+    homogLabel.textContent = 'Max inhomog. (ppm)';
     fieldLabel.textContent = 'Min Field |Bx| (T) ●';
     readout.textContent = `Active: |Bx| ≥ ${tF.toFixed(3)} T · minimize ppm`;
   }
@@ -691,13 +743,24 @@ function updateTargetRanges(metrics, range) {
 // or Fibonacci N). This necessarily discards the offsets, because the set of
 // magnets is different.
 function onLatticeChange() {
+  if(exportRunning || optRunning) return;
+  if(currentLattice()==='fibonacci') {
+    const n=Number(document.getElementById('fibN').value);
+    if(!Number.isInteger(n)||n<20||n>400) {
+      document.getElementById('feasibility-status').textContent='Fibonacci pole count must be an integer from 20 to 400';
+      document.getElementById('btn-opt').disabled=true;return;
+    }
+  }
   magnets = buildRadialArray();
   orbits = buildOrbits(magnets);
   orbitOf = new Array(magnets.length).fill(-1);
   orbits.forEach((orb, oi) => orb.forEach(mi => orbitOf[mi] = oi));
   buildNeighbourList();
-  applyMinOffsetClamp();            // levelUp: fresh lattice starts level
   updateLatticeUI();
+  // Always preview the new lattice, even if the new count creates overlaps.
+  // The clamp and field evaluation retain their feasibility checks.
+  applyMinOffsetClamp();            // levelUp: fresh lattice starts level
+  if(currentMapPlane) setView('3d');
   drawScene();
   evaluateField();
 }
@@ -708,9 +771,14 @@ function onLatticeChange() {
 // zero, destroying the result of an optimization run on any parameter tweak.
 // Offsets are only re-clamped into the new feasible interval.
 function onGeomChange() {
+  if(exportRunning || optRunning) return;
+  if(!canDrawGeometry()) { validInputs(); return; }
   if (magnets.length === 0) { onLatticeChange(); return; }
+  // Feasibility controls calculation and export, not the diagnostic preview.
+  // Keep the current offsets when an edit makes the configuration infeasible.
   applyMinOffsetClamp({ levelUp: false });
   updateLatticeUI();
+  if(currentMapPlane) setView('3d');
   drawScene();
   evaluateField();
 }
@@ -775,10 +843,11 @@ function refreshZBoreLimit() {
 }
 
 function onZBoreChange() {
+  if(exportRunning || optRunning) return;
   const inp = document.getElementById('zBore');
   const lim = maxZBoreRadius(getParams());
   let v = Math.max(0, parseFloat(inp.value) || 0);
-  if (v > lim) v = Math.max(0, Math.floor(lim * 100) / 100);   // snap to the limit
+  if (v >= lim) v = Math.max(0, Math.floor((lim - 0.01) * 100) / 100);   // snap to the limit
   inp.value = String(v);
   onGeomChange();
 }
@@ -836,12 +905,14 @@ function updateLatticeUI() {
 // Called when the user changes the Min Gap or anything else that only affects
 // the clearance constraint — reuses the existing magnets and orbit structure.
 function onGapChange() {
+  if(exportRunning || optRunning || !validInputs()) return;
   applyMinOffsetClamp();
   drawScene();
   evaluateField();
 }
 
 function resetGeometry() {
+  if(exportRunning || optRunning || !validInputs()) return;
   magnets.forEach(m => m.offset = 0);
   applyMinOffsetClamp();
   drawScene();
@@ -876,10 +947,10 @@ function estimateFieldRange() {
 
 
 //calc field, for score in SA
-function fieldAt(px, py, pz, params) {
+function fieldAt(px, py, pz, params, array = magnets) {
   let bx = 0, by = 0, bz = 0;
   const R = params.R, len = params.len, diam = params.diam, Br = params.Br;
-  for (const mag of magnets) {
+  for (const mag of array) {
     const dist = R + mag.offset + len / 2;
     const cx = mag.dir.x * dist, cy = mag.dir.y * dist, cz = mag.dir.z * dist;
     const b = cylinderField(px, py, pz, cx, cy, cz, mag.mu.x, mag.mu.y, mag.mu.z, diam / 2, len / 2, Br);
@@ -897,8 +968,8 @@ function getParams() {
     len: parseFloat(document.getElementById('magLen').value),
     gap: parseFloat(document.getElementById('magGap').value),
     Br: parseFloat(document.getElementById('magBr').value),
-    holeClr: parseFloat(document.getElementById('holeClr').value) || 0,
-    zBore: Math.max(0, parseFloat(document.getElementById('zBore').value) || 0),
+    holeClr: parseFloat(document.getElementById('holeClr').value),
+    zBore: parseFloat(document.getElementById('zBore').value),
     // Active constraint mode + targets. The OTHER quantity becomes the objective.
     //   activeTarget='homog' → enforce ppm ≤ targetHomog, maximize |Bx|
     //   activeTarget='field' → enforce |Bx| ≥ targetField, minimize ppm
@@ -908,8 +979,59 @@ function getParams() {
   };
 }
 
+function validationErrors(p, checkOffsets = false) {
+  const errors=[];
+  if(currentLattice()==='fibonacci') {
+    const n=Number(document.getElementById('fibN').value);
+    if(!Number.isInteger(n)||n<20||n>400)
+      errors.push('Fibonacci pole count must be an integer from 20 to 400');
+  }
+  for(const k of ['R','R_outer','tr','diam','len','Br','targetHomog'])
+    if(!Number.isFinite(p[k])||p[k]<=0) errors.push(k+' must be a finite positive number');
+  for(const k of ['gap','holeClr','zBore','targetField'])
+    if(!Number.isFinite(p[k])||p[k]<0) errors.push(k+' must be a finite non-negative number');
+  if(errors.length) return errors;
+  if(p.R_outer<=p.R) errors.push('Outer radius must exceed inner radius');
+  if(p.tr>=p.R) errors.push('Test radius must lie inside the holder cavity');
+  const a=p.diam/2+p.holeClr;
+  if(a>=p.R) errors.push('Bore radius must be smaller than inner radius');
+  if(magnets.length) {
+    const b=computeMinOffsets(p);
+    if(b.infeasibleFlags.some(Boolean)) errors.push('Cylinders cannot fit inside the outer sphere with the required gaps');
+    for(let i=0;i<magnets.length;i++) {
+      if(neighbours[i].some(nb=>2*p.R*nb.sinHalfA<=2*a+1e-9)) {
+        errors.push('Magnet bores intersect or touch at the inner sphere'); break;
+      }
+    }
+    if(p.zBore>0 && p.zBore>=maxZBoreRadius(p)-1e-9) errors.push('Z channel must leave a positive wall to magnet bores');
+    if(checkOffsets && magnets.some((m,i)=>!Number.isFinite(m.offset)||m.offset<b.minOffs[i]-1e-8||m.offset>b.maxOffs[i]+1e-8))
+      errors.push('Magnet offsets violate the current geometry bounds');
+  }
+  return errors;
+}
+function validInputs(checkOffsets = false) {
+  const errors=validationErrors(getParams(),checkOffsets);
+  const fs=document.getElementById('feasibility-status');
+  if(errors.length) {
+    fs.textContent=errors.join(' · ');fs.style.color='var(--accent3)';
+    if(!optRunning) document.getElementById('btn-opt').disabled=true;
+    for(const id of ['sv-Bc','sv-Bx','sv-By','sv-Bz','sv-Var','sv-Score']) document.getElementById(id).textContent='Invalid inputs';
+    return false;
+  }
+  return true;
+}
+let exportRunning=false;
+let lastVerification=null;
+function configurationKey(p=getParams()) { return JSON.stringify([['R','R_outer','tr','diam','len','gap','Br','holeClr','zBore','activeTarget','targetHomog','targetField'].map(k=>p[k]),magnets]); }
+function verifyConfiguration(p=getParams()) {
+  const key=configurationKey(p);
+  if(lastVerification?.key===key) return lastVerification.metrics;
+  const metrics=computeMetrics(p,VALIDATION_DIRS);
+  lastVerification={key,metrics};return metrics;
+}
+
 // Sample on 2 concentric shells (26 + 6 interior = 32 points) for a stable homogeneity estimate.
-// Identical sample set in main thread and SA worker → scores match exactly.
+// Shared search samples; final candidates use independent dense validation.
 const SAMPLE_DIRS = (() => {
   const dirs = [];
   // Shell 1: 6 axial
@@ -927,83 +1049,73 @@ const SAMPLE_DIRS = (() => {
   return dirs;
 })();
 
-function computeMetrics(params) {
-  const c = fieldAt(0, 0, 0, params);
-  const absBx = Math.max(Math.abs(c.bx), 1e-9);
-  let minBx = c.bx, maxBx = c.bx;
-  let maxTrans = 0;
-  let sumBx = c.bx, sumBx2 = c.bx * c.bx, n = 1;
-
-  for (const { r, d } of SAMPLE_DIRS) {
-    const x = d[0] * params.tr * r, y = d[1] * params.tr * r, z = d[2] * params.tr * r;
-    const f = fieldAt(x, y, z, params);
-    if (f.bx < minBx) minBx = f.bx;
-    if (f.bx > maxBx) maxBx = f.bx;
-    const tr = Math.sqrt(f.by*f.by + f.bz*f.bz);
-    if (tr > maxTrans) maxTrans = tr;
-    sumBx += f.bx; sumBx2 += f.bx * f.bx; n++;
+// Independent rotated Fibonacci directions at three radii, plus search samples.
+// This is a dense sampled check, not a proof of a continuous-volume maximum.
+function validationDirections() {
+  const dirs = SAMPLE_DIRS.slice();
+  for (const r of [0.35, 0.7, 1]) for (let i=0;i<192;i++) {
+    const z=1-2*(i+0.5)/192, t=(i+0.37)*Math.PI*(3-Math.sqrt(5));
+    const q=Math.sqrt(1-z*z);
+    dirs.push({r,d:[q*Math.cos(t),q*Math.sin(t),z]});
   }
-
-  const meanBx = sumBx / n;
-  const varBx = Math.max(0, sumBx2 / n - meanBx * meanBx);
-  const stdBx = Math.sqrt(varBx);
-
-  // Peak-to-peak Bx as fraction of center Bx, in ppm
-  const ppmBx = Math.abs(meanBx) > 1e-9 ? ((maxBx - minBx) / Math.abs(meanBx)) * 1e6 : 1e9;
-  // Transverse leak as fraction of center Bx, in ppm
-  const ppmTrans = (maxTrans / absBx) * 1e6;
-
-  return {
-    bCenter: c,
-    absBx,
-    minBx, maxBx, maxTrans,
-    meanBx, stdBx,
-    ppmBx, ppmTrans
-  };
+  return dirs;
+}
+const VALIDATION_DIRS = validationDirections();
+function metricsFromFlat(values) {
+  const cbx=values[0],cby=values[1],cbz=values[2],absBx=Math.abs(cbx),n=values.length/3;
+  let minBx=cbx,maxBx=cbx,maxTrans=0,sumBx=0;
+  for(let i=0;i<values.length;i+=3) {
+    const bx=values[i],by=values[i+1],bz=values[i+2];
+    if(!Number.isFinite(bx)||!Number.isFinite(by)||!Number.isFinite(bz)) throw new Error('Non-finite field result.');
+    minBx=Math.min(minBx,bx);maxBx=Math.max(maxBx,bx);
+    maxTrans=Math.max(maxTrans,Math.sqrt(by*by+bz*bz));sumBx+=bx;
+  }
+  const meanBx=sumBx/n;
+  let variance=0;
+  for(let i=0;i<values.length;i+=3) variance+=(values[i]-meanBx)**2;
+  const ppmBx=Math.abs(meanBx)>1e-12?(maxBx-minBx)/Math.abs(meanBx)*1e6:1e12;
+  const ppmTrans=absBx>1e-12?maxTrans/absBx*1e6:1e12;
+  return {bCenter:{bx:cbx,by:cby,bz:cbz,b:Math.hypot(cbx,cby,cbz)},absBx,minBx,maxBx,maxTrans,meanBx,stdBx:Math.sqrt(variance/n),ppmBx,ppmTrans};
+}
+function metricsFromFields(fields) {
+  const values=new Float64Array(fields.length*3);
+  fields.forEach((f,i)=>{values[i*3]=f.bx;values[i*3+1]=f.by;values[i*3+2]=f.bz;});
+  return metricsFromFlat(values);
+}
+function computeMetrics(params, dirs = SAMPLE_DIRS, array = magnets) {
+  const fields=[fieldAt(0,0,0,params,array)];
+  for(const {r,d} of dirs) fields.push(fieldAt(d[0]*params.tr*r,d[1]*params.tr*r,d[2]*params.tr*r,params,array));
+  return metricsFromFields(fields);
+}
+function candidateRank(metrics, params) {
+  const ppm=metrics.ppmBx+2*metrics.ppmTrans;
+  const violation=params.activeTarget==='homog'
+    ? Math.max(0,(ppm-params.targetHomog)/params.targetHomog)
+    : Math.max(0,(params.targetField-metrics.absBx)/Math.max(params.targetField,1e-12));
+  return {feasible:violation===0,violation,objective:params.activeTarget==='homog'?-metrics.absBx:ppm};
+}
+function betterCandidate(a,b) {
+  if(!b) return true;
+  if(a.feasible!==b.feasible) return a.feasible;
+  if(!a.feasible && a.violation!==b.violation) return a.violation<b.violation;
+  return a.objective<b.objective;
 }
 
+// Disjoint score intervals: every sampled-feasible state beats every infeasible
+// state, regardless of objective. Annealing can still cross the boundary.
 function computeScore(metrics, params) {
-  // Constraint-based scoring with bounded objective and linear penalty.
-  //
-  // Both terms are scaled to roughly [0, 1] so the score has a meaningful and
-  // stable range regardless of how far the current state is from satisfying
-  // the constraint. Linear (not quadratic) penalty gives a uniform downhill
-  // gradient — quadratic was too flat near the boundary and too steep far
-  // from it, causing SA to either freeze or thrash depending on the starting
-  // state.
-  //
-  // Score ≈ objective in [0, 1] (or [-1, 0]) when feasible.
-  // Score grows by LAMBDA per "unit" of violation when infeasible, so a 100%
-  // violation produces a penalty ≈ LAMBDA, dominating the objective.
-  const ppmTotal = metrics.ppmBx + 2 * metrics.ppmTrans;
-  const absBx = metrics.absBx;
-  const BrSafe = Math.max(params.Br, 0.1);
-
-  // LAMBDA = 10: a 10% violation gives penalty 1.0 (same scale as objective),
-  // 100% violation gives penalty 10 (clearly dominant). Linear penalty.
-  const LAMBDA = 10;
-
-  if (params.activeTarget === 'homog') {
-    // Constraint: ppmTotal ≤ targetHomog.  Objective: maximize absBx.
-    // Objective in [-1, 0]: -1 = at Br (impossible), 0 = no field.
-    const viol = Math.max(0, (ppmTotal - params.targetHomog) / Math.max(params.targetHomog, 1));
-    const objective = -absBx / BrSafe;
-    return objective + LAMBDA * viol;
-  } else {
-    // Constraint: absBx ≥ targetField.  Objective: minimize ppmTotal.
-    // Normalize ppm by 1e6 (worst case = 100% inhomogeneity) so objective ∈ [0, 1].
-    // This is the FIX: previously we normalized by targetHomog, which has nothing
-    // to do with the active "minimize ppm" objective and made the score blow up
-    // when targetHomog was small and current ppm was large.
-    const viol = Math.max(0, (params.targetField - absBx) / Math.max(params.targetField, 1e-3));
-    const objective = ppmTotal / 1e6;
-    return objective + LAMBDA * viol;
-  }
+  const rank=candidateRank(metrics,params);
+  if(!rank.feasible) return 1+rank.violation/(1+rank.violation);
+  if(params.activeTarget==='homog') return 1/(1+metrics.absBx/Math.max(params.Br,1e-12));
+  const ppm=metrics.ppmBx+2*metrics.ppmTrans;
+  return ppm/(1e6+ppm);
 }
 
 function evaluateField() {
+  if(!validInputs()) return null;
+  if(!optRunning) applyMinOffsetClamp({levelUp:false});
   const params = getParams();
-  const metrics = computeMetrics(params);
+  const metrics = lastVerification?.key===configurationKey(params) ? lastVerification.metrics : computeMetrics(params);
   const score = computeScore(metrics, params);
   const c = metrics.bCenter;
 
@@ -1013,6 +1125,7 @@ function evaluateField() {
   document.getElementById('sv-Bz').textContent = c.bz.toExponential(2);
   document.getElementById('sv-Var').textContent =
     `${metrics.ppmBx.toFixed(0)} ppm Bx · ${metrics.ppmTrans.toFixed(0)} ppm YZ`;
+  document.getElementById('sv-Var').title=lastVerification?.key===configurationKey(params) ? 'Validated at 608 off-center points; sampled estimate, not a continuous maximum' : 'Search estimate at 32 off-center points; dense validation runs after optimization and in PDF reports';
 
   // Status indicator: ✓ if constraint satisfied, otherwise show shortfall
   const ppmTotal = metrics.ppmBx + 2 * metrics.ppmTrans;
@@ -1112,38 +1225,18 @@ function buildNeighbourList() {
 // Per-magnet minimum offset from each magnet's OWN nearest neighbour (assumes
 // that neighbour is at the same or smaller offset, which is the worst case).
 // Returns an array of minimums to clamp against.
-function computeMinOffsets(params) {
-  const R = params.R, len = params.len, diam = params.diam, gap = params.gap, tr = params.tr;
-  // Test-volume constraint: inner face ≥ tr + gap from origin
-  const minOffTest = Math.max(0, (tr + gap) - R);
-  const maxOff = Math.max(minOffTest, params.R_outer - R - len);
-
-  const minOffs = new Array(magnets.length).fill(minOffTest);
-  const maxOffs = new Array(magnets.length).fill(maxOff);
-  // Per-magnet infeasibility. The interval is collapsed below so the rest of
-  // the code always has minOffs <= maxOffs, but we must record that it WAS
-  // empty — previously the collapse happened first and the caller's
-  // "minOffs[i] > maxOffs[i]" test was therefore dead code, so the
-  // "cylinder too wide for lattice spacing" diagnostic could never fire.
-  const infeasibleFlags = new Array(magnets.length).fill(false);
-
-  for (let i = 0; i < magnets.length; i++) {
-    let tightest = 0;
-    for (const nb of neighbours[i]) {
-      // If neighbour were at the inner radius (offset 0), our inner radius must satisfy:
-      //   2 · min(R, R+off_i) · sin(α/2) ≥ diam + gap
-      // If off_i were 0 too, the chord is 2·R·sin(α/2).
-      // Required inner radius for this pair: (diam + gap) / (2 sin(α/2))
-      const minInnerR = (diam + gap) / (2 * nb.sinHalfA);
-      const minOffThisPair = Math.max(0, minInnerR - R);
-      if (minOffThisPair > tightest) tightest = minOffThisPair;
-    }
-    minOffs[i] = Math.max(minOffs[i], tightest);
-    if (maxOffs[i] < minOffs[i] - 1e-9) { infeasibleFlags[i] = true; maxOffs[i] = minOffs[i]; }
-    else if (maxOffs[i] < minOffs[i]) maxOffs[i] = minOffs[i];
-  }
-  return { minOffs, maxOffs, infeasibleFlags };
+function offsetBounds(params, array, adjacent) {
+  const lower=Math.max(0,params.tr+params.gap-params.R);
+  const outerSquared=params.R_outer**2-(params.diam/2)**2;
+  const upper=outerSquared>0?Math.sqrt(outerSquared)-params.R-params.len:-Infinity;
+  const minOffs=array.map((_,i)=>Math.max(lower,...adjacent[i].map(nb=>
+    (params.diam+params.gap)/(2*nb.sinHalfA)-params.R)));
+  const maxOffs=array.map(()=>upper);
+  const infeasibleFlags=minOffs.map(lo=>lo>upper+1e-9);
+  return {minOffs,maxOffs,infeasibleFlags};
 }
+function computeMinOffsets(params) { return offsetBounds(params,magnets,neighbours); }
+
 
 // True pairwise constraint check (used in the SA worker — see workerScript).
 // Kept here for reference; the worker has its own copy that operates on its
@@ -1158,11 +1251,12 @@ function computeMinOffsets(params) {
 // visually overlapping in the 3D view, which is a clearer diagnostic than a text
 // message alone. SA is disabled anyway, so no optimization runs on the invalid state.
 function applyMinOffsetClamp({ levelUp = true } = {}) {
+  if(!validInputs()) return;
   const params = getParams();
   const { minOffs, maxOffs, infeasibleFlags } = computeMinOffsets(params);
 
   // Gather feasibility signals BEFORE deciding whether to clamp.
-  const outerTooSmall = params.R_outer < params.R + params.len - 1e-6;
+  const outerTooSmall = Math.hypot(params.R + params.len, params.diam/2) > params.R_outer + 1e-9;
   let infeasible = 0;
   let globalMin = 0;
   for (let i = 0; i < magnets.length; i++) {
@@ -1182,12 +1276,13 @@ function applyMinOffsetClamp({ levelUp = true } = {}) {
     : 0;
   const requiredMinR = Math.max(geomMinR, params.tr + params.gap);
 
-  const maxAllowedInnerR = params.R_outer - params.len;
+  const maxAllowedInnerR = Math.sqrt(params.R_outer**2-(params.diam/2)**2) - params.len;
   const currentInnerR = params.R + globalMin;
   const clearance = maxAllowedInnerR - currentInnerR;
 
   // Determine if the configuration is valid
-  const rTooSmall = params.R < requiredMinR - 1e-6;
+  // Offset adjustment may make a small base radius feasible.
+  const rTooSmall = false;
   const problem = outerTooSmall || infeasible > 0 || clearance < 0 || rTooSmall;
 
   // Only apply the clamp in the valid regime. When infeasible, leave offsets as-is
@@ -1203,7 +1298,7 @@ function applyMinOffsetClamp({ levelUp = true } = {}) {
   // Compose the status text
   let text;
   if (outerTooSmall) {
-    text = `Outer R too small — increase to ≥ ${(params.R + params.len).toFixed(1)} mm`;
+    text = `Outer R too small — increase to ≥ ${Math.hypot(params.R + params.len,params.diam/2).toFixed(2)} mm`;
   } else if (infeasible > 0) {
     text = `min Inner R = ${requiredMinR.toFixed(1)} mm · cylinder too wide for lattice spacing (overlap shown in 3D)`;
   } else if (clearance < 0) {
@@ -1288,7 +1383,15 @@ function updateMagnetPositions() {
   });
 }
 
+// Positive finite dimensions can be drawn even when the parts overlap.
+// Incomplete or non-positive inputs retain the last drawable scene.
+function canDrawGeometry() {
+  const p=getParams();
+  return ['R','R_outer','tr','diam','len'].every(k=>Number.isFinite(p[k]) && p[k]>0)
+    && Number.isFinite(p.zBore) && p.zBore>=0;
+}
 function drawScene() {
+  if(!canDrawGeometry()) return;
   clearGroup(magnetGroup);
   const R = parseFloat(document.getElementById('baseRadius').value);
   const tr = parseFloat(document.getElementById('testRadius').value);
@@ -1390,10 +1493,24 @@ function drawScene() {
 
 //SA, avec Symétrie, pas pour Fibo... on pourray construire un systeme de type Fibo avec mirroir ?
 async function startOptimization() {
-  if (optRunning) return;
+  if (optRunning || exportRunning || !validInputs(true)) return;
   const saBtn = document.getElementById('btn-opt');
   if (saBtn.disabled) return; // infeasible geometry
 
+  for(const [id,min,max,integer] of [['optIters',1,10000000,true],['optRestarts',1,500,true],['optNudge',0.001,10000,false]]) {
+    const v=Number(document.getElementById(id).value);
+    if(!Number.isFinite(v)||v<min||v>max||(integer&&!Number.isInteger(v))) {
+      showTooltip('Invalid optimizer setting: '+id+' (allowed '+min+' to '+max+')',6000);return;
+    }
+  }
+  // A newly enabled symmetry lock also constrains the incumbent.
+  if(document.getElementById('symLock').checked && currentLattice()!=='fibonacci') {
+    for(const group of orbits) {
+      const off=group.reduce((sum,i)=>sum+magnets[i].offset,0)/group.length;
+      group.forEach(i=>magnets[i].offset=off);
+    }
+    applyMinOffsetClamp({levelUp:false});
+  }
   // Feasibility precheck on the active target
   const pCheck = getParams();
   if (pCheck.activeTarget === 'field') {
@@ -1403,13 +1520,14 @@ async function startOptimization() {
         `Target |Bx| = ${pCheck.targetField.toFixed(3)} T appears UNREACHABLE.\n` +
         `Estimated maximum for this geometry: |Bx| ≈ ${bxStrong.toFixed(3)} T ` +
         `(achieved by snapping all magnets to inner positions).\n\n` +
-        `The optimizer will return the closest feasible configuration but the ` +
-        `constraint will not be satisfied. Run anyway?`
+        `This is an estimate, not a proof of reachability. ` +
+        `Run anyway and verify the achieved result?`
       );
       if (!ok) return;
     }
   }
 
+  try {
   optRunning = true;
   saFailed = false;
   setControlsLocked(true);
@@ -1430,7 +1548,8 @@ async function startOptimization() {
     symLock: document.getElementById('symLock').checked && currentLattice() !== 'fibonacci'
   };
 
-  let globalBestScore = computeScore(computeMetrics(params), params);
+  let bestRank=candidateRank(verifyConfiguration(params),params);
+  let globalBestScore = computeScore(verifyConfiguration(params), params);
   document.getElementById('os-best').textContent = `Best: ${globalBestScore.toFixed(4)}`;
   document.getElementById('os-score').textContent = `Score: ${globalBestScore.toFixed(4)}`;
 
@@ -1451,13 +1570,18 @@ async function startOptimization() {
   }));
 
   for (let i = 0; i < numThreads; i++) {
-    const worker = createOptimizationWorker();
+    let worker;
+    try { worker = createOptimizationWorker(); }
+    catch(err) { console.error(err);saFailed=true;stopOptimization();return; }
     activeWorkers.push(worker);
 
     // Without this, a worker that fails to boot never sends 'done', so
     // completedThreads never reaches numThreads, finalizeOptimization() never
     // runs, and the entire left panel stays disabled with no error shown.
+    let finished=false;
     const threadFinished = () => {
+      if(finished || !optRunning) return;
+      finished=true;
       completedThreads++;
       if (completedThreads >= numThreads) finalizeOptimization();
     };
@@ -1465,27 +1589,41 @@ async function startOptimization() {
       console.error('SA worker error:', err.message || err);
       err.preventDefault && err.preventDefault();
       saFailed = true;
-      threadFinished();
+      stopOptimization();
     };
     worker.onmessageerror = () => {
       console.error('SA worker: message could not be deserialized.');
       saFailed = true;
-      threadFinished();
+      stopOptimization();
     };
 
     worker.onmessage = (e) => {
+      if(!optRunning) return;
       armWatchdog();
+      if(e.data.type==='tables') {
+        for(const w of activeWorkers) if(w!==worker && w._startPayload) { w.postMessage({...w._startPayload,tables:e.data.tables});w._startPayload=null; }
+        return;
+      }
       if (e.data.type === 'newBest') {
         // Ignore stale results if the lattice was rebuilt mid-run
         if (e.data.offsets.length !== magnets.length) return;
-        if (e.data.score < globalBestScore) {
-          globalBestScore = e.data.score;
+        const candidate=magnets.map((m,idx)=>({...m,offset:e.data.offsets[idx]}));
+        const bounds=computeMinOffsets(params);
+        if(candidate.some((m,j)=>!Number.isFinite(m.offset)||m.offset<bounds.minOffs[j]-1e-8||m.offset>bounds.maxOffs[j]+1e-8)) return;
+        let verified;
+        try { verified=computeMetrics(params,VALIDATION_DIRS,candidate); }
+        catch(err) { console.error(err);saFailed=true;stopOptimization();return; }
+        const rank=candidateRank(verified,params);
+        if (betterCandidate(rank,bestRank)) {
+          bestRank=rank;
+          globalBestScore = computeScore(verified,params);
           e.data.offsets.forEach((off, idx) => { magnets[idx].offset = off; });
+          lastVerification={key:configurationKey(params),metrics:verified};
           document.getElementById('os-best').textContent = `Best: ${globalBestScore.toFixed(4)}`;
         }
       } else if (e.data.type === 'build') {
         buildFrac[i] = e.data.frac;
-        const mean = buildFrac.reduce((a, b) => a + b, 0) / numThreads;
+        const mean = e.data.frac; // one table builder shared by all search workers
         document.getElementById('opt-progress').style.width = (mean * 100).toFixed(1) + '%';
         document.getElementById('os-iter').textContent =
           'Tabulating field · ' + (mean * 100).toFixed(0) + '%';
@@ -1514,16 +1652,24 @@ async function startOptimization() {
     };
 
     const tempMultiplier = Math.pow(0.6, i);
-    worker.postMessage({
+    worker._startPayload = {
       cmd: 'start',
       magnets: magnetSnapshot,
       orbits: orbits,
       neighbours: neighbours,
       params: { ...params, tempMultiplier, seed: (Date.now() ^ (i * 2654435761)) >>> 0 }
-    });
+    };
+    if(i===0) { worker.postMessage(worker._startPayload);worker._startPayload=null; }
   }
 
   armWatchdog();
+  } catch(err) {
+    console.error('Optimizer startup failed:',err);
+    saFailed=true;
+    if(optRunning) stopOptimization();
+    else showTooltip('Optimizer startup failed: '+err.message,8000);
+  }
+
 }
 
 function stopOptimization() {
@@ -1565,7 +1711,17 @@ function finalizeOptimization() {
   // levelUp:false — the SA already respects per-magnet bounds and pairwise gaps;
   // raising everything to the global minimum would silently undo the optimization.
   applyMinOffsetClamp({ levelUp: false });
-  const { metrics, score } = evaluateField();
+  let result;
+  try { verifyConfiguration();result=evaluateField(); }
+  catch(err) {
+    console.error(err);
+    document.getElementById('opt-overlay').style.display='none';
+    document.getElementById('opt-progress').style.width='0%';
+    showTooltip('Optimization stopped: field validation failed. '+err.message,12000);
+    return;
+  }
+  if(!result) return;
+  const {metrics,score}=result;
   drawScene();
   // Always switch to the bore Z-profile when the SA finishes
   drawBoreProfile(false);
@@ -1588,7 +1744,7 @@ function finalizeOptimization() {
     cstr = `${ok ? '<span style="color:var(--accent)">✓</span>' : '<span style="color:var(--accent3)">✗</span>'} constraint: |Bx| ${Math.abs(metrics.bCenter.bx).toFixed(3)} T ≥ ${params2.targetField.toFixed(3)} T · minimized ppm`;
   }
   const resultMsg =
-    `<b style="color:var(--accent)">SA FINISHED</b><br>` +
+    `<b style="color:var(--accent)">SA FINISHED · dense sampled validation</b><br>` +
     `|Bx| center = ${Math.abs(metrics.bCenter.bx).toFixed(4)} T · |B| = ${metrics.bCenter.b.toFixed(4)} T<br>` +
     `Bx peak-to-peak = ${metrics.ppmBx.toFixed(0)} ppm · transverse leak = ${metrics.ppmTrans.toFixed(0)} ppm<br>` +
     cstr;
@@ -1598,26 +1754,24 @@ function finalizeOptimization() {
 function createOptimizationWorker() {
   const workerScript = `
     const MU0 = 4e-7 * Math.PI;
-    const N_RINGS = 24;
+    const FIELD_RTOL = 1e-10;
     const RESYNC_EVERY = 1024;   // bound rounding drift in the running total
 
     ${ellipticKE.toString()}
     ${ringField.toString()}
+    ${integrateCylinderCurrent.toString()}
     ${cylinderField.toString()}
 
-    // Replicate SAMPLE_DIRS
-    const SAMPLE_DIRS = (() => {
-      const dirs = [];
-      [[1,0,0],[-1,0,0],[0,1,0],[0,-1,0],[0,0,1],[0,0,-1]].forEach(d => dirs.push({ r: 1.0, d }));
-      const s = 1/Math.sqrt(2);
-      [[s,s,0],[s,-s,0],[-s,s,0],[-s,-s,0],[s,0,s],[s,0,-s],[-s,0,s],[-s,0,-s],[0,s,s],[0,s,-s],[0,-s,s],[0,-s,-s]]
-        .forEach(d => dirs.push({ r: 1.0, d }));
-      const t = 1/Math.sqrt(3);
-      [[t,t,t],[t,t,-t],[t,-t,t],[t,-t,-t],[-t,t,t],[-t,t,-t],[-t,-t,t],[-t,-t,-t]]
-        .forEach(d => dirs.push({ r: 1.0, d }));
-      [[1,0,0],[-1,0,0],[0,1,0],[0,-1,0],[0,0,1],[0,0,-1]].forEach(d => dirs.push({ r: 0.5, d }));
-      return dirs;
-    })();
+    const SAMPLE_DIRS = ${JSON.stringify(SAMPLE_DIRS)};
+    const VALIDATION_DIRS = ${JSON.stringify(VALIDATION_DIRS)};
+    ${offsetBounds.toString()}
+    ${metricsFromFlat.toString()}
+    ${metricsFromFields.toString()}
+    ${computeScore.toString()}
+    ${candidateRank.toString()}
+    ${betterCandidate.toString()}
+    ${fieldAt.toString()}
+    ${computeMetrics.toString()}
 
     let magnets, orbits, neighbours, params;
     let minOffs, maxOffs;
@@ -1646,22 +1800,11 @@ function createOptimizationWorker() {
     //  the coordinate polish below valid.
     // ─────────────────────────────────────────────────────────────
     function computeBounds() {
-      const R = params.R, len = params.len, tr = params.tr;
-      const minOffTest = Math.max(0, tr + 1 - R);
-      const maxOff = Math.max(minOffTest, params.R_outer - R - len);
-      minOffs = new Float64Array(magnets.length).fill(minOffTest);
-      maxOffs = new Float64Array(magnets.length).fill(maxOff);
-      for (let i = 0; i < magnets.length; i++) {
-        let tightest = 0;
-        for (const nb of neighbours[i]) {
-          const minInnerR = (params.diam + params.gap) / (2 * nb.sinHalfA);
-          const t = Math.max(0, minInnerR - R);
-          if (t > tightest) tightest = t;
-        }
-        minOffs[i] = Math.max(minOffs[i], tightest);
-        if (maxOffs[i] < minOffs[i]) maxOffs[i] = minOffs[i];
-      }
+      const b=offsetBounds(params,magnets,neighbours);
+      if(b.infeasibleFlags.some(Boolean)) throw new Error('Infeasible geometry bounds');
+      minOffs=b.minOffs;maxOffs=b.maxOffs;
     }
+
 
     function buildSamplePoints() {
       const tr = params.tr;
@@ -1700,14 +1843,10 @@ function createOptimizationWorker() {
     //  shares an offset, so the group's total contribution is likewise a
     //  univariate function. So sample it once on a uniform grid and never
     //  touch an elliptic integral again: the inner loop becomes a 4-tap cubic
-    //  interpolation instead of  (magnets in group) x NS x 24 ring evaluations.
+    //  interpolation instead of  (magnets in group) x NS adaptive field integrations.
     //
-    //  Cubic Lagrange error is ~ h^4 * f'''' / 384. The field varies on the
-    //  scale of the magnet-to-sample distance (>= 26 mm here), so with a grid
-    //  step of a few tenths of a millimetre the relative error lands around
-    //  1e-9 — several orders below what a ppm-scale objective can resolve.
-    //  The main thread still recomputes the exact model at the end, so the
-    //  table is only ever a search accelerator, never the reported answer.
+    //  Interpolation accelerates search only. Its error depends on geometry;
+    //  finalists are recomputed by direct adaptive integration at dense samples.
     // ─────────────────────────────────────────────────────────────
     function buildTables() {
       NG = nG <= 16 ? 96 : (nG <= 64 ? 64 : 48);
@@ -1802,32 +1941,9 @@ function createOptimizationWorker() {
     }
 
     function scoreNow() {
-      const cbx = totalB[0], cby = totalB[1], cbz = totalB[2];
-      const absBx = Math.max(Math.abs(cbx), 1e-9);
-      let minBx = cbx, maxBx = cbx, maxTrans = Math.sqrt(cby*cby + cbz*cbz);
-      let sumBx = cbx;
-      for (let s = 1; s < NS; s++) {
-        const bx = totalB[s*3], by = totalB[s*3+1], bz = totalB[s*3+2];
-        if (bx < minBx) minBx = bx;
-        if (bx > maxBx) maxBx = bx;
-        const tr = Math.sqrt(by*by + bz*bz);
-        if (tr > maxTrans) maxTrans = tr;
-        sumBx += bx;
-      }
-      const meanBx = sumBx / NS;
-      const ppmBx = Math.abs(meanBx) > 1e-9 ? ((maxBx - minBx) / Math.abs(meanBx)) * 1e6 : 1e9;
-      const ppmTrans = (maxTrans / absBx) * 1e6;
-      const ppmTotal = ppmBx + 2*ppmTrans;
-      const BrSafe = Math.max(params.Br, 0.1);
-      const LAMBDA = 10;
-      if (params.activeTarget === 'homog') {
-        const viol = Math.max(0, (ppmTotal - params.targetHomog) / Math.max(params.targetHomog, 1));
-        return -absBx / BrSafe + LAMBDA * viol;
-      } else {
-        const viol = Math.max(0, (params.targetField - absBx) / Math.max(params.targetField, 1e-3));
-        return ppmTotal / 1e6 + LAMBDA * viol;
-      }
+      return computeScore(metricsFromFlat(totalB),params);
     }
+
 
     // Deterministic PRNG so a given seed reproduces a run.
     let rngState = 1;
@@ -1979,7 +2095,12 @@ function createOptimizationWorker() {
       computeBounds();
       buildSamplePoints();
       buildGroups();
-      buildTables();
+      if(e.data.tables) {
+        ({tabs,tabConst,NG}=e.data.tables);
+      } else {
+        buildTables();
+        self.postMessage({type:'tables',tables:{tabs,tabConst,NG}});
+      }
 
       gContrib = new Array(nG);
       for (let g = 0; g < nG; g++) gContrib[g] = new Float64Array(stride);
@@ -2000,6 +2121,7 @@ function createOptimizationWorker() {
       const progTotal = restarts * iters;
 
       let globalBest = Infinity;
+      let verifiedRank=null;
       const globalBestX = new Float64Array(nG);
 
       for (let r = 0; r < restarts; r++) {
@@ -2022,12 +2144,18 @@ function createOptimizationWorker() {
         // Budget total polish work rather than sweep count, for the same reason.
         const sc = polish(Math.max(6, Math.min(60, Math.round(400 / nG))));
 
-        if (sc < globalBest) {
-          globalBest = sc;
+        // Validate direct integration on independent points before retention.
+        const candidate=magnets.map((m,i)=>({...m,offset:gx[groupOf[i]]}));
+        self.postMessage({type:'progress',iter:(r+1)*iters,total:progTotal,temp:0,currentScore:sc});
+        const verified=computeMetrics(params,VALIDATION_DIRS,candidate);
+        const rank=candidateRank(verified,params);
+        if (betterCandidate(rank,verifiedRank)) {
+          verifiedRank=rank;
+          globalBest = computeScore(verified,params);
           globalBestX.set(gx);
           const offsets = new Array(magnets.length);
           for (let i = 0; i < magnets.length; i++) offsets[i] = gx[groupOf[i]];
-          self.postMessage({ type: 'newBest', score: sc, offsets, iter: (r+1)*iters });
+          self.postMessage({ type: 'newBest', score: globalBest, offsets, iter: (r+1)*iters });
         }
       }
 
@@ -2051,6 +2179,8 @@ function createOptimizationWorker() {
 
 //bore profile
 function drawBoreProfile(isPrint = false) {
+  if(!validInputs(true)) return;
+  ++mapToken;
   const range = parseFloat(document.getElementById('testRadius').value);
   const nPts = 100;
   const step = 2 * range / (nPts - 1);
@@ -2136,7 +2266,7 @@ function drawLineChart(ctx, size, axLine, bxLine, byLine, bzLine, boreAxis, rang
 // ═══════════════════════════════════════════════════════════════
 //  2D |B| MAPS
 //
-//  An 80x80 grid is 6400 field points; at 48 magnets x 24 current rings that
+//  An 80x80 grid is 6400 field points; adaptive integration over 48 magnets
 //  is ~7.4 million elliptic-integral evaluations. Running that on the main
 //  thread froze the tab for tens of seconds (and exportPDF did it three times
 //  over), so the grid is computed in a dedicated worker and only the drawing
@@ -2151,9 +2281,10 @@ function getFieldWorker() {
   if (fieldWorker) return fieldWorker;
   const src = `
     const MU0 = 4e-7 * Math.PI;
-    const N_RINGS = 24;
+    const FIELD_RTOL = 1e-10;
     ${ellipticKE.toString()}
     ${ringField.toString()}
+    ${integrateCylinderCurrent.toString()}
     ${cylinderField.toString()}
     self.onmessage = function(e) {
       const { id, magnets, params, plane, N, ext } = e.data;
@@ -2168,6 +2299,7 @@ function getFieldWorker() {
           if (plane === 'xy')      { px = u; py = v; }
           else if (plane === 'xz') { px = u; pz = v; }
           else                     { py = u; pz = v; }
+          if(u*u+v*v>ext*ext) { out[iy*N+ix]=NaN;continue; }
           let bx = 0, by = 0, bz = 0;
           for (const m of magnets) {
             const d = R + m.offset + len/2;
@@ -2221,6 +2353,7 @@ function computeMapGridSync(plane, ext, N, params) {
       if (plane === 'xy')      { px = u; py = v; }
       else if (plane === 'xz') { px = u; pz = v; }
       else                     { py = u; pz = v; }
+      if(u*u+v*v>ext*ext) { vals[iy*N+ix]=NaN;continue; }
       const bv = fieldAt(px, py, pz, params).b;
       vals[iy*N + ix] = bv;
       if (bv < vMin) vMin = bv;
@@ -2278,6 +2411,7 @@ function renderMap2D(plane, grid, isPrint = false) {
   const bpp = mapSize / N;
   for (let iy = 0; iy < N; iy++) {
     for (let ix = 0; ix < N; ix++) {
+      if(!Number.isFinite(vals[iy*N+ix])) continue;
       const t = (vMax > vMin) ? (vals[iy*N + ix] - vMin) / (vMax - vMin) : 0;
       const [r, g, b] = heatmap(t);
       for (let dy = 0; dy < Math.ceil(bpp); dy++) for (let dx = 0; dx < Math.ceil(bpp); dx++) {
@@ -2329,6 +2463,7 @@ function renderMap2D(plane, grid, isPrint = false) {
 }
 
 function setMapTab(plane) {
+  if(exportRunning || !validInputs(true)) return;
   currentMapPlane = plane;
   document.getElementById('map-container').style.display = 'flex';
   document.querySelectorAll('.view-btn').forEach(b => b.classList.remove('active'));
@@ -2342,6 +2477,7 @@ let mapToken = 0;
 const MAP_GRID_N = 80;
 
 async function drawMap2D(plane, isPrint = false) {
+  if(!validInputs(true)) { if(isPrint) throw new Error('Invalid map geometry');return; }
   const overlay = document.getElementById('map-computing-overlay');
   const myToken = ++mapToken;
   if (!isPrint) overlay.style.display = 'flex';
@@ -2352,10 +2488,11 @@ async function drawMap2D(plane, isPrint = false) {
     if (!isPrint && myToken !== mapToken) return; // superseded
     renderMap2D(plane, grid, isPrint);
   } catch (e) {
+    if(isPrint) throw e;
     console.error('Map computation failed:', e);
     document.getElementById('map-title').textContent = 'Map computation failed — see console';
   } finally {
-    overlay.style.display = 'none';
+    if(myToken===mapToken) overlay.style.display = 'none';
   }
 }
 function heatmap(t) {
@@ -2365,6 +2502,9 @@ function heatmap(t) {
 }
 
 function setView(mode) {
+  if(exportRunning) return;
+  ++mapToken;
+  document.getElementById('map-computing-overlay').style.display='none';
   document.getElementById('map-container').style.display = 'none';
   currentMapPlane = null;
   document.querySelectorAll('.view-btn').forEach(b => b.classList.remove('active'));
@@ -2458,6 +2598,16 @@ function drawSchlegelDiagram(ctx, size, view = 'north', isPrint = false) {
 }
 
 async function exportPDF() {
+  if(exportRunning || optRunning || !validInputs(true)) return;
+  exportRunning=true;
+  clearTimeout(_evalTimer);clearTimeout(mapTimer);++mapToken;
+  const disabled=[];
+  document.querySelectorAll('input, select, button').forEach(el=>{if(!el.disabled){el.disabled=true;disabled.push(el);}});
+  const savedUI={background:scene.background,fog:scene.fog?.color.getHex(),grid:gridHelper.visible,axis:axisHelper.visible,
+    labels:document.getElementById('showLabels').checked,spherical:{...spherical},pan:{...panOffset},target:targetView,
+    plane:currentMapPlane,display:document.getElementById('map-container').style.display};
+  targetView=null;
+
   document.body.style.cursor = 'wait';
   const exportBtn = document.querySelector('button[onclick="exportPDF()"]');
   const originalBtnText = exportBtn ? exportBtn.textContent : 'PDF Export';
@@ -2524,9 +2674,9 @@ async function exportPDF() {
     ].forEach(t => { doc.text(cleanStr(`* ${t}`), margin + 5, y); y += 5; });
     y += 4;
 
-    doc.setFontSize(12); doc.text(cleanStr("2. Computed Field (center & volume)"), margin, y); y += 6;
+    doc.setFontSize(12); doc.text(cleanStr("2. Computed Field (center & 608 volume samples)"), margin, y); y += 6;
     doc.setFontSize(10);
-    const m = computeMetrics(p);
+    const m = verifyConfiguration(p);
     const ppmTotal = m.ppmBx + 2 * m.ppmTrans;
     let constraintLine;
     if (p.activeTarget === 'homog') {
@@ -2540,7 +2690,7 @@ async function exportPDF() {
     [
       `|B| at center: ${m.bCenter.b.toFixed(4)} T`,
       `Bx = ${m.bCenter.bx.toFixed(4)} T    By = ${m.bCenter.by.toExponential(2)} T    Bz = ${m.bCenter.bz.toExponential(2)} T`,
-      `Bx peak-to-peak over test volume: ${m.ppmBx.toFixed(1)} ppm`,
+      `Sampled Bx peak-to-peak (not a continuous bound): ${m.ppmBx.toFixed(1)} ppm`,
       `Transverse leak (max): ${m.ppmTrans.toFixed(1)} ppm of |Bx|`,
       `Combined homogeneity metric (ppmBx + 2*ppmTrans): ${ppmTotal.toFixed(1)} ppm`,
       constraintLine
@@ -2641,7 +2791,20 @@ async function exportPDF() {
     doc.save(`Mandhala_${timestampFile}.pdf`);
   } catch (err) {
     console.error("PDF generation failed:", err);
+    showTooltip('PDF generation failed: '+err.message,8000);
   } finally {
+    scene.background=savedUI.background;
+    if(scene.fog && savedUI.fog!==undefined) scene.fog.color.setHex(savedUI.fog);
+    gridHelper.visible=savedUI.grid;axisHelper.visible=savedUI.axis;
+    document.getElementById('showLabels').checked=savedUI.labels;
+    spherical={...savedUI.spherical};panOffset={...savedUI.pan};targetView=savedUI.target;
+    currentMapPlane=savedUI.plane;
+    exportRunning=false;
+    disabled.forEach(el=>el.disabled=false);
+    drawScene();
+    if(savedUI.plane==='bore') drawBoreProfile();
+    else if(savedUI.plane) await drawMap2D(savedUI.plane);
+    document.getElementById('map-container').style.display=savedUI.display;
     document.body.style.cursor = 'default';
     if (exportBtn) { exportBtn.disabled = false; exportBtn.textContent = originalBtnText; }
   }
@@ -2677,6 +2840,7 @@ function downloadBlob(data, mime, filename) {
 }
 
 function exportCSV() {
+  if(exportRunning || optRunning || !validInputs(true)) return;
   const p = getParams();
   const len = p.len;
   const nowIso = new Date().toISOString().replace(/[:.]/g, '-').slice(0, 19);
@@ -3003,6 +3167,7 @@ function stepProductTailFrom(w, mark, brepIds, prodName, prodDesc) {
 
 // ── Export entry points ────────────────────────────────────────────────────
 function exportSTEPHolder() {
+  if(exportRunning || optRunning || !validInputs(true)) return;
   const p = getParams();
   const a = p.diam / 2 + p.holeClr;          // bore radius
 
@@ -3057,6 +3222,7 @@ function exportSTEPHolder() {
 }
 
 function exportSTEPMagnets() {
+  if(exportRunning || optRunning || !validInputs(true)) return;
   const p = getParams();
   const cylinders = magnets.map((mag) => {
     const rInner = p.R + mag.offset;
@@ -3132,7 +3298,7 @@ function animate(time) {
 
   placeCamera(spherical.theta, spherical.phi, spherical.radius, panOffset.x, panOffset.y);
 
-  if (!isMouseDown && !targetView && !optRunning) spherical.theta += 0.0003;
+  if (!isMouseDown && !targetView && !optRunning && !exportRunning) spherical.theta += 0.0003;
   renderer.render(scene, camera);
 }
 
@@ -3144,6 +3310,7 @@ function resize() {
 }
 window.addEventListener('resize', () => {
   resize();
+  if(exportRunning) return;
   if (currentMapPlane === 'bore') drawBoreProfile();
   else if (currentMapPlane) drawMap2D(currentMapPlane);
 });
@@ -3153,7 +3320,7 @@ document.querySelectorAll('input, select').forEach(el => {
   el.addEventListener('input', () => {
     // Target inputs route through onTargetEdit which calls evaluateField itself.
     if (el.id === 'targetHomog' || el.id === 'targetField') return;
-    if (optRunning) return;
+    if (optRunning || exportRunning) return;
     evaluateFieldDebounced();
     if (currentMapPlane) {
       clearTimeout(mapTimer);
